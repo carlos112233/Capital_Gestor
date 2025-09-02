@@ -16,7 +16,7 @@ class CatalogoController extends Controller
      */
     public function index(): View
     {
-        $articulos = Articulo::where('stock', '>', 0)->latest()->paginate(12);
+        $articulos = Articulo::where('stock', '>=', 0)->latest()->paginate(12);
         return view('catalogo.index', compact('articulos'));
     }
 
@@ -24,45 +24,47 @@ class CatalogoController extends Controller
      * Procesa la venta de un artículo.
      */
     public function vender(Request $request): RedirectResponse
-{
-    $validated = $request->validate([
-        'articulo_id' => 'required|exists:articulos,id',
-        'cantidad' => 'required|integer|min:1',
-    ]);
+    {
+        $validated = $request->validate([
+            'articulo_id' => 'required|exists:articulos,id',
+            'cantidad' => 'required|integer|min:1',
+            'cliente_id' => 'required|exists:clientes,id',
+            'precio_venta' => 'required|numeric|min:0',
+            'descripcion' => 'nullable|string',
+        ]);
 
-    try {
-        DB::transaction(function () use ($validated) {
-            $articulo = Articulo::lockForUpdate()->find($validated['articulo_id']);
-            $cantidadVenta = $validated['cantidad'];
+        try {
+            DB::transaction(function () use ($validated) {
+                $articulo = Articulo::lockForUpdate()->find($validated['articulo_id']);
+                $cantidadVenta = $validated['cantidad'];
 
-            // Validar que hay suficiente stock
-            if ($articulo->stock < $cantidadVenta) {
-                // Usamos una ValidationException para que el error se muestre como un error de formulario
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                   'cantidad' => 'No hay suficiente stock. Cantidad disponible: ' . $articulo->stock,
+                // Validar que hay suficiente stock
+                if ($articulo->stock < $cantidadVenta) {
+                    // Usamos una ValidationException para que el error se muestre como un error de formulario
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'cantidad' => 'No hay suficiente stock. Cantidad disponible: ' . $articulo->stock,
+                    ]);
+                }
+
+                // 1. Disminuir el stock del artículo
+                $articulo->decrement('stock', $cantidadVenta);
+
+                // 2. Registrar la venta en la tabla 'ventas'
+                $articulo->ventas()->create([
+                    'user_id'      => Auth::id(),
+                    'cantidad'     => $cantidadVenta,
+                    'precio_venta' => $articulo->precio,
+                    'total_venta'  => $articulo->precio * $cantidadVenta,
                 ]);
-            }
+            });
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Redirigir hacia atrás con los errores de validación
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            // Para cualquier otro tipo de error inesperado
+            return redirect()->route('catalogo.index')->with('error', 'Ocurrió un error inesperado al procesar la venta.');
+        }
 
-            // 1. Disminuir el stock del artículo
-            $articulo->decrement('stock', $cantidadVenta);
-
-            // 2. Registrar la venta en la tabla 'ventas'
-            $articulo->ventas()->create([
-                'user_id'      => Auth::id(),
-                'cantidad'     => $cantidadVenta,
-                'precio_venta' => $articulo->precio,
-                'total_venta'  => $articulo->precio * $cantidadVenta,
-            ]);
-        });
-
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        // Redirigir hacia atrás con los errores de validación
-        return redirect()->back()->withErrors($e->errors())->withInput();
-    } catch (\Exception $e) {
-        // Para cualquier otro tipo de error inesperado
-        return redirect()->route('catalogo.index')->with('error', 'Ocurrió un error inesperado al procesar la venta.');
+        return redirect()->route('catalogo.index')->with('success', '¡Venta registrada con éxito!');
     }
-
-    return redirect()->route('catalogo.index')->with('success', '¡Venta registrada con éxito!');
-}
 }

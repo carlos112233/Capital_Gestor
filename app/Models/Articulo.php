@@ -15,6 +15,8 @@ class Articulo extends Model
         'descripcion',
         'precio',
         'stock',
+        'img_base64',
+        'img_tipo',
     ];
 
     public function ventas(): HasMany

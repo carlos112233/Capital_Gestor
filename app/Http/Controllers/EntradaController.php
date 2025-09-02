@@ -10,10 +10,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth; // <-- Importante
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Carbon\Carbon;
+
 
 class EntradaController extends Controller
 {
-        /**
+
+    /**
      * Muestra una lista de las entradas.
      */
     public function index(): View
@@ -29,7 +32,7 @@ class EntradaController extends Controller
             $entradas = $query->where('user_id', $user->id)->paginate(10);
         }
 
-        return view('entradas.index', compact('entradas'));
+        return view('admin.entradas.index', compact('entradas'));
     }
 
     /**
@@ -39,60 +42,68 @@ class EntradaController extends Controller
     {
         $users = User::all();
         $articulos = Articulo::all();
-        $clientes = Cliente::all();
-        return view('entradas.create', compact('users', 'articulos', 'clientes'));
+        $clientes = User::all();
+        return view('admin.entradas.create', compact('users', 'articulos', 'clientes'));
     }
 
     /**
      * Guarda una nueva entrada en la base de datos.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
+
         $validated = $request->validate([
-            'cliente_id'=> 'required|exists:clientes,id',
+            'cliente_id' => 'nullable|exists:users,id',
             'articulo_id' => 'required|exists:articulos,id',
-            'monto' => 'required|numeric|min:0.01',
+            'precio_venta' => 'required|integer',
             'descripcion' => 'nullable|string|max:1000',
-            'fecha_generado' => 'required|date',
         ]);
 
+
+        $fecha = Carbon::now();
         $user = Auth::user();
         $request->merge([
-            'user_id' => $user->id,
+            'fecha_generado' => $fecha,
+            'user_id' => Auth::user()->hasRole('admin')?$validated['cliente_id']:Auth::id(),
+            'cliente_id' => null
         ]);
 
-        Entrada::create($validated);
+        Entrada::create($request->all());
 
-        return redirect()->route('entradas.index')
-                         ->with('success', 'Entrada de capital registrada con éxito.');
+        return redirect()->route('admin.entradas.index')
+            ->with('success', 'Entrada de capital registrada con éxito.');
     }
 
 
-      public function edit(Entrada $venta)
+    public function edit(Entrada $entrada)
     {
-        $clientes = Cliente::all();
-        return view('entradas.edit', compact('clientes'));
+        $users = User::all();
+        $articulos = Articulo::all();
+        $clientes = User::all();
+        $entrada->load(['user', 'cliente', 'articulo']);
+
+        return view('admin.entradas.edit', compact('users', 'articulos', 'clientes', 'entrada'));
     }
 
     public function update(Request $request, Entrada $entrada)
-    {
+    {   
         $user = Auth::user();
 
         $request->validate([
             'articulo_id' => 'required|exists:articulos,id',
-            'monto' => 'required|integer|min:1',
-            'cliente_id' => 'required|exists:clientes,id',
+            'cliente_id' => 'nullable|exists:users,id',
+            'precio_venta' => 'required|integer',
             'descripcion' => 'nullable|string',
-            'fecha_generado' => 'required|date',
         ]);
 
-         $user = Auth::user();
+        $fecha = Carbon::now();
+        $user = Auth::user();
         $request->merge([
-            'user_id' => $user->id,
+            'fecha_generado' => $fecha,
+            'user_id' => Auth::user()->hasRole('admin')?$request['cliente_id']:Auth::id(),
         ]);
         $entrada->update($request->all());
 
-        return redirect()->route('entradas.index')->with('success', 'Venta actualizada correctamente.');
+        return redirect()->route('admin.entradas.index')->with('success', 'Venta actualizada correctamente.');
     }
-
 }

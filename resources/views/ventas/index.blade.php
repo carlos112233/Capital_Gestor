@@ -5,7 +5,7 @@
                 {{ __('Gestión de clientes') }}
             </h2>
                     <a href="{{ route('ventas.create') }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900">
-                {{ __('Añadir Nuevo cliete') }}
+                {{ __('Nueva venta') }}
             </a>
     </x-slot>
 
@@ -28,6 +28,7 @@
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Cantidad</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Precio</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Cliente</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Fecha</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Total</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Acciones</th>
                             </tr>
@@ -41,8 +42,10 @@
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-gray-900">{{ $venta->articulo->nombre }}</td>
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $venta->cantidad }}</td>
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">${{ number_format($venta->precio_venta, 2) }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $venta->cliente->nombre }}</td>
+                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $venta->user->name }}</td>
+                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ \Carbon\Carbon::parse($venta->created_at)->translatedFormat('l d/m/Y') }}</td>
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">${{ number_format($venta->total_venta, 2) }}</td>
+                                     @if (Auth::user()->hasRole('admin'))
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                                         {{-- Botón Editar --}}
                                         <a href="{{ route('ventas.edit', $venta) }}"
@@ -60,6 +63,7 @@
                                             </buttoIn>
                                         </form>
                                     </td>
+                                    @endif
                                 </tr>
                                 @endif
                             @empty

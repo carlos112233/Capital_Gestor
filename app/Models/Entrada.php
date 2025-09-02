@@ -14,7 +14,7 @@ class Entrada extends Model
         'user_id',
         'cliente_id',
         'articulo_id',
-        'monto',
+        'precio_venta',
         'descripcion',
         'fecha_generado',
     ];

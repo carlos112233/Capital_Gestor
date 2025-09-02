@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Enlace al usuario
             $table->foreignId('cliente_id')->constrained()->comment('cliente'); // Enlace al usuario
             $table->foreignId('articulo_id')->constrained()->comment('Artículo vendido'); // Enlace al usuario
-            $table->decimal('monto', 10, 2); // Monto con 2 decimales
+            $table->decimal('precio_venta', 10, 2); // Monto con 2 decimales
             $table->text('descripcion')->nullable(); // Una descripción opcional
             $table->date('fecha_generado'); // La fecha en que se generó el ingreso
             $table->timestamps(); // created_at y updated_at

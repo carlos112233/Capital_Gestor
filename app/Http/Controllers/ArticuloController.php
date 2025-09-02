@@ -23,12 +23,29 @@ class ArticuloController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        if ($request->hasFile('img_base64')) {
+            // Obtiene el contenido binario del archivo
+            $imagenBinaria = file_get_contents($request->file('img_base64')->getRealPath());
+            $imagen_tipo = $request->file('img_base64')->getMimeType();
+
+            // Lo convierte a Base64
+            $base64 = base64_encode($imagenBinaria);
+
+            $request->merge([
+                'img_base64' => $base64,
+                'img_tipo' => $imagen_tipo,
+            ]);
+        }
+
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'precio' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
+            'img_base64' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
+
+
 
         Articulo::create($validated);
 
@@ -43,12 +60,22 @@ class ArticuloController extends Controller
 
     public function update(Request $request, Articulo $articulo): RedirectResponse
     {
+
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'precio' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
+            'img_base64' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+
         ]);
+
+
+        if ($request->hasFile('img_base64')) {
+            $file = $request->file('img_base64');
+            $validated['img_base64'] = base64_encode(file_get_contents($file->getRealPath()));
+            $articulo->imagen_tipo = $request->file('img_base64')->getMimeType();
+        }
 
         $articulo->update($validated);
 

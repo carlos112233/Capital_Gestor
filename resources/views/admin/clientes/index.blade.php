@@ -5,7 +5,7 @@
                 {{ __('Gestión de clientes') }}
             </h2>
                     <a href="{{ route('admin.clientes.create') }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900">
-                {{ __('Añadir Nueva cliente') }}
+                {{ __('Nueva cliente') }}
             </a>
     </x-slot>
 
@@ -25,18 +25,18 @@
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">ID</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Usuario</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Email</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Telefono</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Direccion</th>
+                                {{-- <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Telefono</th> --}}
+                                {{-- <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Direccion</th> --}}
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($clientes as $cliente)
                                 <tr>
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $cliente->id }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $cliente->nombre }}</td>
+                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $cliente->name }}</td>
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-gray-900">{{ $cliente->email }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $cliente->telefono }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $cliente->direccion }}</td>
+                                    {{-- <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $cliente->telefono }}</td>
+                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $cliente->direccion }}</td> --}}
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                                         {{-- Botón Editar --}}
                                         <a href="{{ route('admin.clientes.edit', $cliente) }}"

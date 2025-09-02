@@ -8,6 +8,8 @@ use App\Models\Articulo;
 use App\Models\Cliente;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class VentaController extends Controller
 {
@@ -15,42 +17,81 @@ class VentaController extends Controller
     {
         $user = Auth::user();
         $ventasQuery = Venta::with(['user', 'articulo', 'cliente'])->latest();
+
+        // Si no es admin, solo ver sus ventas
         if (! $user->hasRole('admin')) {
             $ventasQuery->where('user_id', Auth::id());
         }
 
+        // Ventas de hoy
+        $ventasHoy = (clone $ventasQuery)
+            ->whereDate('created_at', Carbon::today())
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Ventas de la semana (desde el lunes hasta hoy)
+        $ventasSemana = (clone $ventasQuery)
+            ->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])
+            ->orderBy('created_at', 'desc')
+            ->get();
         $ventas = $ventasQuery->paginate(10);
         //return $ventas;
         return view('ventas.index', compact('ventas'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $users = User::all();
         $articulos = Articulo::all();
-        $clientes = Cliente::all();
-        return view('ventas.create', compact('users', 'articulos', 'clientes'));
+        $clientes = User::all();
+        $articuloId = $request->get('articulo_id');
+        return view('ventas.create', compact('users', 'articulos', 'clientes', 'articuloId'));
     }
 
     public function store(Request $request)
-    {    
-        $request->validate([
+    {
+        $validated = $request->validate([
             'articulo_id' => 'required|exists:articulos,id',
             'cantidad' => 'required|integer|min:1',
-            'cliente_id' => 'required|exists:clientes,id',
+            'cliente_id' => 'nullable|exists:users,id',
             'precio_venta' => 'required|numeric|min:0',
             'descripcion' => 'nullable|string',
         ]);
 
-        $user = Auth::user();
-        $request->merge([
-            'user_id' => $user->id,
-            'total_venta' => $request->cantidad * $request->precio_venta
-        ]);
+        try {
+            DB::transaction(function () use ($validated) {
+                $articulo = Articulo::lockForUpdate()->find($validated['articulo_id']);
+                $cantidadVenta = $validated['cantidad'];
 
-        Venta::create($request->all());
+                // Validar que hay suficiente stock
+                if ($articulo->stock < $cantidadVenta) {
+                    // Usamos una ValidationException para que el error se muestre como un error de formulario
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'cantidad' => 'No hay suficiente stock. Cantidad disponible: ' . $articulo->stock,
+                    ]);
+                }
 
-        return redirect()->route('ventas.index')->with('success', 'Venta creada correctamente.');
+                // 1. Disminuir el stock del artículo
+                $articulo->decrement('stock', $cantidadVenta);
+
+                // 2. Registrar la venta en la tabla 'ventas'
+                $articulo->ventas()->create([
+                    'user_id'      =>  Auth::user()->hasRole('admin') ? $validated['cliente_id'] : Auth::id(),
+                    //'cliente_id'   => $validated['cliente_id'],
+                    'cantidad'     => $cantidadVenta,
+                    'precio_venta' => $articulo->precio,
+                    'total_venta'  => $articulo->precio * $cantidadVenta,
+                ]);
+            });
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Redirigir hacia atrás con los errores de validación
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            // Para cualquier otro tipo de error inesperado
+            return redirect()->route('catalogo.index')->with('error', 'Ocurrió un error inesperado al procesar la venta.' . $e);
+        }
+
+        return redirect()->route('catalogo.index')->with('success', '¡Venta registrada con éxito!');
     }
 
     public function show(Venta $venta)
@@ -74,7 +115,7 @@ class VentaController extends Controller
             'user_id' => 'required|exists:users,id',
             'articulo_id' => 'required|exists:articulos,id',
             'cantidad' => 'required|integer|min:1',
-            'cliente_id' => 'required|exists:clientes,id',
+            'cliente_id' => 'required|exists:users,id',
             'precio_venta' => 'required|numeric|min:0',
             'descripcion' => 'nullable|string',
         ]);

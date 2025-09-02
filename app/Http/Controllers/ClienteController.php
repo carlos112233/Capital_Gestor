@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cliente;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -11,7 +12,7 @@ class ClienteController extends Controller
 {
     public function index()
     {
-        $clientes = Cliente::latest()->paginate(10);
+        $clientes = User::latest()->paginate(10);
         return view('admin.clientes.index', compact('clientes'));
     }
 

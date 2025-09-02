@@ -14,4 +14,9 @@ class Cliente extends Model
     {
         return $this->hasMany(Venta::class);
     }
+
+      public function entradas()
+    {
+        return $this->hasMany(Entrada::class);
+    }
 }
