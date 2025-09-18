@@ -6,11 +6,14 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-12">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
 
-                    <h3 class="text-lg font-semibold mb-4">Estado de cuenta semanal</h3>
+                    <div class="mb-4 flex gap-2">
+                        <input type="text" id="search" placeholder="Buscar cliente..."
+                            class="w-full border-gray-300 rounded-lg shadow-sm focus:ring focus:ring-indigo-200 px-4 py-2">
+                    </div>
 
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 border">
@@ -74,3 +77,22 @@
             </div>
         </div>
 </x-app-layout>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const input = document.getElementById('search');
+        const table = document.querySelector('table tbody');
+
+        input.addEventListener('input', function () {
+            const filter = this.value.toLowerCase();
+            const rows = table.querySelectorAll('tr');
+
+            rows.forEach(row => {
+                const cell = row.querySelector('td:first-child'); // columna Cliente
+                if (!cell) return;
+
+                const text = cell.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        });
+    });
+</script>

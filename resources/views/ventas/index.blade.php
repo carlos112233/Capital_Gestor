@@ -1,86 +1,65 @@
 <x-app-layout>
-     <x-slot name="header">
+    <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Gestión de clientes') }}
             </h2>
-                    <a href="{{ route('ventas.create') }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900">
+            <a href="{{ route('ventas.create') }}"
+                class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900">
                 {{ __('Nueva venta') }}
             </a>
     </x-slot>
 
-       <div class="py-12">
+    <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             @if (session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative"
+                    role="alert">
                     {{ session('success') }}
                 </div>
             @endif
-
+            <form method="GET" action="{{ route('ventas.index') }}" class="mb-6 flex gap-2">
+                <input id="q" type="text" name="q" value="{{ request('q') }}"
+                    placeholder="Buscar por nombre…" autocomplete="off"
+                    class="w-full border-gray-300 rounded-lg shadow-sm focus:ring focus:ring-indigo-200">
+            </form>
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">ID</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Usuario</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Artículo</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Cantidad</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Precio</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Cliente</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Fecha</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Total</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse($ventas as $venta)
-                                @if($venta->articulo->nombre != 'Saldar pago' )
-                                <tr>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $venta->id }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $venta->user->name }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-gray-900">{{ $venta->articulo->nombre }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $venta->cantidad }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">${{ number_format($venta->precio_venta, 2) }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $venta->user->name }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ \Carbon\Carbon::parse($venta->created_at)->translatedFormat('l d/m/Y') }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">${{ number_format($venta->total_venta, 2) }}</td>
-                                     @if (Auth::user()->hasRole('admin'))
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
-                                        {{-- Botón Editar --}}
-                                        <a href="{{ route('ventas.edit', $venta) }}"
-                                        class="text-indigo-600 hover:text-indigo-900">
-                                            Editar
-                                        </a>
-                                        {{-- Botón Eliminar --}}
-                                        <form class="inline-block ml-4" action="{{ route('ventas.destroy', $venta) }}" method="POST"
-                                            onsubmit="return confirm('¿Eliminar esta venta?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                    class="text-red-600 hover:text-red-900">
-                                                Eliminar
-                                            </buttoIn>
-                                        </form>
-                                    </td>
-                                    @endif
-                                </tr>
-                                @endif
-                            @empty
-                                <tr>
-                                    <td colspan="8" class="px-6 py-4 border text-center text-gray-600">
-                                        No hay ventas registradas
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                 </div>
-                 <div class="p-4">
+
+                <div id="contenedor-tabla" class="mt-4">
+                    @include('ventas._tabla', ['ventas' => $ventas])
+                </div>
+
+                <div class="p-4">
                     {{ $ventas->links() }}
                 </div>
             </div>
-            </div>
         </div>
+    </div>
+
+
+
+
+
 </x-app-layout>
-        
+<script>
+    const buscador = document.getElementById('q');
+    let timeout = null;
+
+    buscador.addEventListener('keyup', function() {
+        clearTimeout(timeout); // Limpiar búsqueda anterior
+        const query = this.value;
+
+        // Esperar 300ms después de dejar de escribir
+        timeout = setTimeout(() => {
+            fetch("{{ route('ventas.index') }}?q=" + encodeURIComponent(query), {
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                })
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('contenedor-tabla').innerHTML = html;
+                });
+        }, 300);
+    });
+</script>

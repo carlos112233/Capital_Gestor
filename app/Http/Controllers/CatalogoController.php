@@ -14,9 +14,23 @@ class CatalogoController extends Controller
     /**
      * Muestra el catálogo de artículos con stock disponible.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $articulos = Articulo::where('stock', '>=', 0)->latest()->paginate(12);
+        $query = Articulo::query();
+
+        if ($request->filled('q')) {
+            $q = $request->input('q');
+            $query->where('nombre', 'like', "%{$q}%");
+        }
+
+        $articulos = $query->get();
+
+        // Si la petición es AJAX, devolvemos solo el partial (HTML) del grid
+        if ($request->ajax() || $request->boolean('ajax')) {
+            return view('catalogo.partials.grid', compact('articulos'));
+        }
+
+        // Carga normal
         return view('catalogo.index', compact('articulos'));
     }
 

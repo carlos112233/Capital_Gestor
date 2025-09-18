@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use App\Events\PedidoCreado;
 
 class PedidoController extends Controller
 {
@@ -43,31 +44,41 @@ class PedidoController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'articulo_id' => 'required|exists:articulos,id',
-            'descripcion' => 'nullable|string',
-            'costo'       => 'required|numeric|min:1',
-            'user_id' => 'required|exists:users,id',
-        ]);
-        // Crear la venta
-        $venta = Venta::create([
-            'user_id'     => Auth::user()->hasRole('admin') ? $validated['user_id'] : Auth::id(),
-            'articulo_id' => $validated['articulo_id'],
-            'precio_venta' => $validated['costo'],
-            'total_venta' => $validated['costo'],
-            'cliente_id'  => null, // si quieres relacionarlo con cliente luego
-            'descripcion' => $validated['descripcion'] ?? '',
+            'pedidos.*.articulo_id' => 'required|exists:articulos,id',
+            'pedidos.*.cantidad'    => 'required|integer|min:1',
+            'pedidos.*.costo'       => 'required|numeric|min:1',
+            'pedidos.*.descripcion' => 'nullable|string',
+            'user_id'                => 'nullable|exists:users,id',
         ]);
 
-        // Crear el pedido y ligarlo a la venta
-        Pedido::create([
-            'user_id'     => Auth::user()->hasRole('admin') ? $validated['user_id'] : Auth::id(),
-            'articulo_id' => $validated['articulo_id'],
-            'descripcion' => $validated['descripcion'],
-            'costo'       => $validated['costo'],
-            'venta_id'    => $venta->id,
-        ]);
+        $userId = Auth::user()->hasRole('admin') ? $request->user_id : Auth::id();
 
-        return redirect()->route('pedidos.index')->with('success', 'Pedido creado y venta generada.');
+        foreach ($request->pedidos as $p) {
+            $total = $p['costo'] * $p['cantidad'];
+
+            // Crear la venta
+            $venta = Venta::create([
+                'user_id'      => $userId,
+                'articulo_id'  => $p['articulo_id'],
+                'cantidad'     => $p['cantidad'],
+                'precio_venta' => $p['costo'],
+                'total_venta'  => $total,
+                'descripcion'  => $p['descripcion'] ?? '',
+            ]);
+
+            // Crear el pedido
+           $pedido =  Pedido::create([
+                'user_id'     => $userId,
+                'articulo_id' => $p['articulo_id'],
+                'descripcion' => $p['descripcion'] ?? '',
+                'costo'       => $total,
+                'venta_id'    => $venta->id,
+            ]);
+
+            event(new PedidoCreado($pedido));
+        }
+
+        return redirect()->route('pedidos.index')->with('success', 'Todos los pedidos fueron creados correctamente.');
     }
 
     public function edit($id)
@@ -88,40 +99,58 @@ class PedidoController extends Controller
 
     public function update(Request $request, $id)
     {
-        $pedido = Pedido::with('venta')->findOrFail($id);
-
-        // Verificar permisos
-        if (!Auth::user()->hasRole('admin') && $pedido->user_id != Auth::id()) {
-            abort(403, 'No tienes permiso para actualizar este pedido.');
-        }
-
         $validated = $request->validate([
-            'articulo_id' => 'required|exists:articulos,id',
-            'descripcion' => 'nullable|string',
-            'costo'       => 'required|numeric|min:1',
-            'user_id'     => 'required|exists:users,id',
+            'pedidos.*.id'           => 'nullable|exists:pedidos,id', // Si se quiere actualizar existentes
+            'pedidos.*.articulo_id'  => 'required|exists:articulos,id',
+            'pedidos.*.cantidad'     => 'required|integer|min:1',
+            'pedidos.*.costo'        => 'required|numeric|min:1',
+            'pedidos.*.descripcion'  => 'nullable|string',
+            'user_id'                 => 'nullable|exists:users,id',
         ]);
 
-        // Actualizar el pedido
-        $pedido->update([
-            'user_id'     => Auth::user()->hasRole('admin') ? $validated['user_id'] : Auth::id(),
-            'articulo_id' => $validated['articulo_id'],
-            'descripcion' => $validated['descripcion'] ?? '',
-            'costo'       => $validated['costo'],
-        ]);
+        $userId = Auth::user()->hasRole('admin') ? $request->user_id : Auth::id();
 
-        // Actualizar la venta asociada
-        if ($pedido->venta) {
-            $pedido->venta->update([
-                'user_id'      => Auth::user()->hasRole('admin') ? $validated['user_id'] : Auth::id(),
-                'articulo_id'  => $validated['articulo_id'],
-                'precio_venta' => $validated['costo'],
-                'total_venta'  => $validated['costo'],
-                'descripcion'  => $validated['descripcion'] ?? '',
-            ]);
+        foreach ($request->pedidos as $p) {
+            $total = $p['costo'] * $p['cantidad'];
+
+            if (!empty($p['id'])) {
+                // Actualizar pedido y su venta existente
+                $pedidoExistente = Pedido::find($p['id']);
+                $pedidoExistente->update([
+                    'articulo_id' => $p['articulo_id'],
+                    'descripcion' => $p['descripcion'] ?? '',
+                    'costo'       => $total,
+                ]);
+
+                $pedidoExistente->venta()->update([
+                    'articulo_id'  => $p['articulo_id'],
+                    'cantidad'     => $p['cantidad'],
+                    'precio_venta' => $p['costo'],
+                    'total_venta'  => $total,
+                    'descripcion'  => $p['descripcion'] ?? '',
+                ]);
+            } else {
+                // Crear nueva venta y pedido
+                $venta = Venta::create([
+                    'user_id'      => $userId,
+                    'articulo_id'  => $p['articulo_id'],
+                    'cantidad'     => $p['cantidad'],
+                    'precio_venta' => $p['costo'],
+                    'total_venta'  => $total,
+                    'descripcion'  => $p['descripcion'] ?? '',
+                ]);
+
+                Pedido::create([
+                    'user_id'     => $userId,
+                    'articulo_id' => $p['articulo_id'],
+                    'descripcion' => $p['descripcion'] ?? '',
+                    'costo'       => $total,
+                    'venta_id'    => $venta->id,
+                ]);
+            }
         }
 
-        return redirect()->route('pedidos.index')->with('success', 'Pedido y venta actualizados correctamente.');
+        return redirect()->route('pedidos.index')->with('success', 'Pedidos actualizados correctamente.');
     }
 
     public function destroy($id)

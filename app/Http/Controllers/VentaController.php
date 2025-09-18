@@ -13,29 +13,29 @@ use Carbon\Carbon;
 
 class VentaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         $ventasQuery = Venta::with(['user', 'articulo', 'cliente'])->latest();
 
         // Si no es admin, solo ver sus ventas
         if (! $user->hasRole('admin')) {
-            $ventasQuery->where('user_id', Auth::id());
+            $ventasQuery->where('user_id', $user->id);
         }
 
-        // Ventas de hoy
-        $ventasHoy = (clone $ventasQuery)
-            ->whereDate('created_at', Carbon::today())
-            ->orderBy('created_at', 'desc')
-            ->get();
+        // Filtro por nombre de usuario
+        if ($request->filled('q')) {
+            $search = $request->input('q');
+            $ventasQuery->whereHas('user', function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%');
+            });
+        }
 
-        // Ventas de la semana (desde el lunes hasta hoy)
-        $ventasSemana = (clone $ventasQuery)
-            ->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])
-            ->orderBy('created_at', 'desc')
-            ->get();
         $ventas = $ventasQuery->paginate(10);
-        //return $ventas;
+
+        if ($request->ajax()) {
+           return view('ventas._tabla', compact('ventas'))->render();
+        }
         return view('ventas.index', compact('ventas'));
     }
 

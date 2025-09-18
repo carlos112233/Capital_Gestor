@@ -2,7 +2,7 @@
 
 <div class="mb-4">
     <label for="articulo_id" class="block text-gray-700 font-bold mb-2">Artículo</label>
-    <select name="articulo_id" id="articulo_id" class="w-full border-gray-300 rounded-lg shadow-sm">
+    <select name="articulo_id" id="articulo_id" class="w-full border-gray-300 rounded-lg shadow-sm" required>
         <option value="">Seleccione un artículo</option>
         @foreach ($articulos as $articulo)
             @if($articulo->nombre !="Saldar pago")
@@ -22,7 +22,7 @@
     <label for="precio_venta" class="block text-gray-700 font-bold mb-2">Precio de Venta</label>
     <input type="number" step="0.01" name="precio_venta" id="precio_venta"
         class="w-full border-gray-300 rounded-lg shadow-sm"
-        value="{{ old('precio_venta', $venta->precio_venta ?? ($articuloId ? $articulos->find($articuloId)->precio : '')) }}">
+        value="{{ old('precio_venta', $venta->precio_venta ?? ($articuloId ? $articulos->find($articuloId)->precio : '')) }}" required>
     @error('precio_venta')
         <span class="text-red-600 text-sm">{{ $message }}</span>
     @enderror
@@ -39,7 +39,7 @@
    @if (Auth::user()->hasRole('admin'))
         <div class="mb-4">
             <label for="cliente_id" class="block text-gray-700 font-bold mb-2">Cliente</label>
-            <select name="cliente_id" id="cliente_id" class="w-full border-gray-300 rounded-lg shadow-sm">
+            <select name="cliente_id" id="cliente_id" class="w-full border-gray-300 rounded-lg shadow-sm" required>
                 <option value="">Seleccione un cliente</option>
                 @foreach ($clientes as $cliente)
                     <option value="{{ $cliente->id }}"
