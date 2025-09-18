@@ -34,7 +34,7 @@ class VentaController extends Controller
         $ventas = $ventasQuery->paginate(10);
 
         if ($request->ajax()) {
-           return view('ventas._tabla', compact('ventas'))->render();
+            return view('ventas._tabla', compact('ventas'))->render();
         }
         return view('ventas.index', compact('ventas'));
     }
@@ -127,12 +127,26 @@ class VentaController extends Controller
 
         $venta->update($request->all());
 
-        return redirect()->route('admin.ventas.index')->with('success', 'Venta actualizada correctamente.');
+        return redirect()->route('ventas.index')->with('success', 'Venta actualizada correctamente.');
     }
 
     public function destroy(Venta $venta)
     {
-        $venta->delete();
-        return redirect()->route('admin.ventas.index')->with('success', 'Venta eliminada correctamente.');
+        try {
+            DB::transaction(function () use ($venta) {
+                // 1. Bloqueamos el artículo relacionado
+                $articulo = $venta->articulo()->lockForUpdate()->first();
+
+                // 2. Devolvemos al stock la cantidad vendida
+                $articulo->increment('stock', $venta->cantidad);
+
+                // 3. Eliminamos la venta
+                $venta->delete();
+            });
+
+            return redirect()->route('ventas.index')->with('success', 'Venta eliminada y stock actualizado correctamente.');
+        } catch (\Exception $e) {
+            return redirect()->route('ventas.index')->with('error', 'Ocurrió un error al eliminar la venta: ' . $e->getMessage());
+        }
     }
 }

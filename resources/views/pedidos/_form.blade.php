@@ -11,7 +11,7 @@
                 {{-- Artículo --}}
                 <div class="mb-2">
                     <label class="block text-gray-700 font-bold">Artículo</label>
-                    <select class="articulo-select w-full border-gray-300 rounded-lg shadow-sm" name="pedidos[{{ $i }}][articulo_id]">
+                    <select class="articulo-select w-full border-gray-300 rounded-lg shadow-sm" name="pedidos[{{ $i }}][articulo_id]" required>
                         <option value="">Seleccione un artículo</option>
                         @foreach ($articulos as $articulo)
                             @if($articulo->nombre != "Saldar pago")
@@ -29,7 +29,7 @@
                     <label class="block text-gray-700 font-bold">Cantidad</label>
                     <input type="number" name="pedidos[{{ $i }}][cantidad]" min="1"
                         value="{{ old("pedidos.$i.cantidad", $p['cantidad'] ?? 1) }}"
-                        class="cantidad-input w-full border-gray-300 rounded-lg shadow-sm">
+                        class="cantidad-input w-full border-gray-300 rounded-lg shadow-sm" readonly required>
                 </div>
 
                 {{-- Costo unitario --}}
@@ -37,7 +37,7 @@
                     <label class="block text-gray-700 font-bold">Costo unitario</label>
                     <input type="number" name="pedidos[{{ $i }}][costo]" step="1"
                         value="{{ old("pedidos.$i.costo", $p['costo'] ?? $p['precio_venta'] ?? '') }}"
-                        class="costo-input w-full border-gray-300 rounded-lg shadow-sm">
+                        class="costo-input w-full border-gray-300 rounded-lg shadow-sm" required>
                 </div>
 
                 {{-- Descripción --}}
@@ -53,7 +53,7 @@
         <div class="pedido-item mb-4 border p-4 rounded-lg">
             <div class="mb-2">
                 <label class="block text-gray-700 font-bold">Artículo</label>
-                <select class="articulo-select w-full border-gray-300 rounded-lg shadow-sm" name="pedidos[0][articulo_id]">
+                <select class="articulo-select w-full border-gray-300 rounded-lg shadow-sm" name="pedidos[0][articulo_id]" required>
                     <option value="">Seleccione un artículo</option>
                     @foreach ($articulos as $articulo)
                         @if($articulo->nombre != "Saldar pago")
@@ -65,12 +65,12 @@
 
             <div class="mb-2">
                 <label class="block text-gray-700 font-bold">Cantidad</label>
-                <input type="number" name="pedidos[0][cantidad]" min="1" value="1" class="cantidad-input w-full border-gray-300 rounded-lg shadow-sm">
+                <input type="number" name="pedidos[0][cantidad]" min="1" value="1" class="cantidad-input w-full border-gray-300 rounded-lg shadow-sm"required>
             </div>
 
             <div class="mb-2">
                 <label class="block text-gray-700 font-bold">Costo unitario</label>
-                <input type="number" name="pedidos[0][costo]" step="1" class="costo-input w-full border-gray-300 rounded-lg shadow-sm" readonly>
+                <input type="number" name="pedidos[0][costo]" step="1" class="costo-input w-full border-gray-300 rounded-lg shadow-sm" readonly required>
             </div>
 
             <div class="mb-2">

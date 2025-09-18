@@ -10,9 +10,23 @@ use Illuminate\Http\RedirectResponse;
 
 class ArticuloController extends Controller
 {
-    public function index(): View
+    public function index(Request $request)
     {
-        $articulos = Articulo::latest()->paginate(10);
+        $articulosQuery = Articulo::latest();
+
+
+
+        // Filtro por nombre de usuario
+        if ($request->filled('q')) {
+            $search = $request->input('q');
+            $articulosQuery->where('nombre', 'like', '%' . $search . '%');
+        }
+
+        $articulos = $articulosQuery->paginate(10);
+
+        if ($request->ajax()) {
+            return view('admin.articulos._tabla', compact('articulos'))->render();
+        }
         return view('admin.articulos.index', compact('articulos'));
     }
 
@@ -70,6 +84,9 @@ class ArticuloController extends Controller
 
         ]);
 
+        if (isset($validated['stock'])) {
+            $validated['stock'] = $articulo->stock + $validated['stock'];
+        }
 
         if ($request->hasFile('img_base64')) {
             $file = $request->file('img_base64');

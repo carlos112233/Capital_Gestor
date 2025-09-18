@@ -9,7 +9,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
-use App\Events\PedidoCreado;
+use App\Notifications\NuevoPedidoNotification;
+use Illuminate\Support\Facades\Notification;
 
 class PedidoController extends Controller
 {
@@ -67,15 +68,16 @@ class PedidoController extends Controller
             ]);
 
             // Crear el pedido
-           $pedido =  Pedido::create([
+            $pedido =  Pedido::create([
                 'user_id'     => $userId,
                 'articulo_id' => $p['articulo_id'],
                 'descripcion' => $p['descripcion'] ?? '',
                 'costo'       => $total,
                 'venta_id'    => $venta->id,
             ]);
-
-            event(new PedidoCreado($pedido));
+            
+            Notification::route('mail', 'ander.234.cm@gmail.com')
+                ->notify(new \App\Notifications\NuevoPedidoNotification($pedido));
         }
 
         return redirect()->route('pedidos.index')->with('success', 'Todos los pedidos fueron creados correctamente.');
