@@ -30,7 +30,8 @@ class NuevoPedidoNotification extends Notification
             ->subject('📦 Nuevo Pedido Registrado')
             ->markdown('pedidos.nuevo', [
                 'pedido' => $this->pedido,
-                'usuario' => $this->pedido->user, // aquí tienes el usuario con su nombre
+                'usuario' => $this->pedido->user,
+                'articulo' => $this->pedido->articulo, // aquí tienes el usuario con su nombre
             ]);
     }
 }
