@@ -1,7 +1,7 @@
 {{-- resources/views/catalogo/partials/grid.blade.php --}}
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     @forelse ($articulos as $articulo)
-        @if ($articulo->nombre != 'Saldar pago' && $articulo->stock >=1)
+        @if ($articulo->stock >=1)
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg flex flex-col">
                 <div class="p-6 text-gray-900 flex-grow">
                     <h3 class="text-lg font-bold">{{ $articulo->nombre }}</h3>
@@ -45,7 +45,7 @@
             </div>
         @endif
     @empty
-        <p class="text-center text-gray-500 col-span-full">No hay artículos disponibles para la venta.</p>
+        <p class="text-center text-gray-600 col-span-full text-xl font-semibold">No hay artículos disponibles para la venta.</p>
     @endforelse
 </div>
 {{-- <div class="mt-8">

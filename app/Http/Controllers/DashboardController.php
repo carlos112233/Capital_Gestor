@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth; // <-- Importante
 
 class DashboardController extends Controller
 {
@@ -29,7 +30,12 @@ class DashboardController extends Controller
         $totalSaldo = $resumen->sum(function ($User) {
             return $User->saldo;
         });
-        return view('dashboardAdmin', compact('resumen', 'totalSaldo'));
+        $resumen = $resumen->sortBy('name')->values();
+        if (Auth::user()->hasRole('admin')) {
+            return view('dashboardAdmin', compact('resumen', 'totalSaldo'));
+        } else {
+            redirect()->intended(route('dashboard'));
+        }
     }
 
     // Dashboard para usuario normal
@@ -56,6 +62,12 @@ class DashboardController extends Controller
         // Sumatoria de todos los saldos (en este caso solo el suyo)
         $totalSaldo = $resumen->sum('saldo');
 
-        return view('dashboard', compact('resumen', 'totalSaldo'));
+        if (!Auth::user()->hasRole('admin')) {
+            return view('dashboard', compact('resumen', 'totalSaldo'));
+        } else {
+            return redirect()->intended(route('dashboardAdmin'));
+            // o si prefieres directo:
+            // return redirect()->route('dashboardAdmin');
+        }
     }
 }

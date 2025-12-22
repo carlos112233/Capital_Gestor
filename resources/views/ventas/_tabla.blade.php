@@ -35,13 +35,13 @@
                                             ${{ number_format($venta->precio_venta, 2) }}</td>
                                         <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                                             {{ $venta->user->name }}</td>
-                                        <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-3 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                                             {{ \Carbon\Carbon::parse($venta->created_at)->translatedFormat('l d/m/Y') }}
                                         </td>
-                                        <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
+                                        <td class=" py- text-center whitespace-nowrap text-sm text-gray-500">
                                             ${{ number_format($venta->total_venta, 2) }}</td>
                                         @if (Auth::user()->hasRole('admin'))
-                                            <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
+                                            <td class="px-1 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                                                 {{-- Botón Editar --}}
                                                 <a href="{{ route('ventas.edit', $venta) }}"
                                                     class="text-indigo-600 hover:text-indigo-900">

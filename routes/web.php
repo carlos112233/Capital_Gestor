@@ -18,8 +18,8 @@ Route::get('/', [AuthenticatedSessionController::class, 'create'])
 Route::middleware(['auth', 'role:admin'])->group(function () {
     // Todas las rutas dentro de este grupo requerirán que el usuario esté autenticado
     // Y que tenga el rol de 'admin'
-    Route::get('/admin/dashboard', [DashboardController::class, 'indexAdmin'])
-        ->name('admin.dashboard');
+    Route::get('dashboardAdmin', [DashboardController::class, 'indexAdmin'])
+        ->name('dashboardAdmin');
 });
 
 Route::middleware('auth')->group(function () {

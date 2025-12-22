@@ -22,14 +22,14 @@
                 </div>
             @endif
             <div class="mb-4 flex gap-2">
-                  <input id="q" type="text" name="q" value="{{ request('q') }}"
+                <input id="q" type="text" name="q" value="{{ request('q') }}"
                     class="w-full border-gray-300 rounded-lg shadow-sm focus:ring focus:ring-indigo-200 px-4 py-2">
             </div>
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="overflow-x-auto">
-                   <div id="contenedor-tabla" class="mt-4">
-                    @include('admin.articulos._tabla', ['articulos' => $articulos])
-                </div>
+                    <div id="contenedor-tabla" class="mt-4">
+                        @include('admin.articulos._tabla', ['articulos' => $articulos])
+                    </div>
                 </div>
                 <div class="p-4">
                     {{ $articulos->links() }}
@@ -61,4 +61,3 @@
         }, 300);
     });
 </script>
-

@@ -6,23 +6,32 @@ use App\Models\Articulo;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
-
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ArticuloController extends Controller
 {
     public function index(Request $request)
     {
-        $articulosQuery = Articulo::latest();
+        $articulosCollection = Articulo::latest()
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $query->where('nombre', 'like', '%' . $request->q . '%');
+            })
+            ->get()
+            ->sortBy('nombre')
+            ->values();
 
+        // paginación manual
+        $page = request()->get('page', 1);
+        $perPage = 10;
+        $items = $articulosCollection->slice(($page - 1) * $perPage, $perPage)->all();
 
-
-        // Filtro por nombre de usuario
-        if ($request->filled('q')) {
-            $search = $request->input('q');
-            $articulosQuery->where('nombre', 'like', '%' . $search . '%');
-        }
-
-        $articulos = $articulosQuery->paginate(10);
+        $articulos = new LengthAwarePaginator(
+            $items,
+            $articulosCollection->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
 
         if ($request->ajax()) {
             return view('admin.articulos._tabla', compact('articulos'))->render();
@@ -79,7 +88,7 @@ class ArticuloController extends Controller
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'precio' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
+            'stock' => 'required',
             'img_base64' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
 
         ]);

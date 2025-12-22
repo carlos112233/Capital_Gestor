@@ -19,62 +19,15 @@
                 </div>
             @endif
             <div class="mb-4 flex gap-2">
-                <input type="text" id="search" placeholder="Buscar clientes por nombre o email..."
+                <input id="q" type="text" name="q" value="{{ request('q') }}"
                     class="w-full border-gray-300 rounded-lg shadow-sm focus:ring focus:ring-indigo-200 px-4 py-2">
             </div>
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">ID</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Usuario
-                                </th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Email</th>
-                                {{-- <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Telefono</th> --}}
-                                {{-- <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Direccion</th> --}}
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse($clientes as $cliente)
-                                <tr>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
-                                        {{ $cliente->id }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
-                                        {{ $cliente->name }}</td>
-                                    <td
-                                        class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-gray-900">
-                                        {{ $cliente->email }}</td>
-                                    {{-- <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $cliente->telefono }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $cliente->direccion }}</td> --}}
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
-                                        {{-- Botón Editar --}}
-                                        <a href="{{ route('admin.clientes.edit', $cliente) }}"
-                                            class="text-indigo-600 hover:text-indigo-900">
-                                            Editar
-                                        </a>
-                                        {{-- Botón Eliminar --}}
-                                        <form class="inline-block ml-4"
-                                            action="{{ route('admin.clientes.destroy', $cliente) }}" method="POST"
-                                            onsubmit="return confirm('¿Eliminar esta cliente?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-900">
-                                                Eliminar
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="px-4 py-2 border text-center text-gray-500">
-                                        No hay clientes registradas
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                    <div id="contenedor-tabla" class="mt-4">
+                        @include('admin.clientes._tabla', ['clientes' => $clientes])
+                    </div>
                 </div>
                 <div class="p-4">
                     {{ $clientes->links() }}
@@ -85,28 +38,24 @@
 </x-app-layout>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const input = document.getElementById('search');
-        const table = document.querySelector('table tbody');
+    const buscador = document.getElementById('q');
+    let timeout = null;
 
-        input.addEventListener('input', function() {
-            const filter = this.value.toLowerCase();
-            const rows = table.querySelectorAll('tr');
+    buscador.addEventListener('keyup', function() {
+        clearTimeout(timeout); // Limpiar búsqueda anterior
+        const query = this.value;
 
-            rows.forEach(row => {
-                // Columnas: Usuario (2), Email (3)
-                const usuario = row.querySelector('td:nth-child(2)')?.textContent
-                .toLowerCase() || '';
-                const email = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() ||
-                    '';
-
-                // Mostrar fila si alguna columna coincide
-                if (usuario.includes(filter) || email.includes(filter)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
+        // Esperar 300ms después de dejar de escribir
+        timeout = setTimeout(() => {
+            fetch("{{ route('admin.clientes.index') }}?q=" + encodeURIComponent(query), {
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                })
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('contenedor-tabla').innerHTML = html;
+                });
+        }, 300);
     });
 </script>

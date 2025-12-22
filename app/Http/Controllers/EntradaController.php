@@ -19,19 +19,34 @@ class EntradaController extends Controller
     /**
      * Muestra una lista de las entradas.
      */
-    public function index(): View
+    public function index(Request $request)
     {
         $user = Auth::user();
-        $query = Entrada::with('user')->latest();
+        $entradasQuery = Entrada::with('user')->latest();
 
         if ($user->hasRole('admin')) {
             // El admin ve todas las entradas
-            $entradas = $query->paginate(10);
+            $entradas = $entradasQuery->paginate(15);
         } else {
             // El usuario normal solo ve sus propias entradas
-            $entradas = $query->where('user_id', $user->id)->paginate(10);
+            $entradas = $entradasQuery->where('user_id', $user->id)->paginate(10);
         }
 
+        // Filtro por nombre de usuario
+        if ($request->filled('q')) {
+            $search = $request->input('q');
+            $entradasQuery->whereHas('user', function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%');
+            });
+        }
+
+
+
+        if ($request->ajax()) {
+            $entradas = $entradasQuery->orderBy('created_at', 'desc')->get();
+            return view('admin.entradas._tabla', compact('entradas'))->render();
+        }
+        $entradas = $entradasQuery->orderBy('created_at', 'desc')->paginate(10);
         return view('admin.entradas.index', compact('entradas'));
     }
 
@@ -64,7 +79,7 @@ class EntradaController extends Controller
         $user = Auth::user();
         $request->merge([
             'fecha_generado' => $fecha,
-            'user_id' => Auth::user()->hasRole('admin')?$validated['cliente_id']:Auth::id(),
+            'user_id' => Auth::user()->hasRole('admin') ? $validated['cliente_id'] : Auth::id(),
             'cliente_id' => null
         ]);
 
@@ -86,7 +101,7 @@ class EntradaController extends Controller
     }
 
     public function update(Request $request, Entrada $entrada)
-    {   
+    {
         $user = Auth::user();
 
         $request->validate([
@@ -100,10 +115,18 @@ class EntradaController extends Controller
         $user = Auth::user();
         $request->merge([
             'fecha_generado' => $fecha,
-            'user_id' => Auth::user()->hasRole('admin')?$request['cliente_id']:Auth::id(),
+            'user_id' => Auth::user()->hasRole('admin') ? $request['cliente_id'] : Auth::id(),
         ]);
         $entrada->update($request->all());
 
         return redirect()->route('admin.entradas.index')->with('success', 'Venta actualizada correctamente.');
+    }
+
+    public function destroy(Entrada $entrada)
+    {
+        $entrada->delete();
+
+        return redirect()->route('admin.entradas.index')
+            ->with('success', 'Venta eliminada correctamente.');
     }
 }

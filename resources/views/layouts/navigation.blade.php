@@ -7,7 +7,7 @@
                 <div class="shrink-0 flex items-center">
                     @if (Auth::user()->hasRole('admin'))
                         @if (Auth::user()->hasRole('admin'))
-                            <a href="{{ route('admin.dashboard') }}">
+                            <a href="{{ route('dashboardAdmin') }}">
                                 <img src="{{ asset('storage/img/Logo.png') }}" class="h-9 w-auto" alt="Logo">
                             </a>
                         @endif
@@ -22,12 +22,12 @@
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     @if (Auth::user()->hasRole('admin'))
-                        <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
+                        <x-nav-link :href="route('dashboardAdmin')" :active="request()->routeIs('dashboardAdmin')">
                             {{ __('dashboard') }}
                         </x-nav-link>
                     @endif
                     @if (Auth::user()->hasRole('user'))
-                        <x-nav-link :href="route('dashboard')" :active="request()->routeIs('admin.dashboard')">
+                        <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                             {{ __('dashboard') }}
                         </x-nav-link>
                     @endif
@@ -38,7 +38,11 @@
                         {{ __('Existencias') }}
                     </x-nav-link>
                     <x-nav-link :href="route('ventas.index')" :active="request()->routeIs('ventas.*')">
-                        {{ __('Ventas') }}
+                        @if (Auth::user()->hasRole('admin'))
+                            {{ __('Ventas Realizadas') }}
+                        @else
+                            {{ __('Compras Realizadas') }}
+                        @endif
                     </x-nav-link>
                     <x-nav-link :href="route('pedidos.index')" :active="request()->routeIs('pedidos.*')">
                         {{ __('Pedidos') }}
@@ -116,7 +120,7 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{ 'block': open, 'hidden': !open }" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
+            <x-responsive-nav-link :href="route('dashboardAdmin')" :active="request()->routeIs('admin.dashboard')">
                 {{ __('admin.dashboard') }}
             </x-responsive-nav-link>
         </div>

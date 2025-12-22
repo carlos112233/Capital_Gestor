@@ -2,66 +2,117 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cliente;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Pagination\LengthAwarePaginator;
 
+use function PHPUnit\Framework\isEmpty;
+use function PHPUnit\Framework\isNull;
 
 class ClienteController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $clientes = User::latest()->paginate(10);
+         $clientesCollection = User::latest()
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $query->where('name', 'like', '%' . $request->q . '%');
+            })
+            ->get()
+            ->sortBy('name')
+            ->values();
+
+        // paginación manual
+        $page = request()->get('page', 1);
+        $perPage = 10;
+        $items = $clientesCollection->slice(($page - 1) * $perPage, $perPage)->all();
+
+        $clientes = new LengthAwarePaginator(
+            $items,
+            $clientesCollection->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        if ($request->ajax()) {
+            return view('admin.clientes._tabla', compact('clientes'))->render();
+        }
+
         return view('admin.clientes.index', compact('clientes'));
     }
+
 
     public function create()
     {
         return view('admin.clientes.create');
     }
-
+    /**
+     * Crear un nuevo usuario.
+     */
     public function store(Request $request)
     {
-        $request->validate([
-            'nombre' => 'required|string|max:255',
-            'email' => 'required|email|unique:clientes,email', // <--- único
-            'telefono' => 'nullable|string|max:20',
-            'direccion' => 'nullable|string|max:500',
+        $validated = $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:6',
         ]);
 
-        Cliente::create($request->all());
+        // Laravel encripta automáticamente la contraseña por el cast
+        User::create($validated);
 
-        return redirect()->route('admin.clientes.index')->with('success', 'Cliente creado correctamente.');
+        return redirect()->route('admin.clientes.index')
+            ->with('success', 'Usuario creado correctamente.');
     }
 
-    public function edit(Cliente $cliente)
+    /**
+     * Actualizar un usuario existente.
+     */
+    public function update(Request $request, User $cliente)
     {
+        // Normalizar email
+        $request->merge([
+            'email' => trim(strtolower($request->email)),
+        ]);
+
+        $validated = $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => [
+                'required',
+                'string',
+                'email',
+                Rule::unique('users')->ignore($cliente->id),
+            ],
+            'password' => 'nullable|string|min:8',
+        ]);
+
+        if (!$request->filled('password')) {
+            unset($validated['password']);
+        } else {
+            $validated['password'] = bcrypt($validated['password']);
+        }
+
+        $cliente->update($validated);
+
+        return redirect()->route('admin.clientes.index')
+            ->with('success', 'Usuario actualizado correctamente.');
+    }
+
+
+    public function edit($id)
+    {
+        $cliente = User::findOrFail($id);
         return view('admin.clientes.edit', compact('cliente'));
     }
 
-    public function update(Request $request, Cliente $cliente)
+    /**
+     * Eliminar un usuario.
+     */
+    public function destroy(User $user)
     {
-        $request->validate([
-            'nombre' => 'required|string|max:255',
-            'email' => [
-                'required',
-                'email',
-                Rule::unique('clientes')->ignore($cliente->id),
-            ],
-            'telefono' => 'nullable|string|max:20',
-            'direccion' => 'nullable|string|max:500',
-        ]);
+        $user->delete();
 
-
-        $cliente->update($request->all());
-
-        return redirect()->route('admin.clientes.index')->with('success', 'Cliente actualizado correctamente.');
-    }
-
-    public function destroy(Cliente $cliente)
-    {
-        $cliente->delete();
-        return redirect()->route('admin.clientes.index')->with('success', 'Cliente eliminado correctamente.');
+        return redirect()->route('admin.clientes.index')
+            ->with('success', 'Usuario eliminado correctamente.');
     }
 }

@@ -108,7 +108,7 @@
     <a href="{{ route('pedidos.index') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">
         Cancelar
     </a>
-    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+    <button id="enviar" type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
         Guardar
     </button>
 </div>
@@ -163,4 +163,10 @@ document.getElementById('agregar-pedido').addEventListener('click', function() {
     container.appendChild(nuevoPedido);
     index++;
 });
+   const form = document.getElementById("pedido");
+    const boton = document.getElementById("btnSubmit");
+
+  form.addEventListener("submit", function() {
+      boton.style.display = "none"; // el botón desaparece
+    });
 </script>

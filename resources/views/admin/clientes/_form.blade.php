@@ -1,8 +1,8 @@
 <div class="mb-4">
     <label class="block text-gray-700 font-bold mb-2">Nombre</label>
-    <input type="text" name="nombre" class="w-full border-gray-300 rounded-lg shadow-sm"
-           value="{{ old('nombre', $cliente->nombre ?? '') }}">
-    @error('nombre')
+    <input type="text" name="name" class="w-full border-gray-300 rounded-lg shadow-sm"
+           value="{{ old('name', $cliente->name ?? '') }}">
+    @error('name')
         <span class="text-red-600 text-sm">{{ $message }}</span>
     @enderror
 </div>
@@ -11,17 +11,19 @@
     <label>Email</label>
     <input type="email" name="email" class="w-full border-gray-300 rounded-lg shadow-sm"
            value="{{ old('email', $cliente->email ?? '') }}">
+    @error('email')
+        <span class="text-red-600 text-sm">{{ $message }}</span>
+    @enderror
 </div>
 
-<div class="mb-4">
-    <label>Teléfono</label>
-    <input type="text" name="telefono" class="w-full border-gray-300 rounded-lg shadow-sm"
-           value="{{ old('telefono', $cliente->telefono ?? '') }}">
-</div>
+
 
 <div class="mb-4">
-    <label>Dirección</label>
-    <textarea name="direccion" class="w-full border-gray-300 rounded-lg shadow-sm">{{ old('direccion', $cliente->direccion ?? '') }}</textarea>
+    <label>Contraseña</label>
+    <input type="password" name="password" id="password" class="w-full border-gray-300 rounded-lg shadow-sm" value="{{ '' }}">
+    @error('password')
+        <span class="text-red-600 text-sm">{{ $message }}</span>
+    @enderror
 </div>
 
 <div class="flex justify-end">

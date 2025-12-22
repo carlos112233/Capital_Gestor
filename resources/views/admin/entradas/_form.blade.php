@@ -2,7 +2,7 @@
 
 <div class="mb-4">
     <label for="tipo_pago" class="block text-gray-700 font-bold mb-2">Tipo de Pago</label>
-    <select name="tipo_pago" id="tipo_pago" class="w-full border-gray-300 rounded-lg shadow-sm">
+    <select name="tipo_pago" id="tipo_pago" class="w-full border-gray-300 rounded-lg shadow-sm" required>
         <option value="" disabled {{ !isset($entrada) ? 'selected' : '' }}>Seleccione un tipo</option>
         <option value="1" {{ isset($entrada) && $entrada->articulo->nombre != 'Saldar pago' ? 'selected' : '' }}>Por artículo</option>
         <option value="2" {{ isset($entrada) && $entrada->articulo->nombre == 'Saldar pago' ? 'selected' : '' }}>Saldar adeudo</option>
@@ -11,7 +11,7 @@
 
 <div class="mb-4">
     <label for="articulo_id" class="block text-gray-700 font-bold mb-2">Artículo</label>
-    <select name="articulo_id" id="articulo_id" class="w-full border-gray-300 rounded-lg shadow-sm">
+    <select name="articulo_id" id="articulo_id" class="w-full border-gray-300 rounded-lg shadow-sm" required>
         <option value="" disabled>Seleccione un artículo</option>
          @foreach($articulos as $articulo)
                 @if($articulo->nombre!='Saldar Pago')
@@ -31,7 +31,7 @@
     <label for="precio_venta" class="block text-gray-700 font-bold mb-2">Precio de Venta</label>
     <input type="number" step="1" name="precio_venta" id="precio_venta"
            class="w-full border-gray-300 rounded-lg shadow-sm"
-           value="{{  isset($entrada) && $entrada->precio_venta != null ? number_format($entrada->precio_venta ?? 0, 0, '.', '') : '' }}">
+           value="{{  isset($entrada) && $entrada->precio_venta != null ? number_format($entrada->precio_venta ?? 0, 0, '.', '') : '' }}" required>
     @error('precio_venta')
         <span class="text-red-600 text-sm">{{ $message }}</span>
     @enderror
@@ -39,7 +39,7 @@
  @if (Auth::user()->hasRole('admin'))
 <div class="mb-4">
     <label for="cliente_id" class="block text-gray-700 font-bold mb-2">Cliente</label>
-    <select name="cliente_id" id="cliente_id" class="w-full border-gray-300 rounded-lg shadow-sm">
+    <select name="cliente_id" id="cliente_id" class="w-full border-gray-300 rounded-lg shadow-sm" required>
         <option value="" disabled {{ old('cliente_id', $entrada->cliente_id ?? '') == '' ? 'selected' : '' }}>Seleccione un cliente</option>
         @foreach($clientes as $cliente)
             <option value="{{ $cliente->id }}" {{ old('cliente_id', $entrada->cliente_id ?? '') == $cliente->id ? 'selected' : '' }}>
