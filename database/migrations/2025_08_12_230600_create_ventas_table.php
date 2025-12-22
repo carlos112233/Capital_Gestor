@@ -14,8 +14,7 @@ return new class extends Migration
     Schema::create('ventas', function (Blueprint $table) {
         $table->id();
         $table->foreignId('user_id')->constrained()->comment('Usuario que realizó la venta');
-        $table->foreignId('articulo_id')->constrained()->comment('Artículo vendido');
-         $table->foreignId('cliente_id')->constrained()->comment('cliente'); // Enlace al usuario
+        $table->foreignId('articulo_id')->constrained()->comment('Artículo vendido'); // Enlace al usuario
         $table->decimal('precio_venta', 10, 2)->comment('Precio al momento de la venta');
         $table->decimal('total_venta', 10, 2)->comment('Total (cantidad * precio_venta)');
         $table->text('descripcion')->nullable();
