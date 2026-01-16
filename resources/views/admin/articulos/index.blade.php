@@ -27,7 +27,7 @@
             </div>
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="overflow-x-auto">
-                    <div id="contenedor-tabla" class="mt-4">
+                    <div id="contenedor-tabla" class="mt-4 overflow-x-auto">
                         @include('admin.articulos._tabla', ['articulos' => $articulos])
                     </div>
                 </div>

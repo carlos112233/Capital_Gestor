@@ -25,7 +25,7 @@
             </form>
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
 
-                <div id="contenedor-tabla" class="mt-4">
+                <div id="contenedor-tabla" class="mt-4 overflow-x-auto">
                     @include('ventas._tabla', ['ventas' => $ventas])
                 </div>
 
