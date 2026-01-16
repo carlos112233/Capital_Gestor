@@ -34,4 +34,9 @@ class Venta extends Model
     {
         return $this->belongsTo(Cliente::class);
     }
+
+    public function pedidos()
+    {
+        return $this->hasMany(Pedido::class, 'venta_id');
+    }
 }

@@ -6,11 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Pedido extends Model
 {
-     protected $fillable = [
+    protected $fillable = [
         'user_id',
         'articulo_id',
         'descripcion',
         'costo',
+        'cantidad',
         'venta_id'
     ];
 
@@ -26,6 +27,6 @@ class Pedido extends Model
 
     public function venta()
     {
-        return $this->belongsTo(Venta::class);
+        return $this->belongsTo(Venta::class, 'venta_id');
     }
 }

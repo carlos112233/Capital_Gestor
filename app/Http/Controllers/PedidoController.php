@@ -43,13 +43,13 @@ class PedidoController extends Controller
 
 
     public function store(Request $request)
-    {
+    { //dd($request->all()); 
         $validated = $request->validate([
             'pedidos.*.articulo_id' => 'required|exists:articulos,id',
             'pedidos.*.cantidad'    => 'required|integer|min:1',
             'pedidos.*.costo'       => 'required|numeric|min:1',
             'pedidos.*.descripcion' => 'nullable|string',
-            'user_id'                => 'nullable|exists:users,id',
+            'pedidos.*.user_id'      => 'nullable|exists:users,id',
         ]);
 
         $userId = Auth::user()->hasRole('admin') ? $request->user_id : Auth::id();
@@ -59,23 +59,25 @@ class PedidoController extends Controller
 
             // Crear la venta
             $venta = Venta::create([
-                'user_id'      => $userId,
+                'user_id'     => $p['user_id'],
                 'articulo_id'  => $p['articulo_id'],
                 'cantidad'     => $p['cantidad'],
                 'precio_venta' => $p['costo'],
                 'total_venta'  => $total,
                 'descripcion'  => $p['descripcion'] ?? '',
+
             ]);
 
             // Crear el pedido
             $pedido =  Pedido::create([
-                'user_id'     => $userId,
+                'user_id'     => $p['user_id'],
                 'articulo_id' => $p['articulo_id'],
                 'descripcion' => $p['descripcion'] ?? '',
                 'costo'       => $total,
                 'venta_id'    => $venta->id,
+                'cantidad'    => $p['cantidad'],
             ]);
-            
+
             Notification::route('mail', 'ander.234.cm@gmail.com')
                 ->notify(new \App\Notifications\NuevoPedidoNotification($pedido));
         }
@@ -86,7 +88,7 @@ class PedidoController extends Controller
     public function edit($id)
     {
         // Obtener el pedido con su venta
-        $pedido = Pedido::with('venta')->findOrFail($id);
+        $pedido = Pedido::with('venta')->find($id);
 
         // Verificar permisos: si no es admin, solo puede editar sus propios pedidos
         if (!Auth::user()->hasRole('admin') && $pedido->user_id != Auth::id()) {
@@ -100,14 +102,15 @@ class PedidoController extends Controller
     }
 
     public function update(Request $request, $id)
-    {
+    {    //dd($request->all()); 
+
         $validated = $request->validate([
             'pedidos.*.id'           => 'nullable|exists:pedidos,id', // Si se quiere actualizar existentes
             'pedidos.*.articulo_id'  => 'required|exists:articulos,id',
             'pedidos.*.cantidad'     => 'required|integer|min:1',
             'pedidos.*.costo'        => 'required|numeric|min:1',
             'pedidos.*.descripcion'  => 'nullable|string',
-            'user_id'                 => 'nullable|exists:users,id',
+            'pedidos.*.user_id'      => 'nullable|exists:users,id',
         ]);
 
         $userId = Auth::user()->hasRole('admin') ? $request->user_id : Auth::id();
@@ -122,6 +125,8 @@ class PedidoController extends Controller
                     'articulo_id' => $p['articulo_id'],
                     'descripcion' => $p['descripcion'] ?? '',
                     'costo'       => $total,
+                    'cantidad'    => $p['cantidad'],
+                    'user_id'     => $p['user_id'],
                 ]);
 
                 $pedidoExistente->venta()->update([
@@ -129,12 +134,13 @@ class PedidoController extends Controller
                     'cantidad'     => $p['cantidad'],
                     'precio_venta' => $p['costo'],
                     'total_venta'  => $total,
+                    'user_id'     => $p['user_id'],
                     'descripcion'  => $p['descripcion'] ?? '',
                 ]);
             } else {
                 // Crear nueva venta y pedido
                 $venta = Venta::create([
-                    'user_id'      => $userId,
+                    'user_id'     => $p['user_id'],
                     'articulo_id'  => $p['articulo_id'],
                     'cantidad'     => $p['cantidad'],
                     'precio_venta' => $p['costo'],
@@ -143,9 +149,10 @@ class PedidoController extends Controller
                 ]);
 
                 Pedido::create([
-                    'user_id'     => $userId,
+                    'user_id'     => $p['user_id'],
                     'articulo_id' => $p['articulo_id'],
                     'descripcion' => $p['descripcion'] ?? '',
+                    'cantidad'    => $p['cantidad'],
                     'costo'       => $total,
                     'venta_id'    => $venta->id,
                 ]);
@@ -157,22 +164,25 @@ class PedidoController extends Controller
 
     public function destroy($id)
     {
-        // Obtener el pedido con su venta
         $pedido = Pedido::with('venta')->findOrFail($id);
 
-        // Verificar permisos: si no es admin, solo puede eliminar sus propios pedidos
-        if (!Auth::user()->hasRole('admin') && $pedido->user_id != Auth::id()) {
+        // Permisos
+        if (!Auth::user()->hasRole('admin') && $pedido->user_id !== Auth::id()) {
             abort(403, 'No tienes permiso para eliminar este pedido.');
         }
 
-        // Eliminar la venta asociada primero (si existe)
-        if ($pedido->venta) {
-            $pedido->venta->delete();
-        }
+        $venta = $pedido->venta;
 
-        // Eliminar el pedido
+        // Eliminar pedido
         $pedido->delete();
 
-        return redirect()->route('pedidos.index')->with('success', 'Pedido y venta eliminados correctamente.');
+        // Si la venta ya no tiene pedidos, eliminarla
+        if ($venta && $venta->pedidos()->count() === 0) {
+            $venta->delete();
+        }
+
+        return redirect()
+            ->route('pedidos.index')
+            ->with('success', 'Pedido eliminado correctamente.');
     }
 }

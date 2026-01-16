@@ -103,31 +103,58 @@ class VentaController extends Controller
     {
         $users = User::all();
         $articulos = Articulo::all();
-        $clientes = Cliente::all();
+        $clientes = User::all();
         return view('ventas.edit', compact('venta', 'users', 'articulos', 'clientes'));
     }
 
     public function update(Request $request, Venta $venta)
     {
-        $user = Auth::user();
-
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
+        $validated = $request->validate([
             'articulo_id' => 'required|exists:articulos,id',
             'cantidad' => 'required|integer|min:1',
-            'cliente_id' => 'required|exists:users,id',
+            'cliente_id' => 'nullable|exists:users,id',
             'precio_venta' => 'required|numeric|min:0',
             'descripcion' => 'nullable|string',
         ]);
 
-        $request->merge([
-            'user_id' => $user->id,
-            'total_venta' => $request->cantidad * $request->precio_venta
-        ]);
+        try {
+            DB::transaction(function () use ($validated, $venta) {
+                // 1. Obtener el artículo (el actual o el nuevo si cambió)
+                $articulo = Articulo::lockForUpdate()->find($validated['articulo_id']);
 
-        $venta->update($request->all());
+                // 2. Calcular la diferencia de stock
+                // Si antes vendí 5 y ahora quiero vender 8, la diferencia es 3 (debo quitar 3 más)
+                // Si antes vendí 5 y ahora quiero vender 3, la diferencia es -2 (debo devolver 2)
+                $diferenciaStock = $validated['cantidad'] - $venta->cantidad;
 
-        return redirect()->route('ventas.index')->with('success', 'Venta actualizada correctamente.');
+                // 3. Validar si hay stock suficiente para la diferencia
+                if ($articulo->stock < $diferenciaStock) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'cantidad' => 'No hay suficiente stock adicional. Disponible: ' . $articulo->stock,
+                    ]);
+                }
+
+                // 4. Actualizar el stock del artículo
+                $articulo->decrement('stock', $diferenciaStock);
+
+                // 5. Actualizar los datos de la venta
+                $venta->update([
+                    // Si es admin, puede cambiar el cliente. Si no, se queda el que estaba.
+                    'user_id'      => Auth::user()->hasRole('admin') ? $validated['cliente_id'] : $venta->user_id,
+                    'articulo_id'  => $validated['articulo_id'],
+                    'cantidad'     => $validated['cantidad'],
+                    'precio_venta' => $articulo->precio, // O $validated['precio_venta'] si permites editar precio
+                    'total_venta'  => $articulo->precio * $validated['cantidad'],
+                    'descripcion'  => $validated['descripcion'],
+                ]);
+            });
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            return redirect()->route('ventas.index')->with('error', 'Error al actualizar la venta: ' . $e->getMessage());
+        }
+
+        return redirect()->route('ventas.index')->with('success', '¡Venta actualizada con éxito!');
     }
 
     public function destroy(Venta $venta)

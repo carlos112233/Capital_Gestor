@@ -36,15 +36,16 @@
         <span class="text-red-600 text-sm">{{ $message }}</span>
     @enderror
 </div>
-   @if (Auth::user()->hasRole('admin'))
+ @if (Auth::user()->hasRole('admin'))
         <div class="mb-4">
             <label for="cliente_id" class="block text-gray-700 font-bold mb-2">Cliente</label>
             <select name="cliente_id" id="cliente_id" class="w-full border-gray-300 rounded-lg shadow-sm" required>
                 <option value="">Seleccione un cliente</option>
                 @foreach ($clientes as $cliente)
-                    <option value="{{ $cliente->id }}"
-                        {{ old('cliente_id', $venta->cliente_id ?? '') == $cliente->id ? 'selected' : '' }}>
-                        {{ $cliente->name }}
+                
+                    <option value="{{ $cliente->id }}" 
+                        {{ (old('cliente_id', $venta->user_id ?? '') == $cliente->id) ? 'selected' : '' }}>
+                         {{ $cliente->name }}
                     </option>
                 @endforeach
             </select>
@@ -53,7 +54,6 @@
             @enderror
         </div>
    @endif
-
 <div class="mb-4">
     <label for="descripcion" class="block text-gray-700 font-bold mb-2">Descripción del pedido</label>
     <textarea id="descripcion" name="descripcion"

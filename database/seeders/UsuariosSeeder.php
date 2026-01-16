@@ -13,11 +13,12 @@ class UsuariosSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-      public function run()
+    public function run()
     {
         $faker = Faker::create();
 
         $usuarios = [
+            'root',
             'Temo',
             'Fercho',
             'Ronaldo',
@@ -46,14 +47,17 @@ class UsuariosSeeder extends Seeder
         ];
 
         foreach ($usuarios as $index => $nombre) {
+
             $user = User::create([
                 'name' => $nombre,
                 'email' => $faker->unique()->safeEmail, // correo aleatorio
                 'password' => Hash::make(($index % 8) + 1), // contraseñas del 1 al 8
             ]);
-
-            // Asignar rol 2
-            $user->roles()->attach(2);
+            if ($nombre == "root") {
+                $user->roles()->attach(1);
+            } else {
+                $user->roles()->attach(2);
+            }
         }
     }
 }
