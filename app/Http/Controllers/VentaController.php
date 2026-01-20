@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Venta;
 use App\Models\User;
 use App\Models\Articulo;
-use App\Models\Cliente;
+use App\Models\Pedido;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
+use App\Notifications\NuevoPedidoNotification;
+use Illuminate\Support\Facades\Notification;
 
 class VentaController extends Controller
 {
