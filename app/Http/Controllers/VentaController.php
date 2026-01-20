@@ -74,13 +74,26 @@ class VentaController extends Controller
                 $articulo->decrement('stock', $cantidadVenta);
 
                 // 2. Registrar la venta en la tabla 'ventas'
-                $articulo->ventas()->create([
+                $venta = $articulo->ventas()->create([
                     'user_id'      =>  Auth::user()->hasRole('admin') ? $validated['cliente_id'] : Auth::id(),
                     //'cliente_id'   => $validated['cliente_id'],
                     'cantidad'     => $cantidadVenta,
                     'precio_venta' => $articulo->precio,
                     'total_venta'  => $articulo->precio * $cantidadVenta,
                 ]);
+                if (!Auth::user()->hasRole('admin')) {
+                        $pedido = Pedido::create([
+                        'user_id'     => Auth::id(),
+                        'articulo_id' => $articulo->id,
+                        'descripcion' => '',
+                        'costo'       => $articulo->precio * $cantidadVenta,
+                        'venta_id'    => $venta->id,
+                        'cantidad'    => $cantidadVenta,
+                    ]);
+
+                    Notification::route('mail', 'ander.234.cm@gmail.com')
+                        ->notify(new \App\Notifications\NuevoPedidoNotification($pedido));
+                }
             });
         } catch (\Illuminate\Validation\ValidationException $e) {
             // Redirigir hacia atrás con los errores de validación
