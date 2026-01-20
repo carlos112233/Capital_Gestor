@@ -41,11 +41,10 @@ class VentaController extends Controller
 
     public function create(Request $request)
     {
-        $users = User::all();
         $articulos = Articulo::all();
-        $clientes = User::all();
+        $clientes = User::orderBy('name', 'asc')->get();
         $articuloId = $request->get('articulo_id');
-        return view('ventas.create', compact('users', 'articulos', 'clientes', 'articuloId'));
+        return view('ventas.create', compact('articulos', 'clientes', 'articuloId'));
     }
 
     public function store(Request $request)

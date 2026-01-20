@@ -55,10 +55,9 @@ class EntradaController extends Controller
      */
     public function create(): View
     {
-        $users = User::all();
         $articulos = Articulo::all();
-        $clientes = User::all();
-        return view('admin.entradas.create', compact('users', 'articulos', 'clientes'));
+        $clientes = User::orderBy('name', 'asc')->get();
+        return view('admin.entradas.create', compact( 'articulos', 'clientes'));
     }
 
     /**

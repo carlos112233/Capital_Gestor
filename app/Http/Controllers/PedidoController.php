@@ -36,7 +36,7 @@ class PedidoController extends Controller
     public function create()
     {
         $articulos = Articulo::all();
-        $users = User::all();
+        $users = User::orderBy('name', 'asc')->get();
         $articuloId = null; // o algún valor por defecto, por ejemplo el primer artículo
         return view('pedidos.create', compact('articulos', 'articuloId', 'users'));
     }
