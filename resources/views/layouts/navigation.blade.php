@@ -133,9 +133,39 @@
             </div>
 
             <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">
+                <x-responsive-nav-link :href="route('profile.edit')" :active="request()->routeIs('profile.edit')">
                     {{ __('Profile') }}
                 </x-responsive-nav-link>
+
+                 <x-responsive-nav-link :href="route('catalogo.index')" :active="request()->routeIs('catalogo.index')">
+                        {{ __('Existencias') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('ventas.index')" :active="request()->routeIs('ventas.*')">
+                        @if (Auth::user()->hasRole('admin'))
+                            {{ __('Ventas Realizadas') }}
+                        @else
+                            {{ __('Compras Realizadas') }}
+                        @endif
+                </x-responsive-nav-link>
+
+                 <x-responsive-nav-link : :href="route('pedidos.index')" :active="request()->routeIs('pedidos.*')">
+                        {{ __('Pedidos') }}
+                </x-responsive-nav-link>
+
+                @if (Auth::user()->hasRole('admin'))
+                <x-responsive-nav-link :href="route('admin.entradas.index')" :active="request()->routeIs('admin.entradas.*')">
+                            {{ __('Entradas Capital') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('admin.articulos.index')" :active="request()->routeIs('admin.articulos.*')">
+                            {{ __('Artículos') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('admin.clientes.index')" :active="request()->routeIs('admin.clientes.*')">
+                            {{ __('Clientes') }}
+                </x-responsive-nav-link>
+                @endif
 
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">
@@ -144,7 +174,7 @@
                     <x-responsive-nav-link :href="route('logout')"
                         onclick="event.preventDefault();
                                         this.closest('form').submit();">
-                        {{ __('Log Out') }}
+                        <b>{{ __('Cerrar Sessión') }}</b>
                     </x-responsive-nav-link>
                 </form>
             </div>
