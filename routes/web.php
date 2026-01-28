@@ -10,7 +10,8 @@ use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\DashboardController;
-use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Artisan;
+
 
 Route::get('/', [AuthenticatedSessionController::class, 'create'])
     ->name('login');
@@ -47,3 +48,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
      Route::resource('pedidos', PedidoController::class);
 });
 require __DIR__ . '/auth.php';
+Route::get('/migrar-db', function () {
+    try {
+        Artisan::call('migrate', ['--force' => true]);
+        return "Base de datos migrada con éxito.";
+    } catch (\Exception $e) {
+        return "Error al migrar: " . $e->getMessage();
+    }
+});
