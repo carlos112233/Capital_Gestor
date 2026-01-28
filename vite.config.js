@@ -8,4 +8,10 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    // --- AGREGA ESTA SECCIÓN ---
+    server: {
+        watch: {
+            ignored: ['**/vendor/**', '**/node_modules/**', '**/storage/**'],
+        },
+    },
 });

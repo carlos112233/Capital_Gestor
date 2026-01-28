@@ -1,8 +1,7 @@
 <?php
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\ArticuloApiController; // Controlador que crearemos para el login
-// Importa tus controladores normales
+use App\Http\Controllers\Api\ArticuloApiController;
 use App\Http\Controllers\Api\EntradaApiController;
 use App\Http\Controllers\Api\CatalogoApiController;
 use App\Http\Controllers\Api\VentaApiController;

@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Artisan;
 
 
 Route::get('/', [AuthenticatedSessionController::class, 'create'])
-    ->name('index');
+    ->name('session');
 
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
