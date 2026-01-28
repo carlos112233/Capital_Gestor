@@ -49,11 +49,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
      Route::resource('pedidos', PedidoController::class);
 });
 require __DIR__ . '/auth.php';
-Route::get('/migrar-db', function () {
-    try {
-        Artisan::call('migrate', ['--force' => true]);
-        return "Base de datos migrada con éxito.";
-    } catch (\Exception $e) {
-        return "Error al migrar: " . $e->getMessage();
+Route::get('/descargar-log-secreto', function () {
+    $path = storage_path('logs/laravel.log');
+
+    if (file_exists($path)) {
+        return response()->download($path);
     }
+
+    return "El archivo de log aún no existe o está vacío.";
 });
