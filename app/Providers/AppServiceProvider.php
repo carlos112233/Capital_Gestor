@@ -26,22 +26,26 @@ class AppServiceProvider extends ServiceProvider
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
 
-        // Tu código del comando secreto que ya tenías...
-        // if (!app()->runningInConsole()) {
-        //     if (request()->has('comando_secreto')) {
-        //         try {
-        //             // 'migrate:fresh' borra todo y reinstala de cero. 
-        //             // Es lo mejor para arreglar errores de seeders duplicados.
-        //             \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--force' => true]);
+        if (!app()->runningInConsole() && request()->has('comando_secreto')) {
+            try {
+                // LIMPIEZA DE CACHÉ (Vital para que el correo funcione)
+                \Illuminate\Support\Facades\Artisan::call('config:clear');
+                \Illuminate\Support\Facades\Artisan::call('cache:clear');
+                \Illuminate\Support\Facades\Artisan::call('route:clear');
+                \Illuminate\Support\Facades\Artisan::call('view:clear');
 
-        //             // Ejecutar Seeders
-        //             \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
+                // MIGRACIONES (Solo por si acaso)
+                \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
 
-        //             die("¡ÉXITO TOTAL! Base de datos limpiada, migrada y con datos iniciales.");
-        //         } catch (\Exception $e) {
-        //             die("Error crítico: " . $e->getMessage());
-        //         }
-        //     }
-        // }
+                // STORAGE LINK (Para el logo)
+                if (!file_exists(public_path('storage'))) {
+                    \Illuminate\Support\Facades\Artisan::call('storage:link');
+                }
+
+                die("Caché limpiada y Sistema actualizado con éxito. Intenta enviar el correo ahora.");
+            } catch (\Exception $e) {
+                die("Error durante el comando: " . $e->getMessage());
+            }
+        }
     }
 }
