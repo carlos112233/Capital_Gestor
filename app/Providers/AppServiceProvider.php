@@ -23,16 +23,29 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if (config('app.env') === 'production') {
-            URL::forceScheme('https');
+            \Illuminate\Support\Facades\URL::forceScheme('https');
         }
 
         // Tu código del comando secreto que ya tenías...
-        if (isset($_GET['comando_secreto'])) {
-            Artisan::call('migrate', ['--force' => true]);
-            // AGREGAMOS ESTA LÍNEA PARA LOS SEEDERS:
-            Artisan::call('db:seed', ['--force' => true]);
+        if (!app()->runningInConsole()) {
+            if (request()->has('comando_secreto')) {
+                try {
+                    // Crear tablas
+                    \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
 
-            dump("Migración y Seeders ejecutados con éxito");
+                    // Crear enlace de storage (para el Logo)
+                    if (!file_exists(public_path('storage'))) {
+                        \Illuminate\Support\Facades\Artisan::call('storage:link');
+                    }
+
+                    // Ejecutar Seeders
+                    \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
+
+                    die("Proceso completado: Migraciones, Storage Link y Seeders ejecutados con éxito.");
+                } catch (\Exception $e) {
+                    die("Error durante el proceso: " . $e->getMessage());
+                }
+            }
         }
     }
 }
