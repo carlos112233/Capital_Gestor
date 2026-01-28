@@ -11,7 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // AÑADE ESTA LÍNEA PARA RENDER
+        // 1. Registramos el alias 'role'
+        $middleware->alias([
+            'role' => \App\Http\Middleware\CheckRole::class, // O como se llame tu archivo de Middleware
+        ]);
+
+        // 2. Confiar en el proxy de Render (para evitar errores de HTTPS)
         $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions) {
