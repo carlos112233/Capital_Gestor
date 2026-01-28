@@ -24,6 +24,9 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Instalar dependencias de PHP
 RUN composer install --no-dev --optimize-autoloader
 
+RUN composer dump-autoload
+
+RUN composer update
 # Instalar dependencias de Node y compilar assets (Vite)
 RUN npm install && npm run build
 
