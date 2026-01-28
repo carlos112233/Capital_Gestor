@@ -25,7 +25,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 RUN composer install --no-dev --optimize-autoloader
 
 # Instalar dependencias de Node y compilar assets (Vite)
-RUN npm install && npm run build
+RUN npm install  && npm run dev && npm run build
 
 # Configurar Apache para que apunte a la carpeta /public de Laravel
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
