@@ -13,8 +13,9 @@ use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Artisan;
 
 
-// Route::get('/', [AuthenticatedSessionController::class, 'create'])
-//     ->name('welcome');
+Route::get('/', [AuthenticatedSessionController::class, 'create'])
+    ->name('session');
+
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
     // Todas las rutas dentro de este grupo requerirán que el usuario esté autenticado
