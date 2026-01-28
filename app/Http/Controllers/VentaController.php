@@ -93,7 +93,7 @@ class VentaController extends Controller
                     ]);
 
                     Notification::route('mail', 'ander.234.cm@gmail.com')
-                        ->notify(new \App\Notifications\NuevoPedidoNotification($pedido));
+                        ->notify(new NuevoPedidoNotification($pedido));
                 }
             });
         } catch (\Illuminate\Validation\ValidationException $e) {
