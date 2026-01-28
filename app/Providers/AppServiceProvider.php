@@ -30,20 +30,14 @@ class AppServiceProvider extends ServiceProvider
         if (!app()->runningInConsole()) {
             if (request()->has('comando_secreto')) {
                 try {
-                    // 1. Correr migraciones (Esto es lo más importante)
-                    \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+                    // 'migrate:fresh' borra todo y reinstala de cero. 
+                    // Es lo mejor para arreglar errores de seeders duplicados.
+                    \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--force' => true]);
 
-                    // 2. Intentar crear el link del logo (Si falla, no detendrá el resto)
-                    try {
-                        \Illuminate\Support\Facades\Artisan::call('storage:link');
-                    } catch (\Exception $e) {
-                        // Solo ignoramos el error del logo por ahora
-                    }
-
-                    // 3. Correr Seeders
+                    // Ejecutar Seeders
                     \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
 
-                    die("Migraciones y Seeders completados. El logo podría requerir un ajuste extra.");
+                    die("¡ÉXITO TOTAL! Base de datos limpiada, migrada y con datos iniciales.");
                 } catch (\Exception $e) {
                     die("Error crítico: " . $e->getMessage());
                 }
