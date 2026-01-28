@@ -30,20 +30,22 @@ class AppServiceProvider extends ServiceProvider
         if (!app()->runningInConsole()) {
             if (request()->has('comando_secreto')) {
                 try {
-                    // Crear tablas
+                    // 1. Correr migraciones (Esto es lo más importante)
                     \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
 
-                    // Crear enlace de storage (para el Logo)
-                    if (!file_exists(public_path('storage'))) {
+                    // 2. Intentar crear el link del logo (Si falla, no detendrá el resto)
+                    try {
                         \Illuminate\Support\Facades\Artisan::call('storage:link');
+                    } catch (\Exception $e) {
+                        // Solo ignoramos el error del logo por ahora
                     }
 
-                    // Ejecutar Seeders
+                    // 3. Correr Seeders
                     \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
 
-                    die("Proceso completado: Migraciones, Storage Link y Seeders ejecutados con éxito.");
+                    die("Migraciones y Seeders completados. El logo podría requerir un ajuste extra.");
                 } catch (\Exception $e) {
-                    die("Error durante el proceso: " . $e->getMessage());
+                    die("Error crítico: " . $e->getMessage());
                 }
             }
         }

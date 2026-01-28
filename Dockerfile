@@ -27,6 +27,10 @@ RUN composer install --no-dev --optimize-autoloader
 RUN composer dump-autoload
 
 RUN composer update
+
+# ... después de composer install ...
+RUN php artisan storage:link
+
 # Instalar dependencias de Node y compilar assets (Vite)
 RUN npm install && npm run build
 
