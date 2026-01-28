@@ -6,17 +6,17 @@ use Illuminate\Foundation\Configuration\Middleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        commands: __DIR__.'/../routes/console.php',
+        web: __DIR__ . '/../routes/web.php',
+        commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // 1. Registramos el alias 'role'
+        // Registramos el alias para que Laravel entienda qué es 'role'
         $middleware->alias([
-            'role' => \App\Http\Middleware\CheckRole::class, // O como se llame tu archivo de Middleware
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
 
-        // 2. Confiar en el proxy de Render (para evitar errores de HTTPS)
+        // Aprovechamos para configurar los proxies de Render (evita errores de HTTPS)
         $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions) {
