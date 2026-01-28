@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Artisan;
 
 
 Route::get('/', [AuthenticatedSessionController::class, 'create'])
-    ->name('login');
+    ->name('welcome');
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
     // Todas las rutas dentro de este grupo requerirán que el usuario esté autenticado
