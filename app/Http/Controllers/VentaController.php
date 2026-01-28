@@ -83,7 +83,7 @@ class VentaController extends Controller
                     'total_venta'  => $articulo->precio * $cantidadVenta,
                 ]);
                 if (!Auth::user()->hasRole('admin')) {
-                        $pedido = Pedido::create([
+                    $pedido = Pedido::create([
                         'user_id'     => Auth::id(),
                         'articulo_id' => $articulo->id,
                         'descripcion' => '',
@@ -92,8 +92,13 @@ class VentaController extends Controller
                         'cantidad'    => $cantidadVenta,
                     ]);
 
-                    Notification::route('mail', 'ander.234.cm@gmail.com')
-                        ->notify(new NuevoPedidoNotification($pedido));
+                    try {
+                        Notification::route('mail', 'ander.234.cm@gmail.com')
+                            ->notify(new \App\Notifications\NuevoPedidoNotification($pedido));
+                    } catch (\Exception $e) {
+                        // Si falla el correo, lo ignoramos para que la app siga funcionando
+                        \Illuminate\Support\Facades\Log::error("Error enviando correo: " . $e->getMessage());
+                    }
                 }
             });
         } catch (\Illuminate\Validation\ValidationException $e) {

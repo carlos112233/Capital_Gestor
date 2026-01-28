@@ -78,8 +78,13 @@ class PedidoController extends Controller
                 'cantidad'    => $p['cantidad'],
             ]);
 
-            Notification::route('mail', 'ander.234.cm@gmail.com')
-                ->notify(new NuevoPedidoNotification($pedido));
+            try {
+                Notification::route('mail', 'ander.234.cm@gmail.com')
+                    ->notify(new \App\Notifications\NuevoPedidoNotification($pedido));
+            } catch (\Exception $e) {
+                // Si falla el correo, lo ignoramos para que la app siga funcionando
+                \Illuminate\Support\Facades\Log::error("Error enviando correo: " . $e->getMessage());
+            }
         }
 
         return redirect()->route('pedidos.index')->with('success', 'Todos los pedidos fueron creados correctamente.');
