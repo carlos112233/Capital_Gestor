@@ -8,13 +8,13 @@
                     @if (Auth::user()->hasRole('admin'))
                         @if (Auth::user()->hasRole('admin'))
                             <a href="{{ route('dashboardAdmin') }}">
-                                <img src="{{ asset('storage/img/Logo.png') }}" class="h-9 w-auto" alt="Logo">
+                                <img src="{{ asset('img/Logo.png') }}" class="h-9 w-auto" alt="Logo">
                             </a>
                         @endif
                     @endif
                     @if (Auth::user()->hasRole('user'))
                         <a href="{{ route('dashboard') }}">
-                            <img src="{{ asset('storage/img/Logo.png') }}" class="h-9 w-auto" alt="Logo">
+                            <img src="{{ asset('img/Logo.png') }}" class="h-9 w-auto" alt="Logo">
                         </a>
                     @endif
                 </div>
