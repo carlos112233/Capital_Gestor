@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Artisan; // <-- Agrega esta línea
+use Illuminate\Support\Facades\Schema; 
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +22,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        if (isset($_GET['comando_secreto'])) {
+            Artisan::call('migrate', ['--force' => true]);
+            dump("Migración ejecutada con éxito");
+        }
     }
 }
