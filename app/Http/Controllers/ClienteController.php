@@ -14,7 +14,7 @@ class ClienteController extends Controller
 {
     public function index(Request $request)
     {
-         $clientesCollection = User::latest()
+        $clientesCollection = User::latest()
             ->when($request->filled('q'), function ($query) use ($request) {
                 $query->where('name', 'like', '%' . $request->q . '%');
             })
@@ -56,8 +56,22 @@ class ClienteController extends Controller
             'name'     => 'required|string|max:255',
             'email'    => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
+            'img_base64' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
+        if ($request->hasFile('image')) {
+            // Obtiene el contenido binario del archivo
+            $imagenBinaria = file_get_contents($request->file('image')->getRealPath());
+            $imagen_tipo = $request->file('image')->getMimeType();
+
+            // Lo convierte a Base64
+            $base64 = base64_encode($imagenBinaria);
+
+            $request->merge([
+                'image' => $base64,
+                'image_tipo' => $imagen_tipo,
+            ]);
+        }
         // Laravel encripta automáticamente la contraseña por el cast
         User::create($validated);
 
@@ -77,6 +91,7 @@ class ClienteController extends Controller
 
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
+            'img_base64' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'email'    => [
                 'required',
                 'string',
@@ -86,6 +101,13 @@ class ClienteController extends Controller
             'password' => 'nullable|string|min:8',
         ]);
 
+        // Si viene un archivo (desde la Web)
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $validated['image'] = base64_encode(file_get_contents($file->getRealPath()));
+            // Si tienes la columna image_tipo en tu DB, agrégala al validated
+            $validated['image_tipo'] = $file->getMimeType();
+        }
         if (!$request->filled('password')) {
             unset($validated['password']);
         } else {
