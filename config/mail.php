@@ -96,7 +96,11 @@ return [
             ],
             'retry_after' => 60,
         ],
-
+        // AGREGA ESTE BLOQUE AQUÍ:
+        'sendgrid' => [
+            'transport' => 'sendgrid',
+            'key' => env('SENDGRID_API_KEY'), // <--- USA ESTE NOMBRE EXACTO
+        ],
     ],
 
     /*
