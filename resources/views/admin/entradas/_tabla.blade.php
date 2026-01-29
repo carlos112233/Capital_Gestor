@@ -34,7 +34,7 @@
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                                         {{ $entrada->descripcion }}</td>
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
-                                        {{ \Carbon\Carbon::parse($entrada->fecha_generado)->translatedFormat('l d/m/Y') }}
+                                         {{ ucfirst($entrada->fecha_generado)->setTimezone('America/Mexico_City')->translatedFormat('l d/m/Y')}}
                                     </td>
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                                         {{-- Botón Editar --}}

@@ -36,7 +36,7 @@
                                         <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                                             {{ $venta->user->name }}</td>
                                         <td class="px-3 py-4 text-center whitespace-nowrap text-sm text-gray-500">
-                                            {{ \Carbon\Carbon::parse($venta->created_at)->translatedFormat('l d/m/Y') }}
+                                             {{ ucfirst($venta->created_at)->setTimezone('America/Mexico_City')->translatedFormat('l d/m/Y')}}
                                         </td>
                                         <td class=" py- text-center whitespace-nowrap text-sm text-gray-500">
                                             ${{ number_format($venta->total_venta, 2) }}</td>
