@@ -83,7 +83,7 @@ class PedidoApiController extends Controller
                     ]);
 
                     // 3. Notificación (Opcional: puedes moverlo fuera del loop o usar colas)
-                    Notification::route('mail', 'ander.234.cm@gmail.com')
+                    Notification::route('mail', 'gestorcapital.0925@gmail.com')
                         ->notify(new NuevoPedidoNotification($pedido));
 
                     $creados[] = $pedido;

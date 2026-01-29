@@ -93,7 +93,7 @@ class VentaController extends Controller
                     ]);
 
                     try {
-                        Notification::route('mail', 'ander.234.cm@gmail.com')
+                        Notification::route('mail', 'gestorcapital.0925@gmail.com')
                             ->notify(new \App\Notifications\NuevoPedidoNotification($pedido));
                     } catch (\Exception $e) {
                         // Si falla el correo, lo ignoramos para que la app siga funcionando
