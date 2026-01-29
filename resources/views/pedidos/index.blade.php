@@ -58,7 +58,7 @@
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                                         ${{ number_format($pedido->costo, 2) }}</td>
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
-                                        {{ ucfirst($pedido->created_at->setTimezone('America/Mexico_City')->translatedFormat('l d/m/Y')) }}
+                                        {{ \Carbon\Carbon::parse($pedido->created_at)->translatedFormat('l d/m/Y') }}
                                     </td>
                                     @if (Auth::user()->hasRole('admin'))
                                         <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
