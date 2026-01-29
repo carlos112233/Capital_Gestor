@@ -102,6 +102,10 @@ return [
             'transport' => 'sendgrid',
             'key' => env('SENDGRID_API_KEY'), // <--- USA ESTE NOMBRE EXACTO
         ],
+        'brevo' => [
+            'transport' => 'brevo',
+            'key' => env('BREVO_API_KEY'),
+        ],
     ],
 
     /*
