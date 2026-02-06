@@ -10,16 +10,24 @@
             <div class="bg-neutral-primary-soft block max-w-sm p-6 border border-default rounded-base shadow-xs">
                 <h5 class="mb-3 text-2xl font-semibold tracking-tight text-heading leading-8">Cuentas para
                     transferencia </h5>
-                <b>
-                    <h6 class="text-body text-center mb-6 ">BBVA:</h6>
-                </b>
-                <p>Cuenta: <b>158 086 7512</b> <br>
+
+                <p> 
+                    <b>
+                        BBVA:
+                    </b><br>
+                    Cuenta: <b>158 086 7512</b> <br>
                     Cuenta CLABE: <b>012 650 01580867512 5</b></p>
-                <b>
-                    <br>
-                    <h6 class="text-body text-center mb-6 ">Mercado Pago:</h6>
-                </b>
-                <p>Cuenta CLABE: <b>722969010384935035</b></p>
+
+                <br>
+
+                <p>
+                    <b>
+                        Mercado Pago:
+                    </b>
+                    <br>Cuenta CLABE: <b>722969010384935035</b>
+                </p>
+                <br><br>
+                <p>Enviar comprobante al:<b> 2222153410</b></p>
             </div>
         </div>
     </div>
