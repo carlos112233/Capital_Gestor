@@ -37,17 +37,18 @@ Route::middleware('auth')->group(function () {
     Route::resource('ventas', VentaController::class);
     // --- AÑADIR ESTA LÍNEA ---
 
-});
 
 
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-    // Dashboard de Admin (lo usaremos más adelante)
-    // Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-    Route::resource('clientes', ClienteController::class);
-    Route::resource('articulos', ArticuloController::class);
-    Route::resource('entradas', EntradaController::class);
-     Route::resource('pedidos', PedidoController::class);
+    Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+        // Dashboard de Admin (lo usaremos más adelante)
+        // Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::resource('clientes', ClienteController::class);
+        Route::resource('articulos', ArticuloController::class);
+        Route::resource('entradas', EntradaController::class);
+        Route::resource('pedidos', PedidoController::class);
+    });
 });
+
 require __DIR__ . '/auth.php';
 Route::get('/descargar-log-secreto', function () {
     $path = storage_path('logs/laravel.log');

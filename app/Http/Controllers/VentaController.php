@@ -110,5 +110,29 @@ class VentaController extends Controller
         }
     }
 
+
     // ... resto de métodos con lógica similar
+
+     public function destroy(Venta $venta)
+    {
+        if (!Auth::user()->hasRole('admin') && $venta->user_id !== Auth::id()) {
+            return $this->error('No autorizado', 403);
+        }
+
+        try {
+            DB::transaction(function () use ($venta) {
+                // CAMBIO POSTGRES: Usar findOrFail para asegurar el bloqueo en la transacción
+                $articulo = Articulo::lockForUpdate()->find($venta->articulo_id);
+                if ($articulo) {
+                    $articulo->increment('stock', (int) $venta->cantidad);
+                }
+                $venta->delete();
+            });
+
+              return redirect()->route('ventas.index')->with('success', '¡Venta registrada!');
+        } catch (\Exception $e) {
+            \Log::error("Postgres Delete Error: " . $e->getMessage());
+            return $this->error('Error al eliminar', 500);
+        }
+    }
 }
