@@ -6,9 +6,9 @@
             </h2>
     </x-slot>
     <div style="display:flex; justify-content:center;">
-        <div class="py-12 w-full h-auto max-w-xl rounded-base ">
+        <div class="py-12 w-full h-auto max-w-xl rounded-base text-center">
             <div class="bg-neutral-primary-soft block max-w-sm p-6 border border-default rounded-base shadow-xs">
-                <h5 class="mb-3 text-2xl font-semibold tracking-tight text-heading leading-8 text-center">Cuentas para
+                <h5 class="mb-3 text-2xl font-semibold tracking-tight text-heading leading-8">Cuentas para
                     transferencia </h5>
                 <b>
                     <h6 class="text-body text-center mb-6 ">BBVA:</h6>
