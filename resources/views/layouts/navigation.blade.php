@@ -6,13 +6,10 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     @if (Auth::user()->hasRole('admin'))
-                        @if (Auth::user()->hasRole('admin'))
-                            <a href="{{ route('dashboardAdmin') }}">
-                                <img src="{{ asset('img/Logo.png') }}" class="h-9 w-auto" alt="Logo">
-                            </a>
-                        @endif
-                    @endif
-                    @if (Auth::user()->hasRole('user'))
+                        <a href="{{ route('dashboardAdmin') }}">
+                            <img src="{{ asset('img/Logo.png') }}" class="h-9 w-auto" alt="Logo">
+                        </a>
+                    @else 
                         <a href="{{ route('dashboard') }}">
                             <img src="{{ asset('img/Logo.png') }}" class="h-9 w-auto" alt="Logo">
                         </a>
@@ -137,34 +134,34 @@
                     {{ __('Profile') }}
                 </x-responsive-nav-link>
 
-                 <x-responsive-nav-link :href="route('catalogo.index')" :active="request()->routeIs('catalogo.index')">
-                        {{ __('Existencias') }}
+                <x-responsive-nav-link :href="route('catalogo.index')" :active="request()->routeIs('catalogo.index')">
+                    {{ __('Existencias') }}
                 </x-responsive-nav-link>
 
                 <x-responsive-nav-link :href="route('ventas.index')" :active="request()->routeIs('ventas.*')">
-                        @if (Auth::user()->hasRole('admin'))
-                            {{ __('Ventas Realizadas') }}
-                        @else
-                            {{ __('Compras Realizadas') }}
-                        @endif
+                    @if (Auth::user()->hasRole('admin'))
+                        {{ __('Ventas Realizadas') }}
+                    @else
+                        {{ __('Compras Realizadas') }}
+                    @endif
                 </x-responsive-nav-link>
 
-                 <x-responsive-nav-link : :href="route('pedidos.index')" :active="request()->routeIs('pedidos.*')">
-                        {{ __('Pedidos') }}
+                <x-responsive-nav-link : :href="route('pedidos.index')" :active="request()->routeIs('pedidos.*')">
+                    {{ __('Pedidos') }}
                 </x-responsive-nav-link>
 
                 @if (Auth::user()->hasRole('admin'))
-                <x-responsive-nav-link :href="route('admin.entradas.index')" :active="request()->routeIs('admin.entradas.*')">
-                            {{ __('Entradas Capital') }}
-                </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.entradas.index')" :active="request()->routeIs('admin.entradas.*')">
+                        {{ __('Entradas Capital') }}
+                    </x-responsive-nav-link>
 
-                <x-responsive-nav-link :href="route('admin.articulos.index')" :active="request()->routeIs('admin.articulos.*')">
-                            {{ __('Artículos') }}
-                </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.articulos.index')" :active="request()->routeIs('admin.articulos.*')">
+                        {{ __('Artículos') }}
+                    </x-responsive-nav-link>
 
-                <x-responsive-nav-link :href="route('admin.clientes.index')" :active="request()->routeIs('admin.clientes.*')">
-                            {{ __('Clientes') }}
-                </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.clientes.index')" :active="request()->routeIs('admin.clientes.*')">
+                        {{ __('Clientes') }}
+                    </x-responsive-nav-link>
                 @endif
 
                 <!-- Authentication -->
