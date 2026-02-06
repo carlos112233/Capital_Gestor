@@ -44,6 +44,9 @@
                     <x-nav-link :href="route('pedidos.index')" :active="request()->routeIs('pedidos.*')">
                         {{ __('Pedidos') }}
                     </x-nav-link>
+                     <x-nav-link :href="route('datos.index')" :active="request()->routeIs('datos.*')">
+                      <b>  {{ __('Método de pago') }}</b>
+                    </x-nav-link>
 
                     @if (Auth::user()->hasRole('admin'))
                         <x-nav-link :href="route('admin.entradas.index')" :active="request()->routeIs('admin.entradas.*')">
@@ -148,6 +151,10 @@
 
                 <x-responsive-nav-link : :href="route('pedidos.index')" :active="request()->routeIs('pedidos.*')">
                     {{ __('Pedidos') }}
+                </x-responsive-nav-link>
+
+                 <x-responsive-nav-link : :href="route('datos.index')" :active="request()->routeIs('datos.*')">
+                    <b>{{ __('Método de pago') }}</b>
                 </x-responsive-nav-link>
 
                 @if (Auth::user()->hasRole('admin'))

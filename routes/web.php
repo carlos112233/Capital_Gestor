@@ -8,6 +8,7 @@ use App\Http\Controllers\CatalogoController;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\TransferenciaController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Artisan;
@@ -35,6 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::post('catalogo/vender', [CatalogoController::class, 'vender'])->name('catalogo.vender');
     Route::resource('pedidos', PedidoController::class);
     Route::resource('ventas', VentaController::class);
+    Route::resource('datos', TransferenciaController::class);
     // --- AÑADIR ESTA LÍNEA ---
 
 
