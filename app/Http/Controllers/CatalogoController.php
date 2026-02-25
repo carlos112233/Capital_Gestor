@@ -21,7 +21,7 @@ class CatalogoController extends Controller
 
         if ($request->filled('q')) {
             $q = $request->input('q');
-            $query->where('nombre', 'like', "%{$q}%");
+            $query->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($q) . '%']);
         }
 
         $articulos = $query->get();

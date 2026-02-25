@@ -28,7 +28,7 @@ class VentaController extends Controller
             $search = $request->input('q');
             $ventasQuery->whereHas('user', function ($query) use ($search) {
                 // ILIKE es específico de Postgres para búsquedas insensibles a mayúsculas
-                $query->where('name', 'ILIKE', '%' . $search . '%');
+              $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
             });
         }
 
