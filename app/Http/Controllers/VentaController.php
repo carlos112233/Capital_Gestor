@@ -154,6 +154,7 @@ class VentaController extends Controller
                 'descripcion'  => $p['descripcion'] ?? '',
             ]);
         }
+          return redirect()->route('catalogo.index')->with('success', '¡Venta se actualizo correctamente!');
     }    catch (\Exception $e) {
         \Log::critical("Error en Update Venta: " . $e->getMessage());
         return redirect()->back()->with('error', 'Error en base de datos.');    
