@@ -12,7 +12,6 @@ class Entrada extends Model
 
     protected $fillable = [
         'user_id',
-        'cliente_id',
         'articulo_id',
         'precio_venta',
         'descripcion',

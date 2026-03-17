@@ -40,9 +40,9 @@
 <div class="mb-4">
     <label for="cliente_id" class="block text-gray-700 font-bold mb-2">Cliente</label>
     <select name="cliente_id" id="cliente_id" class="w-full border-gray-300 rounded-lg shadow-sm" required>
-        <option value="" disabled {{ old('cliente_id', $entrada->cliente_id ?? '') == '' ? 'selected' : '' }}>Seleccione un cliente</option>
-        @foreach($clientes as $cliente)
-            <option value="{{ $cliente->id }}" {{ old('cliente_id', $entrada->cliente_id ?? '') == $cliente->id ? 'selected' : '' }}>
+        <option value="" disabled {{ old('cliente_id', $entrada->user_id ?? '') == '' ? 'selected' : '' }}>Seleccione un cliente</option>
+        @foreach($users as $cliente)
+            <option value=  "{{ $cliente->id }}" {{ old('cliente_id', $entrada->user_id ?? '') == $cliente->id ? 'selected' : '' }}>
                 {{ $cliente->name }}
             </option>
         @endforeach

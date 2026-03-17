@@ -79,7 +79,6 @@ class EntradaController extends Controller
         $request->merge([
             'fecha_generado' => $fecha,
             'user_id' => Auth::user()->hasRole('admin') ? $validated['cliente_id'] : Auth::id(),
-            'cliente_id' => null
         ]);
 
         Entrada::create($request->all());
@@ -91,17 +90,15 @@ class EntradaController extends Controller
 
     public function edit(Entrada $entrada)
     {
-        $users = User::all();
+        $users = User::orderBy('name', 'asc')->get();;
         $articulos = Articulo::all();
-        $clientes = User::all();
-        $entrada->load(['user', 'cliente', 'articulo']);
+        $entrada->load(['user',  'articulo']);
 
-        return view('admin.entradas.edit', compact('users', 'articulos', 'clientes', 'entrada'));
+        return view('admin.entradas.edit', compact('users', 'articulos', 'entrada'));
     }
 
     public function update(Request $request, Entrada $entrada)
     {
-        $user = Auth::user();
 
         $request->validate([
             'articulo_id' => 'required|exists:articulos,id',
@@ -111,7 +108,6 @@ class EntradaController extends Controller
         ]);
 
         $fecha = Carbon::now();
-        $user = Auth::user();
         $request->merge([
             'fecha_generado' => $fecha,
             'user_id' => Auth::user()->hasRole('admin') ? $request['cliente_id'] : Auth::id(),
