@@ -94,14 +94,13 @@ class PedidoController extends Controller
     {
         // Obtener el pedido con su venta
         $pedido = Pedido::with('venta')->find($id);
-
         // Verificar permisos: si no es admin, solo puede editar sus propios pedidos
         if (!Auth::user()->hasRole('admin') && $pedido->user_id != Auth::id()) {
             abort(403, 'No tienes permiso para editar este pedido.');
         }
 
         $articulos = Articulo::all();
-        $users  = User::all(); // si admin, puede cambiar el usuario
+        $users  = User::orderBy('name', 'asc')->get(); // si admin, puede cambiar el usuario
 
         return view('pedidos.edit', compact('pedido', 'articulos', 'users'));
     }

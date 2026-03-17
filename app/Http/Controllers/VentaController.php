@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Venta;
@@ -28,7 +29,7 @@ class VentaController extends Controller
             $search = $request->input('q');
             $ventasQuery->whereHas('user', function ($query) use ($search) {
                 // ILIKE es específico de Postgres para búsquedas insensibles a mayúsculas
-              $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
+                $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
             });
         }
 
@@ -111,9 +112,58 @@ class VentaController extends Controller
     }
 
 
+    public function edit($id)
+    {
+        try {
+            // Obtener el pedido con su venta
+            $venta = Venta::with(['user', 'articulo'])->find($id);
+
+            // Verificar permisos: si no es admin, solo puede editar sus propios pedidos
+            if (!Auth::user()->hasRole('admin') && $venta->user_id != Auth::id()) {
+                abort(403, 'No tienes permiso para editar este pedido.');
+            }
+
+            $articulos = Articulo::all();
+            $clientes  = User::orderBy('name', 'asc')->get();// si admin, puede cambiar el usuario
+        } catch (\Exception $e) {
+            \Log::critical("Error en Edit Venta: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Error en base de datos.');
+        }
+        return view('ventas.edit', compact('venta', 'articulos', 'clientes'));
+    }
+
+    public function update(Request $request, Venta $venta)
+    {   try {
+ if (!empty($p['id'])) {
+            // Actualizar pedido y su venta existente
+            $pedidoExistente = Pedido::find($p['id']);
+            $pedidoExistente->update([
+                'articulo_id' => $p['articulo_id'],
+                'descripcion' => $p['descripcion'] ?? '',
+                'costo'       => $total,
+                'cantidad'    => $p['cantidad'],
+                'user_id'     => $p['user_id'],
+            ]);
+
+            $pedidoExistente->venta()->update([
+                'articulo_id'  => $p['articulo_id'],
+                'cantidad'     => $p['cantidad'],
+                'precio_venta' => $p['costo'],
+                'total_venta'  => $total,
+                'user_id'     => $p['user_id'],
+                'descripcion'  => $p['descripcion'] ?? '',
+            ]);
+        }
+    }    catch (\Exception $e) {
+        \Log::critical("Error en Update Venta: " . $e->getMessage());
+        return redirect()->back()->with('error', 'Error en base de datos.');    
+    }
+       
+    }
+
     // ... resto de métodos con lógica similar
 
-     public function destroy(Venta $venta)
+    public function destroy(Venta $venta)
     {
         if (!Auth::user()->hasRole('admin') && $venta->user_id !== Auth::id()) {
             return $this->error('No autorizado', 403);
@@ -129,7 +179,7 @@ class VentaController extends Controller
                 $venta->delete();
             });
 
-              return redirect()->route('ventas.index')->with('success', '¡Venta registrada!');
+            return redirect()->route('ventas.index')->with('success', '¡Venta registrada!');
         } catch (\Exception $e) {
             \Log::error("Postgres Delete Error: " . $e->getMessage());
             return $this->error('Error al eliminar', 500);
