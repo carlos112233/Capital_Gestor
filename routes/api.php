@@ -18,7 +18,7 @@ Route::post('/login', [AuthController::class, 'login']); // Ruta para obtener el
 // --- RUTAS PROTEGIDAS (Cualquier usuario autenticado) ---
 Route::middleware('auth:sanctum')->name('api.')->group(function (){
     // Ahora esta ruta se llamará 'api.profile.edit'
-    Route::get('/profile', [ProfileApiController::class, 'edit']);
+    Route::get('/profile', [ProfileApiController::class, 'show']);
     Route::patch('/profile', [ProfileApiController::class, 'update']);
     Route::delete('/profile', [ProfileApiController::class, 'destroy']);
     
@@ -26,10 +26,10 @@ Route::middleware('auth:sanctum')->name('api.')->group(function (){
     Route::get('catalogo', [CatalogoApiController::class, 'index']);
     Route::post('catalogo/vender', [CatalogoApiController::class, 'vender']);
 
-
+    Route::put('clientes/{id}',[ ClienteApiController::class, 'update']);  
     // // Recursos (apiResource elimina create y edit)
-     Route::apiResource('pedidos', PedidoApiController::class);
-     Route::apiResource('ventas', VentaApiController::class);
+    Route::apiResource('pedidos', PedidoApiController::class);
+    Route::apiResource('ventas', VentaApiController::class);
      // --- RUTAS DE ADMIN (Protegidas por token + rol) ---
     Route::middleware('role:admin')->prefix('admin')->group(function () {  
         Route::apiResource('clientes', ClienteApiController::class);      
