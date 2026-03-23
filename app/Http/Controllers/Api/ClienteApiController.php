@@ -94,40 +94,43 @@ class ClienteApiController extends Controller
         return $this->success($cliente);
     }
 
-    public function update(Request $request, User $cliente): JsonResponse
+ public function update(Request $request, User $cliente): JsonResponse
     {
+        // 1. Normalizar el email
         $request->merge([
             'email' => trim(strtolower($request->email)),
         ]);
 
+        // 2. Validar (Usando el ID del objeto $cliente que Laravel ya cargó)
         $validated = $request->validate([
             'name'  => 'required|string|max:255',
-            'image_tipo' => 'nullable|string', // Validamos que sea un string (el base64)
+            'image_tipo' => 'nullable|string',
             'email' => [
                 'required',
                 'string',
                 'email',
+                'max:255',
+                // Esta es la clave: ignora el ID del cliente actual
                 Rule::unique('users', 'email')->ignore($cliente->id),
             ],
             'password' => 'nullable|string|min:8',
         ]);
+
+        // 3. Lógica de la imagen (Base64)
         if ($request->filled('image')) {
             $imageData = $request->image;
 
-            // 1. Si el base64 viene con el encabezado "data:image/png;base64,..."
+            // Si trae encabezado data:image/...
             if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
-                // Extraer el contenido puro sin el encabezado
                 $imageData = substr($imageData, strpos($imageData, ',') + 1);
                 $validated['image'] = $imageData;
                 $validated['image_tipo'] = "image/" . strtolower($type[1]);
             } else {
-                // 2. Si es un base64 puro, usamos el image_tipo enviado desde Flutter
+                // Si es base64 puro
                 $validated['image'] = $imageData;
-
                 if ($request->filled('image_tipo')) {
                     $validated['image_tipo'] = $request->image_tipo;
                 } else {
-                    // 3. Si no hay nada, intentamos detectar por los primeros bytes del base64
                     $decoded = base64_decode($imageData);
                     $f = finfo_open();
                     $validated['image_tipo'] = finfo_buffer($f, $decoded, FILEINFO_MIME_TYPE);
@@ -136,18 +139,22 @@ class ClienteApiController extends Controller
             }
         }
 
+        // 4. Lógica del Password
         if ($request->filled('password')) {
-            $validated['password'] = Hash::make($validated['password']);
+            $validated['password'] = Hash::make($request->password);
         } else {
+            // Importante: Eliminar password del array si no se va a cambiar
             unset($validated['password']);
         }
 
+        // 5. Actualizar el modelo
         $cliente->update($validated);
 
-        return $this->success(
-            $cliente,
-            'Cliente actualizado correctamente'
-        );
+        return response()->json([
+            'status' => 'success',
+            'data' => $cliente,
+            'message' => 'Cliente actualizado correctamente'
+        ], 200);
     }
 
     public function destroy(User $cliente): JsonResponse
