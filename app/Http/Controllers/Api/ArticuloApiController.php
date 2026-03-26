@@ -26,7 +26,7 @@ class ArticuloApiController extends Controller
 
         // paginación manual (se conserva tu lógica)
         $page = (int) $request->get('page', 1);
-        $perPage = 10;
+        $perPage = 50;
 
         $items = $articulosCollection
             ->slice(($page - 1) * $perPage, $perPage)
