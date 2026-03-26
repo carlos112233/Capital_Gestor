@@ -26,7 +26,7 @@ class ClienteApiController extends Controller
             ->values();
 
         $page = (int) $request->get('page', 1);
-        $perPage = 10;
+        $perPage = 50;
 
         $items = $clientesCollection
             ->slice(($page - 1) * $perPage, $perPage)
