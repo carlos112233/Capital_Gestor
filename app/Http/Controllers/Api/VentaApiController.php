@@ -18,7 +18,7 @@ class VentaApiController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $ventasQuery = Venta::with(['user', 'articulo'])->latest()->take(40);
+        $ventasQuery = Venta::with(['user', 'articulo'])->latest();
 
         if (!$user->hasRole('admin')) {
             $ventasQuery->where('user_id', $user->id);
@@ -32,7 +32,7 @@ class VentaApiController extends Controller
             });
         }
 
-        return $this->success($ventasQuery->get());
+        return $this->success($ventasQuery->limit(40)->get());
     }
 
     public function store(Request $request)

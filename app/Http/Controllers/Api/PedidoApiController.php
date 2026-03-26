@@ -31,7 +31,7 @@ class PedidoApiController extends Controller
             $query->where('user_id', $user->id);
         }
 
-        $pedidos = $query->paginate(15);
+        $pedidos = $query->limit(40)->get();
 
         return $this->success($pedidos);
     }
