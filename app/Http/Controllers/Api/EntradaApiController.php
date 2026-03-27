@@ -39,7 +39,7 @@ class EntradaApiController extends Controller
             });
         }
 
-        $entradas = $entradasQuery->paginate(15);
+        $entradas = $entradasQuery->limit(40)->get();
 
         return $this->success($entradas);
     }
