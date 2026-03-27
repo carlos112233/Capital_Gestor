@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Articulo;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -166,4 +167,20 @@ class ClienteApiController extends Controller
             'Cliente eliminado correctamente'
         );
     }
+
+
+  public function articuloCliente(Request $request): JsonResponse{
+    $articulos = Articulo::orderBy('nombre')->get();
+    $clientes = User::orderBy('name')->get();
+
+    $data = [
+        "clientes" => $clientes, 
+        "articulos" => $articulos
+    ];
+
+    // IMPORTANTE: Retornar la variable $data que contiene ambos
+    return $this->success($data); 
+
+  }
+
 }

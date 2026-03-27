@@ -27,12 +27,14 @@ Route::middleware('auth:sanctum')->name('api.')->group(function (){
     Route::post('catalogo/vender', [CatalogoApiController::class, 'vender']);
 
     Route::put('clientes/{cliente}',[ClienteApiController::class, 'update']);  
+    Route::post('articulos_cliente', [ClienteApiController::class, 'articuloCliente']);     
     // // Recursos (apiResource elimina create y edit)
     Route::apiResource('pedidos', PedidoApiController::class);
     Route::apiResource('ventas', VentaApiController::class);
      // --- RUTAS DE ADMIN (Protegidas por token + rol) ---
     Route::middleware('role:admin')->prefix('admin')->group(function () {  
-        Route::apiResource('clientes', ClienteApiController::class);      
+        Route::apiResource('clientes', ClienteApiController::class); 
+        Route::post('articulos_cliente', [ClienteApiController::class, 'articuloCliente']);     
         Route::apiResource('articulos', ArticuloApiController::class);
          Route::apiResource('entradas', EntradaApiController::class);
          Route::apiResource('pedidos', PedidoApiController::class);
