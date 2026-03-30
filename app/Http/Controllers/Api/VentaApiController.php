@@ -27,8 +27,8 @@ class VentaApiController extends Controller
         if ($request->filled('q')) {
             $search = $request->input('q');
             $ventasQuery->whereHas('user', function ($query) use ($search) {
-                // CAMBIO POSTGRES: 'ILIKE' para búsqueda insensible a mayúsculas y acentos
-                $query->where('name', 'SIMILAR TO', '%TREASURE%');
+                // ILIKE es específico de Postgres para búsquedas insensibles a mayúsculas
+                $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
             });
         }
 

@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Notification;
 
 class PedidoController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $user = Auth::user();
 
@@ -28,7 +28,12 @@ class PedidoController extends Controller
                 ->latest()
                 ->paginate(10);
         }
-
+        if ($request->filled('q')) {
+            $search = $request->input('q');
+            $query->whereHas('user', function ($query) use ($search) {
+               $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
+            });
+        }
         return view('pedidos.index', compact('pedidos'));
     }
 

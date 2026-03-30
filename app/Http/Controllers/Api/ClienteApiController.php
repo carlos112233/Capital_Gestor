@@ -20,7 +20,7 @@ class ClienteApiController extends Controller
     {
         $clientesCollection = User::latest()
             ->when($request->filled('q'), function ($query) use ($request) {
-                $query->where('name', 'like', '%' . $request->q . '%');
+                 $query->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($request->q) . '%']);
             })
             ->get()
             ->sortBy('name')

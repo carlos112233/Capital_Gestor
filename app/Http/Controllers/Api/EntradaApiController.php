@@ -35,7 +35,7 @@ class EntradaApiController extends Controller
         if ($request->filled('q')) {
             $search = $request->input('q');
             $entradasQuery->whereHas('user', function ($query) use ($search) {
-                $query->where('name', 'like', '%' . $search . '%');
+                $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
             });
         }
 

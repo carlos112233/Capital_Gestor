@@ -18,7 +18,7 @@ class ArticuloApiController extends Controller
     {
         $articulosCollection = Articulo::latest()
             ->when($request->filled('q'), function ($query) use ($request) {
-                $query->where('nombre', 'like', '%' . $request->q . '%');
+               $query->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($request->q) . '%']);
             })
             ->get()
             ->sortBy('nombre')

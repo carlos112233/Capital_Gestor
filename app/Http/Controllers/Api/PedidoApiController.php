@@ -21,7 +21,7 @@ class PedidoApiController extends Controller
     /**
      * Lista de pedidos (Admin ve todo, Usuario ve lo suyo)
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
@@ -29,6 +29,14 @@ class PedidoApiController extends Controller
 
         if (!$user->hasRole('admin')) {
             $query->where('user_id', $user->id);
+        }
+        
+
+          if ($request->filled('q')) {
+            $search = $request->input('q');
+            $query->whereHas('user', function ($query) use ($search) {
+               $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
+            });
         }
 
         $pedidos = $query->limit(40)->get();
