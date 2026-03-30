@@ -11,15 +11,17 @@ class DashboardApiController extends Controller
 {
     // Dashboard ADMIN
     public function admin(Request $request)
-    {   
+    {
         $query = User::query();
+
         if ($request->filled('q')) {
             $search = $request->input('q');
-            // Usamos whereRaw como pediste para asegurar la búsqueda en minúsculas
+            // Filtramos sobre la query inicial
             $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
         }
 
-        $resumen = User::withSum('ventas', 'total_venta')
+        // IMPORTANTE: Usamos $query, no User::
+        $resumen = $query->withSum('ventas', 'total_venta')
             ->withSum('entradas', 'precio_venta')
             ->get()
             ->map(function ($user) {
