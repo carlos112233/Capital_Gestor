@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Clue\Redis\Protocol\Model\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 class DashboardApiController extends Controller
 {
@@ -19,7 +19,7 @@ class DashboardApiController extends Controller
             $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
         }
 
-        $resumen = $query->withSum('ventas', 'total_venta')
+        $resumen = User::withSum('ventas', 'total_venta')
             ->withSum('entradas', 'precio_venta')
             ->get()
             ->map(function ($user) {
