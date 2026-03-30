@@ -4,14 +4,22 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Clue\Redis\Protocol\Model\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardApiController extends Controller
 {
     // Dashboard ADMIN
-    public function admin()
-    {
-        $resumen = User::withSum('ventas', 'total_venta')
+    public function admin(Request $request)
+    {   
+        $query = User::query();
+        if ($request->filled('q')) {
+            $search = $request->input('q');
+            // Usamos whereRaw como pediste para asegurar la búsqueda en minúsculas
+            $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
+        }
+
+        $resumen = $query->withSum('ventas', 'total_venta')
             ->withSum('entradas', 'precio_venta')
             ->get()
             ->map(function ($user) {
