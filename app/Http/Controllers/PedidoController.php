@@ -30,7 +30,7 @@ class PedidoController extends Controller
         }
         if ($request->filled('q')) {
             $search = $request->input('q');
-            $query->whereHas('user', function ($query) use ($search) {
+            $pedidos->whereHas('user', function ($query) use ($search) {
                $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
             });
         }
