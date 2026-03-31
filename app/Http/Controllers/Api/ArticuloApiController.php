@@ -103,7 +103,7 @@ class ArticuloApiController extends Controller
                 'nombre'      => 'required|string|max:255',
                 'descripcion' => 'nullable|string',
                 'precio'      => 'required|numeric|min:0',
-                'stock'       => 'required|integer|min:0',
+                'stock'       => 'required',
                 'img_base64'  => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ]);
 
