@@ -22,7 +22,7 @@ class EntradaApiController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        
+
         // Iniciamos la consulta con la relación del usuario
         $entradasQuery = Entrada::with(['user', 'articulo'])->latest();
 
@@ -50,6 +50,7 @@ class EntradaApiController extends Controller
     public function store(Request $request)
     {
         try {
+            // 1. Validación
             $validated = $request->validate([
                 'articulo_id'  => 'required|exists:articulos,id',
                 'cliente_id'   => 'nullable|exists:users,id',
@@ -57,10 +58,13 @@ class EntradaApiController extends Controller
                 'descripcion'  => 'nullable|string|max:1000',
             ]);
 
-            $entrada = DB::transaction(function () use ($validated) {
-                // Determinar a quién pertenece la entrada
-                $userId = Auth::user()->hasRole('admin') 
-                    ? ($validated['cliente_id'] ?? Auth::id()) 
+            // 2. Transacción y Creación
+            $entrada = DB::transaction(function () use ($validated, $request) {
+
+                // Determinar el ID del usuario: 
+                // Si es admin y envió cliente_id, usamos ese. Si no, el del usuario autenticado.
+                $userId = (Auth::user()->hasRole('admin') && $request->filled('cliente_id'))
+                    ? $validated['cliente_id']
                     : Auth::id();
 
                 return Entrada::create([
@@ -72,15 +76,18 @@ class EntradaApiController extends Controller
                 ]);
             });
 
+            // 3. Respuesta Exitosa
             return $this->success(
                 $entrada->load(['user', 'articulo']),
                 'Entrada de capital registrada con éxito.',
                 201
             );
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             return $this->error('Error de validación', 422, $e->errors());
         } catch (\Exception $e) {
+            // Loguear el error es buena práctica para debuguear
+            \Log::error("Error en EntradaController@store: " . $e->getMessage());
+
             return $this->error('Error al registrar la entrada: ' . $e->getMessage(), 500);
         }
     }
@@ -114,8 +121,8 @@ class EntradaApiController extends Controller
             ]);
 
             DB::transaction(function () use ($validated, $entrada) {
-                $userId = Auth::user()->hasRole('admin') 
-                    ? ($validated['cliente_id'] ?? $entrada->user_id) 
+                $userId = Auth::user()->hasRole('admin')
+                    ? ($validated['cliente_id'] ?? $entrada->user_id)
                     : Auth::id();
 
                 $entrada->update([
@@ -128,7 +135,6 @@ class EntradaApiController extends Controller
             });
 
             return $this->success($entrada->fresh(['user', 'articulo']), 'Entrada actualizada correctamente.');
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             return $this->error('Error de validación', 422, $e->errors());
         } catch (\Exception $e) {

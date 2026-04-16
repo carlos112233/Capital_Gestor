@@ -36,7 +36,7 @@ class EntradaController extends Controller
         if ($request->filled('q')) {
             $search = $request->input('q');
             $entradasQuery->whereHas('user', function ($query) use ($search) {
-               $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
+                $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
             });
         }
 
@@ -57,7 +57,7 @@ class EntradaController extends Controller
     {
         $articulos = Articulo::all();
         $users = User::orderBy('name', 'asc')->get();
-        return view('admin.entradas.create', compact( 'articulos', 'users'));
+        return view('admin.entradas.create', compact('articulos', 'users'));
     }
 
     /**
@@ -65,24 +65,32 @@ class EntradaController extends Controller
      */
     public function store(Request $request)
     {
-
+        // 1. Validar los datos
         $validated = $request->validate([
-            'cliente_id' => 'nullable|exists:users,id',
-            'articulo_id' => 'required|exists:articulos,id',
+            'cliente_id'   => 'nullable|exists:users,id',
+            'articulo_id'  => 'required|exists:articulos,id',
             'precio_venta' => 'required|integer',
-            'descripcion' => 'nullable|string|max:1000',
+            'descripcion'  => 'nullable|string|max:1000',
         ]);
 
+        // 2. Determinar el user_id de forma segura
+        // Si el usuario es admin y eligió un cliente, usamos ese ID.
+        // De lo contrario, usamos el ID del usuario que está logueado.
+        $userId = (Auth::user()->hasRole('admin') && $request->filled('cliente_id'))
+            ? $validated['cliente_id']
+            : Auth::id();
 
-        $fecha = Carbon::now();
-        $user = Auth::user();
-        $request->merge([
-            'fecha_generado' => $fecha,
-            'user_id' => Auth::user()->hasRole('admin') ? $validated['cliente_id'] : Auth::id(),
+        // 3. Crear el registro
+        // Es mejor pasar un array explícito que usar $request->all()
+        Entrada::create([
+            'articulo_id'    => $validated['articulo_id'],
+            'user_id'        => $userId,
+            'precio_venta'   => $validated['precio_venta'],
+            'descripcion'    => $validated['descripcion'],
+            'fecha_generado' => now(), // now() es un helper de Laravel para Carbon::now()
         ]);
 
-        Entrada::create($request->all());
-
+        // 4. Redireccionar
         return redirect()->route('admin.entradas.index')
             ->with('success', 'Entrada de capital registrada con éxito.');
     }
