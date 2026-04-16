@@ -124,7 +124,7 @@ class VentaController extends Controller
             }
 
             $articulos = Articulo::all();
-            $clientes  = User::orderBy('name', 'asc')->get();// si admin, puede cambiar el usuario
+            $clientes  = User::orderBy('name', 'asc')->get(); // si admin, puede cambiar el usuario
         } catch (\Exception $e) {
             \Log::critical("Error en Edit Venta: " . $e->getMessage());
             return redirect()->back()->with('error', 'Error en base de datos.');
@@ -133,33 +133,65 @@ class VentaController extends Controller
     }
 
     public function update(Request $request, Venta $venta)
-    {   try {
- if (!empty($p['id'])) {
-            // Actualizar pedido y su venta existente
-            $pedidoExistente = Pedido::find($p['id']);
-            $pedidoExistente->update([
-                'articulo_id' => $p['articulo_id'],
-                'descripcion' => $p['descripcion'] ?? '',
-                'costo'       => $total,
-                'cantidad'    => $p['cantidad'],
-                'user_id'     => $p['user_id'],
-            ]);
+    {
 
-            $pedidoExistente->venta()->update([
-                'articulo_id'  => $p['articulo_id'],
-                'cantidad'     => $p['cantidad'],
-                'precio_venta' => $p['costo'],
-                'total_venta'  => $total,
-                'user_id'     => $p['user_id'],
-                'descripcion'  => $p['descripcion'] ?? '',
-            ]);
+        try {
+            
+            if (!empty($p['id'])) {
+                // Actualizar pedido y su venta existente
+                $pedidoExistente = Pedido::find($p['id']);
+                $pedidoExistente->update([
+                    'articulo_id' => $p['articulo_id'],
+                    'descripcion' => $p['descripcion'] ?? '',
+                    'costo'       => $total,
+                    'cantidad'    => $p['cantidad'],
+                    'user_id'     => $p['user_id'],
+                ]);
+
+                $pedidoExistente->venta()->update([
+                    'articulo_id'  => $p['articulo_id'],
+                    'cantidad'     => $p['cantidad'],
+                    'precio_venta' => $p['costo'],
+                    'total_venta'  => $total,
+                    'user_id'     => $p['user_id'],
+                    'descripcion'  => $p['descripcion'] ?? '',
+                ]);
+            } elseif(!empty($venta['id'])) {
+               
+                // 1. Validar incluyendo el ID de la venta y usando los nombres correctos
+                $validated = $request->validate([
+                    'articulo_id'  => 'required|exists:articulos,id',
+                    'cantidad'     => 'required|integer|min:1',
+                    'cliente_id'   => 'nullable|exists:users,id',
+                    'precio_venta' => 'required|numeric|min:0', // Asegúrate que el input se llame así
+                    'descripcion'  => 'nullable|string',
+                ]);
+               
+                // 2. Determinar el usuario
+                $userId = (Auth::user()->hasRole('admin') && !empty($validated['cliente_id']))
+                    ? $validated['cliente_id']
+                    : Auth::id();
+
+                // 3. Buscar la venta
+                $venta = Venta::findOrFail($venta['id']);
+
+                // 4. Calcular total (usando el nombre de variable validado)
+                $total = $validated['cantidad'] * $validated['precio_venta'];
+                // 5. Actualizar
+                $venta->update([
+                    'articulo_id'  => $validated['articulo_id'],
+                    'cantidad'     => $validated['cantidad'],
+                    'precio_venta' => $validated['precio_venta'],
+                    'total_venta'  => $total,
+                    'user_id'      => $userId,
+                    'descripcion'  => $validated['descripcion'] ?? '',
+                ]);
+            }
+            return redirect()->route('catalogo.index')->with('success', '¡Venta se actualizo correctamente!');
+        } catch (\Exception $e) {
+            \Log::critical("Error en Update Venta: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Error en base de datos.');
         }
-          return redirect()->route('catalogo.index')->with('success', '¡Venta se actualizo correctamente!');
-    }    catch (\Exception $e) {
-        \Log::critical("Error en Update Venta: " . $e->getMessage());
-        return redirect()->back()->with('error', 'Error en base de datos.');    
-    }
-       
     }
 
     // ... resto de métodos con lógica similar
