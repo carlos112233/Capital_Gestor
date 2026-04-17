@@ -16,7 +16,7 @@ class ClienteController extends Controller
     {
         $clientesCollection = User::latest()
             ->when($request->filled('q'), function ($query) use ($request) {
-                $query->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($request->q) . '%']);
+                $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($request->q) . '%']);
             })
             ->get()
             ->sortBy('name')
