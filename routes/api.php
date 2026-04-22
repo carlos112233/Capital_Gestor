@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ArticuloApiController;
@@ -16,33 +17,35 @@ Route::post('/login', [AuthController::class, 'login']); // Ruta para obtener el
 
 
 // --- RUTAS PROTEGIDAS (Cualquier usuario autenticado) ---
-Route::middleware('auth:sanctum')->name('api.')->group(function (){
+Route::middleware('auth:sanctum')->name('api.')->group(function () {
     // Ahora esta ruta se llamará 'api.profile.edit'
     Route::get('/profile', [ProfileApiController::class, 'show']);
     Route::patch('/profile', [ProfileApiController::class, 'update']);
     Route::delete('/profile', [ProfileApiController::class, 'destroy']);
-    
+
     Route::get('/dashboard', [DashboardApiController::class, 'usuario']);
     Route::get('catalogo', [CatalogoApiController::class, 'index']);
     Route::post('catalogo/vender', [CatalogoApiController::class, 'vender']);
     Route::apiResource('entradas', EntradaApiController::class);
     Route::get('clientes', [ClienteApiController::class, 'index']);
-    Route::get('clientes/{cliente}',[ClienteApiController::class, 'show']); 
-    Route::put('clientes/{cliente}',[ClienteApiController::class, 'update']);  
-    Route::get('articulos_cliente', [ClienteApiController::class, 'articuloCliente']);     
+    Route::get('clientes/{cliente}', [ClienteApiController::class, 'show']);
+    Route::put('clientes/{cliente}', [ClienteApiController::class, 'update']);
+    Route::get('articulos_cliente', [ClienteApiController::class, 'articuloCliente']);
     // // Recursos (apiResource elimina create y edit)
     Route::apiResource('pedidos', PedidoApiController::class);
     Route::apiResource('ventas', VentaApiController::class);
-     // --- RUTAS DE ADMIN (Protegidas por token + rol) ---
-    Route::middleware('role:admin')->prefix('admin')->group(function () {  
-        Route::apiResource('clientes', ClienteApiController::class); 
-        Route::get('articulos_cliente', [ClienteApiController::class, 'articuloCliente']);     
+    // --- RUTAS DE ADMIN (Protegidas por token + rol) ---
+    Route::middleware('role:admin')->prefix('admin')->group(function () {
+        Route::apiResource('clientes', ClienteApiController::class);
+        Route::get('catalogo', [CatalogoApiController::class, 'index']);
+        Route::post('catalogo/vender', [CatalogoApiController::class, 'vender']);
+        Route::get('articulos_cliente', [ClienteApiController::class, 'articuloCliente']);
         Route::apiResource('articulos', ArticuloApiController::class);
-         Route::apiResource('entradas', EntradaApiController::class);
-         Route::apiResource('pedidos', PedidoApiController::class);
+        Route::apiResource('entradas', EntradaApiController::class);
+        Route::apiResource('pedidos', PedidoApiController::class);
         Route::get('dashboard', [DashboardApiController::class, 'admin']);
     });
-   
+
 
     // Ruta para cerrar sesión (revocar token)
     Route::post('/logout', [AuthController::class, 'logout']);
