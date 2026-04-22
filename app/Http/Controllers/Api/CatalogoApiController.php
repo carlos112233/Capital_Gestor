@@ -20,14 +20,22 @@ class CatalogoApiController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Articulo::where('nombre', '!=', 'Saldar pago')
+        // 1. Usamos query() para mayor claridad
+        $query = Articulo::query()
+            ->where('nombre', '!=', 'Saldar pago')
             ->where('stock', '>=', 1);
 
+        // 2. Ajuste para PostgreSQL: ILIKE
+        // En Postgres, 'like' es sensible a mayúsculas. 'ilike' es la versión rápida que ignora mayúsculas.
         if ($request->filled('q')) {
-            $query->where('nombre', 'like', '%' . $request->q . '%');
+            $query->where('nombre', 'ilike', '%' . $request->q . '%');
         }
 
-        $articulos = $query->get();
+        // 3. Ejecución ultra ligera y ordenada
+        $articulos = $query->select('id', 'nombre', 'precio', 'stock', 'imagen')
+            ->orderBy('nombre', 'asc') // Siempre ordena para que tu App se vea profesional
+            ->toBase() // Sigue usando esto, es genial para ahorrar los 512MB de RAM de Render
+            ->get();
 
         return $this->success($articulos);
     }

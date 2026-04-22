@@ -34,7 +34,7 @@ Route::middleware('auth:sanctum')->name('api.')->group(function (){
      // --- RUTAS DE ADMIN (Protegidas por token + rol) ---
     Route::middleware('role:admin')->prefix('admin')->group(function () {  
         Route::apiResource('clientes', ClienteApiController::class); 
-        Route::post('articulos_cliente', [ClienteApiController::class, 'articuloCliente']);     
+        Route::get('articulos_cliente', [ClienteApiController::class, 'articuloCliente']);     
         Route::apiResource('articulos', ArticuloApiController::class);
          Route::apiResource('entradas', EntradaApiController::class);
          Route::apiResource('pedidos', PedidoApiController::class);

@@ -18,31 +18,22 @@ class ClienteApiController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $clientesCollection = User::latest()
-            ->when($request->filled('q'), function ($query) use ($request) {
-                 $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($request->q) . '%']);
-            })
-            ->get()
-            ->sortBy('name')
-            ->values();
+        // 1. Iniciamos la consulta de Usuarios (Clientes)
+        $query = User::query();
 
-        $page = (int) $request->get('page', 1);
-        $perPage = 50;
+        // 2. Filtro de búsqueda optimizado para PostgreSQL (ILIKE)
+        if ($request->filled('q')) {
+            $query->where('name', 'ilike', '%' . $request->q . '%');
+        }
 
-        $items = $clientesCollection
-            ->slice(($page - 1) * $perPage, $perPage)
-            ->values();
-
-        $clientes = new LengthAwarePaginator(
-            $items,
-            $clientesCollection->count(),
-            $perPage,
-            $page,
-            [
-                'path'  => $request->url(),
-                'query' => $request->query()
-            ]
-        );
+        // 3. Ejecución eficiente:
+        // - select: Traemos solo lo necesario (id, name, email) para ahorrar RAM.
+        // - orderBy: Ordenamos directamente en la DB, mucho más rápido que sortBy() de PHP.
+        // - toBase: Convierte a objetos planos, ideal para no saturar los 512MB de Render.
+        $clientes = $query->select('id', 'name', 'email', 'created_at')
+            ->orderBy('name', 'asc')
+            ->toBase()
+            ->get();
 
         return $this->success($clientes);
     }
@@ -95,7 +86,7 @@ class ClienteApiController extends Controller
         return $this->success($cliente);
     }
 
- public function update(Request $request, User $cliente): JsonResponse
+    public function update(Request $request, User $cliente): JsonResponse
     {
         // 1. Normalizar el email
         $request->merge([
@@ -169,18 +160,25 @@ class ClienteApiController extends Controller
     }
 
 
-  public function articuloCliente(Request $request): JsonResponse{
-    $articulos = Articulo::orderBy('nombre')->get();
-    $clientes = User::orderBy('name')->get();
+    public function articuloCliente(Request $request): JsonResponse
+    {
+        // 1. Traemos solo las columnas necesarias. 
+        // IMPORTANTE: NO incluyas 'image' o 'img_base64' aquí.
+        $articulos = Articulo::select('id', 'nombre', 'stock', 'precio', 'descripcion')
+            ->orderBy('nombre')
+            ->toBase() // toBase es mucho más rápido para listas largas
+            ->get();
 
-    $data = [
-        "clientes" => $clientes, 
-        "articulos" => $articulos
-    ];
+        $clientes = User::select('id', 'name', 'email')
+            ->orderBy('name')
+            ->toBase()
+            ->get();
 
-    // IMPORTANTE: Retornar la variable $data que contiene ambos
-    return $this->success($data); 
+        $data = [
+            "clientes" => $clientes,
+            "articulos" => $articulos
+        ];
 
-  }
-
+        return $this->success($data);
+    }
 }

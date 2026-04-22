@@ -16,32 +16,19 @@ class ArticuloApiController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $articulosCollection = Articulo::latest()
-            ->when($request->filled('q'), function ($query) use ($request) {
-               $query->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($request->q) . '%']);
-            })
-            ->get()
-            ->sortBy('nombre')
-            ->values();
+        $query = Articulo::query()
+            ->where('nombre', '!=', 'Saldar pago')
+            ->where('stock', '>=', 1);
 
-        // paginación manual (se conserva tu lógica)
-        $page = (int) $request->get('page', 1);
-        $perPage = 50;
+        if ($request->filled('q')) {
+            $query->where('nombre', 'ilike', '%' . $request->q . '%');
+        }
 
-        $items = $articulosCollection
-            ->slice(($page - 1) * $perPage, $perPage)
-            ->values();
-
-        $articulos = new LengthAwarePaginator(
-            $items,
-            $articulosCollection->count(),
-            $perPage,
-            $page,
-            [
-                'path' => $request->url(),
-                'query' => $request->query()
-            ]
-        );
+        // Quitamos 'imagen' de aquí porque no existe en la tabla
+        $articulos = $query->select('id', 'nombre', 'precio', 'stock')
+            ->orderBy('nombre', 'asc')
+            ->toBase()
+            ->get();
 
         return $this->success($articulos);
     }
@@ -76,7 +63,6 @@ class ArticuloApiController extends Controller
                 'Artículo creado con éxito',
                 201
             );
-
         } catch (ValidationException $e) {
             return $this->error(
                 'Error de validación',
@@ -126,7 +112,6 @@ class ArticuloApiController extends Controller
                 $articulo,
                 'Artículo actualizado con éxito'
             );
-
         } catch (ValidationException $e) {
             return $this->error(
                 'Error de validación',
@@ -150,7 +135,6 @@ class ArticuloApiController extends Controller
                 null,
                 'Artículo eliminado con éxito'
             );
-
         } catch (\Exception $e) {
             return $this->error(
                 'Error al eliminar el artículo',

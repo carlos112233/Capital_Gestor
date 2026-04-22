@@ -25,25 +25,32 @@ class PedidoApiController extends Controller
     {
         $user = Auth::user();
 
-        $query = Pedido::with(['user', 'articulo', 'venta'])->latest();
+        // Cargamos solo las columnas necesarias para que el JSON sea idéntico al que Flutter espera
+        $query = Pedido::query()
+            ->with([
+                'user:id,name',
+                'articulo:id,nombre',
+                'venta:id'
+            ]);
 
+        // Filtro de seguridad
         if (!$user->hasRole('admin')) {
             $query->where('user_id', $user->id);
         }
-        
 
-          if ($request->filled('q')) {
+        // Búsqueda rápida con ILIKE (específico de Postgres)
+        if ($request->filled('q')) {
             $search = $request->input('q');
-            $query->whereHas('user', function ($query) use ($search) {
-               $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
+            $query->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'ILIKE', "%$search%");
             });
         }
 
-        $pedidos = $query->limit(40)->get();
+        // latest() usa created_at. limit(40) para no saturar la RAM de 512MB
+        $pedidos = $query->latest()->limit(40)->get();
 
         return $this->success($pedidos);
     }
-
     /**
      * Crear múltiples pedidos y ventas en una sola petición
      */
@@ -64,8 +71,8 @@ class PedidoApiController extends Controller
 
                 foreach ($request->pedidos as $p) {
                     // Determinar ID del usuario (Admin puede asignar a otros)
-                    $userId = Auth::user()->hasRole('admin') 
-                        ? ($p['user_id'] ?? Auth::id()) 
+                    $userId = Auth::user()->hasRole('admin')
+                        ? ($p['user_id'] ?? Auth::id())
                         : Auth::id();
 
                     $total = $p['costo'] * $p['cantidad'];
@@ -100,7 +107,6 @@ class PedidoApiController extends Controller
             });
 
             return $this->success($resultados, 'Pedidos y ventas creados correctamente.', 201);
-
         } catch (\Exception $e) {
             return $this->error('Error al procesar los pedidos: ' . $e->getMessage(), 500);
         }
@@ -148,7 +154,7 @@ class PedidoApiController extends Controller
 
                     if (!empty($p['id'])) {
                         $pedido = Pedido::findOrFail($p['id']);
-                        
+
                         // Seguridad básica
                         if (!Auth::user()->hasRole('admin') && $pedido->user_id != Auth::id()) continue;
 

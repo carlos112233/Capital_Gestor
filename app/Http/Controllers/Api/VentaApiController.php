@@ -18,21 +18,35 @@ class VentaApiController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $ventasQuery = Venta::with(['user', 'articulo'])->latest();
 
+        // 1. Cargamos solo lo necesario para no agotar los 512MB de RAM
+        $ventasQuery = Venta::query()
+            ->with([
+                'user:id,name',
+                'articulo:id,nombre,precio'
+            ]);
+
+        // 2. Filtro de seguridad
         if (!$user->hasRole('admin')) {
             $ventasQuery->where('user_id', $user->id);
         }
 
+        // 3. Búsqueda optimizada para POSTGRESQL
         if ($request->filled('q')) {
             $search = $request->input('q');
+
+            // RECUERDA: En Postgres usamos ILIKE directamente. 
+            // Es mucho más rápido que LOWER() porque permite usar índices.
             $ventasQuery->whereHas('user', function ($query) use ($search) {
-                // ILIKE es específico de Postgres para búsquedas insensibles a mayúsculas
-                $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
+                $query->where('name', 'ILIKE', "%$search%");
             });
         }
 
-        return $this->success($ventasQuery->limit(40)->get());
+        // 4. Aplicar límite y obtener resultados
+        // Usamos limit(40) para que la respuesta sea ligera.
+        $ventas = $ventasQuery->latest()->limit(40)->get();
+
+        return $this->success($ventas);
     }
 
     public function store(Request $request)
@@ -111,7 +125,7 @@ class VentaApiController extends Controller
                 // 2. Bloquear artículo nuevo y validar
                 $articuloNuevo = Articulo::lockForUpdate()->findOrFail($validated['articulo_id']);
                 $nuevaCantidad = (int) $validated['cantidad'];
-                
+
                 if ($articuloNuevo->stock < $nuevaCantidad) {
                     throw ValidationException::withMessages([
                         'cantidad' => "Stock insuficiente en el producto seleccionado. Disponible: {$articuloNuevo->stock}",
@@ -123,7 +137,7 @@ class VentaApiController extends Controller
 
                 // 4. Actualizar
                 $total = (float) ($articuloNuevo->precio * $nuevaCantidad);
-                
+
                 $venta->update([
                     'user_id'      => Auth::user()->hasRole('admin') ? ($validated['cliente_id'] ?? $venta->user_id) : $venta->user_id,
                     'articulo_id'  => $articuloNuevo->id,

@@ -23,23 +23,32 @@ class EntradaApiController extends Controller
     {
         $user = Auth::user();
 
-        // Iniciamos la consulta con la relación del usuario
-        $entradasQuery = Entrada::with(['user', 'articulo'])->latest();
+        // 1. Usamos 'query()' y limitamos las columnas para ahorrar RAM en Render
+        $entradasQuery = Entrada::query()
+            ->with([
+                'user:id,name',
+                'articulo:id,nombre,precio' // Solo trae lo que vas a mostrar
+            ]);
 
-        // Filtro de seguridad: Si no es admin, solo ve sus propias entradas
+        // 2. Filtro de seguridad
         if (!$user->hasRole('admin')) {
             $entradasQuery->where('user_id', $user->id);
         }
 
-        // Filtro por búsqueda (nombre de usuario)
+        // 3. Búsqueda optimizada para POSTGRESQL
         if ($request->filled('q')) {
             $search = $request->input('q');
+
+            // En Postgres, existe 'ILIKE', que es mucho más rápido que LOWER()
+            // porque permite a la DB usar índices si están bien configurados.
             $entradasQuery->whereHas('user', function ($query) use ($search) {
-                $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
+                $query->where('name', 'ILIKE', "%$search%");
             });
         }
 
-        $entradas = $entradasQuery->limit(40)->get();
+        // 4. Ordenar y limitar
+        // latest() en Postgres es rápido si tienes índice en created_at
+        $entradas = $entradasQuery->latest()->limit(40)->get();
 
         return $this->success($entradas);
     }
