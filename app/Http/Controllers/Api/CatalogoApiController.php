@@ -32,7 +32,7 @@ class CatalogoApiController extends Controller
         }
 
         // 3. Ejecución ultra ligera y ordenada
-        $articulos = $query->select('id', 'nombre', 'precio', 'stock', 'imagen')
+        $articulos = $query->select('id', 'nombre', 'precio', 'stock', 'img_base64')
             ->orderBy('nombre', 'asc') // Siempre ordena para que tu App se vea profesional
             ->toBase() // Sigue usando esto, es genial para ahorrar los 512MB de RAM de Render
             ->get();
