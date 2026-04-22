@@ -25,7 +25,9 @@ Route::middleware('auth:sanctum')->name('api.')->group(function (){
     Route::get('/dashboard', [DashboardApiController::class, 'usuario']);
     Route::get('catalogo', [CatalogoApiController::class, 'index']);
     Route::post('catalogo/vender', [CatalogoApiController::class, 'vender']);
-
+    Route::apiResource('entradas', EntradaApiController::class);
+    Route::get('clientes', [ClienteApiController::class, 'index']);
+    Route::get('clientes/{cliente}',[ClienteApiController::class, 'show']); 
     Route::put('clientes/{cliente}',[ClienteApiController::class, 'update']);  
     Route::get('articulos_cliente', [ClienteApiController::class, 'articuloCliente']);     
     // // Recursos (apiResource elimina create y edit)
