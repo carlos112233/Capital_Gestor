@@ -72,8 +72,7 @@
                                                         $mensaje =
                                                             'Hola ' .
                                                             $r->name .
-                                                            ", solo para informarte que tu saldo actual a cubrir es de $" .
-                                                            number_format($r->saldo, 2) .
+                                                            ", solo para informarte que tu saldo actual a cubrir es de $" .number_format($r->saldo, 2) 
                                                             ."\n si deseas más informacion el cobro de tu saldo, mandanos un mensaje.\n"
                                                             . "--------------------------\n"
                                                             . "*DATOS PARA PAGO:*\n\n"
