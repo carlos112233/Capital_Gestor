@@ -25,6 +25,9 @@
 
                             <span>Exportar</span>
                         </button>
+                         <button id="btn-envio-masivo" 
+                                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-900 transition shadow-md disabled:opacity-50">
+                            Enviar a WhatsApp masivamente</button>
                     </div>
 
                     <div class="overflow-x-auto">
@@ -40,6 +43,9 @@
                                     <th
                                         class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         WhatsApp</th>
+                                          <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">     
+                                        <input type="checkbox" id="select-all" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    </th>
                                 </tr>
 
                             </thead>
@@ -56,6 +62,7 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                                 @if ($r->telefono)
                                                     @php
+                                                    $urlWa = "#";
                                                         // 1. Quitamos espacios, guiones o paréntesis que pueda tener el número
                                                         $soloNumeros = preg_replace('/[^0-9]/', '', $r->telefono);
 
@@ -85,14 +92,10 @@
                                                             . "Favor de enviar el comprobante a este número.";
 
                                                         // 4. Codificamos el mensaje para URL
-                                                        $urlWhatsapp =
-                                                            'https://wa.me/' .
-                                                            $telefonoFinal .
-                                                            '?text=' .
-                                                            urlencode($mensaje);
+                                                            $urlWa = "https://wa.me/" . $telefonoFinal . "?text=" . urlencode($mensaje);
                                                     @endphp
 
-                                                    <a href="{{ $urlWhatsapp }}" target="_blank"
+                                                    <a href="{{ $urlWa }}" target="_blank"
                                                         class="inline-flex items-center justify-center w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-full transition-colors shadow-md"
                                                         title="Enviar WhatsApp">
                                                         <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px"
@@ -114,10 +117,14 @@
                                                                 clip-rule="evenodd"></path>
                                                         </svg>
                                                     </a>
+                                                    
                                                 @else
                                                     <span class="text-gray-400 text-xs italic">Sin cel.</span>
                                                 @endif
                                             </td>
+                                            <td
+                                                class="px-6 py-4 whitespace-nowrap text-center">  <input type="checkbox" class="cliente-checkbox  rounded border-gray-300 text-indigo-600 shadow-sm" 
+                                                       data-url="{{ $urlWa }}"></td>
                                         </tr>
                                     @elseif($r->saldo < 0)
                                         <tr>
@@ -146,7 +153,7 @@
                                     <td class="px-6 py-4 text-right text-green-600">
                                         ${{ number_format($totalSaldo, 2) }}
                                     </td>
-                                    <td colspan="1" class="px-6 py-4 text-right"></td>
+                                    <td colspan="2" class="px-6 py-4 text-right"></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -261,6 +268,87 @@
                 const text = cell.textContent.toLowerCase();
                 row.style.display = text.includes(filter) ? '' : 'none';
             });
+        });
+    });
+
+
+     // --- 2. LÓGICA DE BUSCADOR, SELECCIÓN Y ENVÍO MASIVO ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputBusqueda = document.getElementById('search');
+        const selectAll = document.getElementById('select-all');
+        const checkboxes = document.querySelectorAll('.cliente-checkbox');
+        const btnMasivo = document.getElementById('btn-envio-masivo');
+        const countSpan = document.getElementById('count-selected');
+        const tableBody = document.querySelector('table tbody');
+
+        // A. Buscador en tiempo real
+        inputBusqueda.addEventListener('input', function() {
+            const filter = this.value.toLowerCase();
+            const rows = tableBody.querySelectorAll('tr');
+
+            rows.forEach(row => {
+                const cellCliente = row.querySelector('td:nth-child(2)');
+                if (cellCliente) {
+                    const text = cellCliente.textContent.toLowerCase();
+                    row.style.display = text.includes(filter) ? '' : 'none';
+                    // Desmarcar si se oculta
+                    if (row.style.display === 'none') {
+                        const cb = row.querySelector('.cliente-checkbox');
+                        if (cb) cb.checked = false;
+                    }
+                }
+            });
+            actualizarContador();
+        });
+
+        // B. Seleccionar Todos
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(cb => {
+                // Solo seleccionar los que están visibles en el filtro
+                if (cb.closest('tr').style.display !== 'none') {
+                    cb.checked = selectAll.checked;
+                }
+            });
+            actualizarContador();
+        });
+
+        // C. Actualizar contador al marcar individualmente
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', actualizarContador);
+        });
+
+        function actualizarContador() {
+            const seleccionados = document.querySelectorAll('.cliente-checkbox:checked').length;
+            countSpan.innerText = seleccionados;
+            btnMasivo.disabled = (seleccionados === 0);
+        }
+
+        // D. PROCESO DE ENVÍO MASIVO (CON RETRASO)
+        btnMasivo.addEventListener('click', async function() {
+            const seleccionados = document.querySelectorAll('.cliente-checkbox:checked');
+            
+            if (!confirm(`Se abrirán ${seleccionados.length} pestañas de WhatsApp. ¿Deseas continuar?`)) {
+                return;
+            }
+
+            btnMasivo.disabled = true;
+            const originalText = btnMasivo.innerHTML;
+
+            for (let i = 0; i < seleccionados.length; i++) {
+                const url = seleccionados[i].getAttribute('data-url');
+                
+                btnMasivo.innerHTML = `Enviando ${i + 1} de ${seleccionados.length}...`;
+                
+                // Abrir pestaña de WhatsApp
+                window.open(url, '_blank');
+
+                // Esperar 2.5 segundos antes del siguiente para evitar bloqueo del navegador
+                await new Promise(resolve => setTimeout(resolve, 2500));
+            }
+
+            btnMasivo.disabled = false;
+            btnMasivo.innerHTML = originalText;
+            alert('Proceso completado. Recuerda dar clic en "Enviar" en cada pestaña abierta.');
         });
     });
 </script>
