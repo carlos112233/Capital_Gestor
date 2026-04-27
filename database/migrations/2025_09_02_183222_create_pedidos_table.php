@@ -19,6 +19,8 @@ return new class extends Migration
             $table->decimal('costo', 10, 2);
             $table->foreignId('venta_id')->nullable()->constrained()->onDelete('set null'); // relación con la venta
             $table->timestamps();
+            $table->index('user_id');
+            $table->index('created_at');
         });
     }
 

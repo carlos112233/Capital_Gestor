@@ -14,26 +14,20 @@ class ClienteController extends Controller
 {
     public function index(Request $request)
     {
-        $clientesCollection = User::latest()
+        // 1. Optimización: Paginamos directamente en la base de datos (PostgreSQL)
+        $clientes = User::query()
             ->when($request->filled('q'), function ($query) use ($request) {
-                $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($request->q) . '%']);
+                $search = '%' . strtolower($request->q) . '%';
+                // Buscamos por nombre, email o el nuevo campo telefono
+                $query->where(function($q) use ($search) {
+                    $q->where('name', 'ilike', $search)
+                      ->orWhere('email', 'ilike', $search)
+                      ->orWhere('telefono', 'ilike', $search);
+                });
             })
-            ->get()
-            ->sortBy('name')
-            ->values();
-
-        // paginación manual
-        $page = request()->get('page', 1);
-        $perPage = 10;
-        $items = $clientesCollection->slice(($page - 1) * $perPage, $perPage)->all();
-
-        $clientes = new LengthAwarePaginator(
-            $items,
-            $clientesCollection->count(),
-            $perPage,
-            $page,
-            ['path' => request()->url(), 'query' => request()->query()]
-        );
+            ->orderBy('name', 'asc')
+            ->paginate(10) // Laravel hace el trabajo sucio por ti
+            ->withQueryString(); // Mantiene los filtros al cambiar de página
 
         if ($request->ajax()) {
             return view('admin.clientes._tabla', compact('clientes'))->render();
@@ -42,76 +36,71 @@ class ClienteController extends Controller
         return view('admin.clientes.index', compact('clientes'));
     }
 
-
     public function create()
     {
         return view('admin.clientes.create');
     }
-    /**
-     * Crear un nuevo usuario.
-     */
+
     public function store(Request $request)
     {
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users',
+            'email'    => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:6',
-            'img_base64' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'telefono' => 'nullable|string|max:20', // Nuevo campo
+            'image'    => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
+        // Manejo de Imagen
         if ($request->hasFile('image')) {
-            // Obtiene el contenido binario del archivo
-            $imagenBinaria = file_get_contents($request->file('image')->getRealPath());
-            $imagen_tipo = $request->file('image')->getMimeType();
-
-            // Lo convierte a Base64
-            $base64 = base64_encode($imagenBinaria);
-
-            $request->merge([
-                'image' => $base64,
-                'image_tipo' => $imagen_tipo,
-            ]);
+            $file = $request->file('image');
+            $validated['image'] = base64_encode(file_get_contents($file->getRealPath()));
+            $validated['image_tipo'] = $file->getMimeType();
         }
-        // Laravel encripta automáticamente la contraseña por el cast
+
+        $validated['password'] = Hash::make($validated['password']);
+
         User::create($validated);
 
         return redirect()->route('admin.clientes.index')
             ->with('success', 'Usuario creado correctamente.');
     }
 
-    /**
-     * Actualizar un usuario existente.
-     */
+    public function edit($id)
+    {
+        $cliente = User::findOrFail($id);
+        return view('admin.clientes.edit', compact('cliente'));
+    }
+
     public function update(Request $request, User $cliente)
     {
-        // Normalizar email
         $request->merge([
             'email' => trim(strtolower($request->email)),
         ]);
 
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
-            'img_base64' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'email'    => [
-                'required',
-                'string',
-                'email',
+                'required', 'string', 'email', 'max:255',
                 Rule::unique('users')->ignore($cliente->id),
             ],
+            'telefono' => 'nullable|string|max:20', // Nuevo campo
             'password' => 'nullable|string|min:8',
+            'image'    => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        // Si viene un archivo (desde la Web)
+        // Manejo de Imagen
         if ($request->hasFile('image')) {
             $file = $request->file('image');
             $validated['image'] = base64_encode(file_get_contents($file->getRealPath()));
-            // Si tienes la columna image_tipo en tu DB, agrégala al validated
             $validated['image_tipo'] = $file->getMimeType();
         }
-        if (!$request->filled('password')) {
-            unset($validated['password']);
+
+        // Manejo de Password
+        if ($request->filled('password')) {
+            $validated['password'] = Hash::make($validated['password']);
         } else {
-            $validated['password'] = bcrypt($validated['password']);
+            unset($validated['password']);
         }
 
         $cliente->update($validated);
@@ -120,20 +109,9 @@ class ClienteController extends Controller
             ->with('success', 'Usuario actualizado correctamente.');
     }
 
-
-    public function edit($id)
+    public function destroy(User $cliente)
     {
-        $cliente = User::findOrFail($id);
-        return view('admin.clientes.edit', compact('cliente'));
-    }
-
-    /**
-     * Eliminar un usuario.
-     */
-    public function destroy(User $user)
-    {
-        $user->delete();
-
+        $cliente->delete();
         return redirect()->route('admin.clientes.index')
             ->with('success', 'Usuario eliminado correctamente.');
     }

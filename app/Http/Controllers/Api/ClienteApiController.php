@@ -18,19 +18,15 @@ class ClienteApiController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        // 1. Iniciamos la consulta de Usuarios (Clientes)
         $query = User::query();
 
-        // 2. Filtro de búsqueda optimizado para PostgreSQL (ILIKE)
         if ($request->filled('q')) {
-            $query->where('name', 'ilike', '%' . $request->q . '%');
+            $query->where('name', 'ilike', '%' . $request->q . '%')
+                  ->orWhere('telefono', 'ilike', '%' . $request->q . '%'); // Ahora busca también por teléfono
         }
 
-        // 3. Ejecución eficiente:
-        // - select: Traemos solo lo necesario (id, name, email) para ahorrar RAM.
-        // - orderBy: Ordenamos directamente en la DB, mucho más rápido que sortBy() de PHP.
-        // - toBase: Convierte a objetos planos, ideal para no saturar los 512MB de Render.
-        $clientes = $query->select('id', 'name', 'email', 'created_at')
+        // Agregamos 'telefono' al select
+        $clientes = $query->select('id', 'name', 'email', 'telefono', 'created_at')
             ->orderBy('name', 'asc')
             ->toBase()
             ->get();
@@ -41,144 +37,101 @@ class ClienteApiController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users,email',
-            'password' => 'required|string|min:6',
-            'image_tipo' => 'nullable|string', // Validamos que sea un string (el base64)
+            'name'       => 'required|string|max:255',
+            'email'      => 'required|string|email|max:255|unique:users,email',
+            'password'   => 'required|string|min:6',
+            'telefono'   => 'nullable|string|max:20', // Validamos el teléfono
+            'image_tipo' => 'nullable|string',
         ]);
+
+        // Lógica de Imagen Base64
         if ($request->filled('image')) {
             $imageData = $request->image;
-
-            // 1. Si el base64 viene con el encabezado "data:image/png;base64,..."
             if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
-                // Extraer el contenido puro sin el encabezado
                 $imageData = substr($imageData, strpos($imageData, ',') + 1);
                 $validated['image'] = $imageData;
                 $validated['image_tipo'] = "image/" . strtolower($type[1]);
             } else {
-                // 2. Si es un base64 puro, usamos el image_tipo enviado desde Flutter
                 $validated['image'] = $imageData;
-
-                if ($request->filled('image_tipo')) {
-                    $validated['image_tipo'] = $request->image_tipo;
-                } else {
-                    // 3. Si no hay nada, intentamos detectar por los primeros bytes del base64
-                    $decoded = base64_decode($imageData);
-                    $f = finfo_open();
-                    $validated['image_tipo'] = finfo_buffer($f, $decoded, FILEINFO_MIME_TYPE);
-                    finfo_close($f);
-                }
+                $validated['image_tipo'] = $request->image_tipo ?? 'image/jpeg';
             }
         }
+
         $validated['password'] = Hash::make($validated['password']);
 
         $cliente = User::create($validated);
 
-        return $this->success(
-            $cliente,
-            'Cliente creado correctamente',
-            201
-        );
+        return $this->success($cliente, 'Cliente creado correctamente', 201);
     }
 
     public function show(User $cliente): JsonResponse
     {
+        // El objeto $cliente ya incluye el teléfono automáticamente si está en el modelo
         return $this->success($cliente);
     }
 
     public function update(Request $request, User $cliente): JsonResponse
     {
-        // 1. Normalizar el email
         $request->merge([
             'email' => trim(strtolower($request->email)),
         ]);
 
-        // 2. Validar (Usando el ID del objeto $cliente que Laravel ya cargó)
         $validated = $request->validate([
-            'name'  => 'required|string|max:255',
-            'image_tipo' => 'nullable|string',
-            'email' => [
-                'required',
-                'string',
-                'email',
-                'max:255',
-                // Esta es la clave: ignora el ID del cliente actual
+            'name'     => 'required|string|max:255',
+            'telefono' => 'nullable|string|max:20', // Validamos el teléfono en el update
+            'email'    => [
+                'required', 'string', 'email', 'max:255',
                 Rule::unique('users', 'email')->ignore($cliente->id),
             ],
             'password' => 'nullable|string|min:8',
         ]);
 
-        // 3. Lógica de la imagen (Base64)
+        // Lógica de Imagen Base64 (simplificada para legibilidad)
         if ($request->filled('image')) {
             $imageData = $request->image;
-
-            // Si trae encabezado data:image/...
             if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
                 $imageData = substr($imageData, strpos($imageData, ',') + 1);
                 $validated['image'] = $imageData;
                 $validated['image_tipo'] = "image/" . strtolower($type[1]);
             } else {
-                // Si es base64 puro
                 $validated['image'] = $imageData;
-                if ($request->filled('image_tipo')) {
-                    $validated['image_tipo'] = $request->image_tipo;
-                } else {
-                    $decoded = base64_decode($imageData);
-                    $f = finfo_open();
-                    $validated['image_tipo'] = finfo_buffer($f, $decoded, FILEINFO_MIME_TYPE);
-                    finfo_close($f);
-                }
+                $validated['image_tipo'] = $request->image_tipo ?? $cliente->image_tipo;
             }
         }
 
-        // 4. Lógica del Password
         if ($request->filled('password')) {
             $validated['password'] = Hash::make($request->password);
         } else {
-            // Importante: Eliminar password del array si no se va a cambiar
             unset($validated['password']);
         }
 
-        // 5. Actualizar el modelo
         $cliente->update($validated);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $cliente,
-            'message' => 'Cliente actualizado correctamente'
-        ], 200);
+        return $this->success($cliente, 'Cliente actualizado correctamente');
     }
 
     public function destroy(User $cliente): JsonResponse
     {
         $cliente->delete();
-
-        return $this->success(
-            null,
-            'Cliente eliminado correctamente'
-        );
+        return $this->success(null, 'Cliente eliminado correctamente');
     }
-
 
     public function articuloCliente(Request $request): JsonResponse
     {
-        // 1. Traemos solo las columnas necesarias. 
-        // IMPORTANTE: NO incluyas 'image' o 'img_base64' aquí.
         $articulos = Articulo::select('id', 'nombre', 'stock', 'precio', 'descripcion')
             ->orderBy('nombre')
-            ->toBase() // toBase es mucho más rápido para listas largas
+            ->toBase()
             ->get();
 
-        $clientes = User::select('id', 'name', 'email')
+        // Agregamos 'telefono' también aquí para que Flutter lo tenga disponible
+        $clientes = User::select('id', 'name', 'email', 'telefono')
             ->orderBy('name')
             ->toBase()
             ->get();
 
-        $data = [
+        return $this->success([
             "clientes" => $clientes,
             "articulos" => $articulos
-        ];
-
-        return $this->success($data);
+        ]);
     }
 }

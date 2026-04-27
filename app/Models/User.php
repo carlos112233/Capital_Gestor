@@ -25,7 +25,8 @@ class User extends Authenticatable
         'email',
         'password',
         'image',
-        'image_tipo', // Agregado para el Base64
+        'image_tipo',
+        'telefono', // Agregado para el Base64
     ];
 
     /**

@@ -4,6 +4,8 @@
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">ID</th>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Usuario
             </th>
+            <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Telefono
+            </th>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Email</th>
             {{-- <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Telefono</th> --}}
             {{-- <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Direccion</th> --}}
@@ -16,6 +18,8 @@
                     {{ $cliente->id }}</td>
                 <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                     {{ $cliente->name }}</td>
+                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
+                    {{ $cliente->telefono }}</td>
                 <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-gray-900">
                     {{ $cliente->email }}</td>
                 {{-- <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $cliente->telefono }}</td>
