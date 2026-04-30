@@ -11,8 +11,8 @@ use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\TransferenciaController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\DashboardController;
-use Illuminate\Support\Facades\Artisan;
-
+use App\Notifications\GeneralNotification;
+use Illuminate\Support\Facades\Http;
 
 Route::get('/', [AuthenticatedSessionController::class, 'create'])
     ->name('session');
@@ -22,6 +22,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     // Todas las rutas dentro de este grupo requerirán que el usuario esté autenticado
     // Y que tenga el rol de 'admin'
     Route::get('dashboardAdmin', [DashboardController::class, 'indexAdmin'])
+        ->name('dashboardAdmin');
+
+        Route::get('dashboardAdmin', [DashboardController::class, 'indexAdmin'])
         ->name('dashboardAdmin');
 });
 
@@ -48,6 +51,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('articulos', ArticuloController::class);
         Route::resource('entradas', EntradaController::class);
         Route::resource('pedidos', PedidoController::class);
+          Route::post('enviar-masivo', [DashboardController::class, 'enviarRecordatoriosMasivos'])->name('enviar.masivo');
     });
 });
 
@@ -60,4 +64,28 @@ Route::get('/descargar-log-secreto', function () {
     }
 
     return "El archivo de log aún no existe o está vacío.";
+});
+
+
+
+Route::get('/enviar-alerta', function () {
+    // Simulamos un usuario o usamos el sistema de notificaciones
+    \Illuminate\Support\Facades\Notification::route('broadcast', 'canal-publico')
+        ->notify(new GeneralNotification("Prueba Laravel 12", "¡Esto funciona!"));
+
+    return "Notificación enviada.";
+});
+
+Route::get('/test-notif', function () {
+    // 1. Elige un nombre de canal único (ej. "canal_marcos_123")
+    $topic |= "canal_marcos_123"; 
+
+    // 2. Enviamos la petición a ntfy.sh
+    $response = Http::withHeaders([
+        'Title' => 'Prueba Local',
+        'Priority' => 'high',
+        'Tags' => 'tada,iphone'
+    ])->post("https://ntfy.sh/$topic", "¡Si lees esto, Laravel y ntfy funcionan!");
+
+    return $response->ok() ? "Enviado correctamente" : "Error al enviar";
 });

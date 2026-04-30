@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth; // <-- Importante
+use App\Jobs\SendWhatsAppJob;
 
 class DashboardController extends Controller
 {
@@ -69,5 +70,51 @@ class DashboardController extends Controller
             // o si prefieres directo:
             // return redirect()->route('dashboardAdmin');
         }
+    }
+
+    public function enviarRecordatoriosMasivos(Request $request)
+    {
+        $userIds = $request->input('user_ids');
+
+        // 1. Log corregido (Este ya lo habías arreglado)
+        \Log::info('Petición masiva recibida.', ['ids' => $userIds]);
+
+        if (!$userIds || !is_array($userIds)) {
+            return response()->json(['message' => 'No se seleccionaron usuarios válidos.'], 400);
+        }
+
+        $usuarios = User::whereIn('id', $userIds)->get();
+        $retraso = 0;
+
+        foreach ($usuarios as $user) {
+            if (!$user->telefono) continue;
+
+            $totalDeuda = $user->ventas()->sum('total_venta') ?? 0;
+            $totalPagado = $user->entradas()->sum('precio_venta') ?? 0;
+            $saldo = $totalDeuda - $totalPagado;
+
+            $mensaje = "Hola " . $user->name . ", solo para informarte que tu saldo actual a cubrir es de *$" .
+                number_format($saldo, 2) .
+                "*\n si deseas más informacion el cobro de tu saldo, mandanos un mensaje.\n" .
+                "--------------------------\n" .
+                "*DATOS PARA PAGO:*\n\n" .
+                "*BBVA:*\n" .
+                "Cuenta: *158 086 7512*\n" .
+                "CLABE: *012 650 01580867512 5*\n\n" .
+                "*Mercado Pago:*\n" .
+                "CLABE: *722969010384935035*\n\n" .
+                "--------------------------\n" .
+                'Favor de enviar el comprobante a este número.';
+
+            // 2. CORRECCIÓN AQUÍ: El nombre del usuario debe ir dentro de un array []
+            \Log::info('Procesando usuario para WhatsApp:', ['usuario' => $user->name]);
+
+            // Despachamos el trabajo
+            SendWhatsAppJob::dispatch($user, $mensaje)->delay(now()->addSeconds($retraso));
+
+            $retraso += 15;
+        }
+
+        return response()->json(['message' => 'Se están enviando ' . count($usuarios) . ' mensajes.']);
     }
 }

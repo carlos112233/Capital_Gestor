@@ -1,12 +1,12 @@
 # Usamos una imagen oficial de PHP con Apache
-FROM php:8.2-apache
+FROM php:8.3-apache
 
 # Instalar dependencias del sistema y extensiones de PHP para Postgres y Node
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     unzip \
     curl \
-    && docker-php-ext-install pdo pdo_pgsql
+    && docker-php-ext-install pdo pdo_pgsql pcntl
 
 # Instalar Node.js (necesario para Vite/npm)
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
@@ -45,5 +45,12 @@ RUN a2enmod rewrite
 # Dar permisos a las carpetas de almacenamiento
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Exponer el puerto 80
-EXPOSE 80
+# 3. Crear un script de inicio (esto es clave para correr Apache y Reverb juntos)
+COPY docker-start.sh /usr/local/bin/docker-start.sh
+RUN chmod +x /usr/local/bin/docker-start.sh
+
+# Exponer el puerto 80 (web) y el 8080 (Websockets de Reverb)
+EXPOSE 80 8080
+
+# Usar el script de inicio
+CMD ["/usr/local/bin/docker-start.sh"]
