@@ -6,7 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Pagination\LengthAwarePaginator;
-
+use Illuminate\Support\Facades\Hash;
 use function PHPUnit\Framework\isEmpty;
 use function PHPUnit\Framework\isNull;
 

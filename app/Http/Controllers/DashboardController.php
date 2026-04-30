@@ -75,12 +75,10 @@ class DashboardController extends Controller
     public function enviarRecordatoriosMasivos(Request $request)
     {
         $userIds = $request->input('user_ids');
-
-        // 1. Log corregido (Este ya lo habías arreglado)
-        \Log::info('Petición masiva recibida.', ['ids' => $userIds]);
+        $ajustes = $request->input('ajustes', []); // Recibimos el array de ajustes [id => monto]
 
         if (!$userIds || !is_array($userIds)) {
-            return response()->json(['message' => 'No se seleccionaron usuarios válidos.'], 400);
+            return response()->json(['message' => 'No seleccionaste usuarios.'], 400);
         }
 
         $usuarios = User::whereIn('id', $userIds)->get();
@@ -89,32 +87,26 @@ class DashboardController extends Controller
         foreach ($usuarios as $user) {
             if (!$user->telefono) continue;
 
+            // 1. Saldo original de la BD
             $totalDeuda = $user->ventas()->sum('total_venta') ?? 0;
             $totalPagado = $user->entradas()->sum('precio_venta') ?? 0;
-            $saldo = $totalDeuda - $totalPagado;
+            $saldoOriginal = $totalDeuda - $totalPagado;
 
-            $mensaje = "Hola " . $user->name . ", solo para informarte que tu saldo actual a cubrir es de *$" .
-                number_format($saldo, 2) .
-                "*\n si deseas más informacion el cobro de tu saldo, mandanos un mensaje.\n" .
-                "--------------------------\n" .
-                "*DATOS PARA PAGO:*\n\n" .
-                "*BBVA:*\n" .
-                "Cuenta: *158 086 7512*\n" .
-                "CLABE: *012 650 01580867512 5*\n\n" .
-                "*Mercado Pago:*\n" .
-                "CLABE: *722969010384935035*\n\n" .
-                "--------------------------\n" .
-                'Favor de enviar el comprobante a este número.';
+            // 2. Aplicar ajuste temporal (solo para el mensaje)
+            $montoAjuste = isset($ajustes[$user->id]) ? (float)$ajustes[$user->id] : 0;
+            $saldoParaMensaje = $saldoOriginal - $montoAjuste;
 
-            // 2. CORRECCIÓN AQUÍ: El nombre del usuario debe ir dentro de un array []
-            \Log::info('Procesando usuario para WhatsApp:', ['usuario' => $user->name]);
-
-            // Despachamos el trabajo
+            // 3. Crear mensaje con el nuevo saldo
+            $mensaje = "Hola *" . $user->name . "*, le saludamos de *Gestor Capital*.\n\n"
+                . "Le informamos que su saldo actual a cubrir es de: *$" . number_format($saldoParaMensaje, 2) . "*\n\n"
+                . "*DATOS PARA PAGO:*\n"
+                . "BBVA: *158 086 7512*\n"
+                . "Mercado Pago: *722969010384935035*";
+            \Log::info($mensaje);
             SendWhatsAppJob::dispatch($user, $mensaje)->delay(now()->addSeconds($retraso));
-
             $retraso += 15;
         }
 
-        return response()->json(['message' => 'Se están enviando ' . count($usuarios) . ' mensajes.']);
+        return response()->json(['message' => 'Mensajes encolados con saldos ajustados.']);
     }
 }

@@ -50,18 +50,34 @@ class SendWhatsAppJob implements ShouldQueue
             $browser = new Browser($driver);
 
             $numero = preg_replace('/[^0-9]/', '', $this->user->telefono);
-            if(strlen($numero) == 10) $numero = '52' . $numero;
+            if (strlen($numero) == 10) $numero = '52' . $numero;
 
             $browser->visit("https://web.whatsapp.com/send?phone=$numero&text=" . urlencode($this->mensaje));
-
+            // ... después de visitar la URL
             $inputSelector = 'div[contenteditable="true"]';
             $browser->waitFor($inputSelector, 45);
+
+            // 1. Forzar clic para dar foco
+            $browser->click($inputSelector);
+            $browser->pause(2000); // Esperar 2 segundos a que el cursor parpadee
+
+            // 2. Escribir un espacio o asegurar que el texto está ahí
+            // A veces el texto de la URL no se pega bien, esto asegura que haya algo
+            $browser->keys($inputSelector, " ");
+            $browser->pause(1000);
+
+            // 3. Presionar ENTER
             $browser->keys($inputSelector, \Facebook\WebDriver\WebDriverKeys::ENTER);
-            
-            sleep(3); // Pausa para que el mensaje salga
+
+            // 4. AUMENTAR EL TIEMPO DE ESPERA FINAL
+            // Si el servidor es lento, necesita tiempo para subir el mensaje
+             \Log::info("Esperando que el mensaje salga del servidor...");
+            sleep(8);
+            $browser->keys($inputSelector, \Facebook\WebDriver\WebDriverKeys::ENTER);
+
+            sleep(5); // Pausa para que el mensaje salga
 
             \Log::info("✅ WhatsApp enviado desde la web a: " . $this->user->name);
-
         } catch (\Exception $e) {
             \Log::error("❌ Error enviando desde la web a {$this->user->name}: " . $e->getMessage());
         } finally {

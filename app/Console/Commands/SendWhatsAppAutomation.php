@@ -45,6 +45,8 @@ class SendWhatsAppAutomation extends Command
             // 1. Entrar a la URL
             $url = "https://web.whatsapp.com/send?phone=$numero&text=" . urlencode($mensaje);
             $browser->visit($url);
+            $this->info("Esperando confirmación de envío...");
+            sleep(5); 
 
             $this->warn("⚠️  Asegúrate de haber escaneado el QR. Esperando carga del chat...");
 

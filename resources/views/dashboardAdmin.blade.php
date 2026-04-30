@@ -64,6 +64,9 @@
                                         WhatsApp</th>
                                     <th
                                         class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Ajuste temp.</th>
+                                    <th
+                                        class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         <input type="checkbox" id="select-all"
                                             class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                                     </th>
@@ -147,10 +150,17 @@
                                                     <span class="text-gray-400 text-xs italic">Sin cel.</span>
                                                 @endif
                                             </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                <div class="flex items-center justify-center">
+                                                    <span class="text-gray-500 mr-1">$</span>
+                                                    <input type="number"
+                                                        class="input-ajuste w-20 h-8 text-sm border-gray-300 rounded-md focus:ring-indigo-500"
+                                                        placeholder="0.00" step="0.01" data-id="{{ $r->id }}">
+                                                </div>
+                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-center"> <input type="checkbox"
                                                     class="cliente-checkbox  rounded border-gray-300 text-indigo-600 shadow-sm"
-                                                    data-id="{{ $r->id }}" 
-                                                    data-url="{{ $urlWa }}"></td>   
+                                                    data-id="{{ $r->id }}" data-url="{{ $urlWa }}"></td>
                                         </tr>
                                     @elseif($r->saldo < 0)
                                         <tr>
@@ -179,7 +189,7 @@
                                     <td class="px-6 py-4 text-right text-green-600">
                                         ${{ number_format($totalSaldo, 2) }}
                                     </td>
-                                    <td colspan="2" class="px-6 py-4 text-right"></td>
+                                    <td colspan="3" class="px-6 py-4 text-right"></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -351,15 +361,26 @@
 
         // D. PROCESO DE ENVÍO MASIVO (CON RETRASO)
         btnMasivo.addEventListener('click', function() {
-            const seleccionados = Array.from(document.querySelectorAll('.cliente-checkbox:checked'))
-                .map(cb => cb.getAttribute(
-                'data-id')); // Asegúrate de añadir data-id="{{ $r->id }}" al checkbox
+            const seleccionados = [];
+            const ajustes = {}; // Objeto para guardar id:monto
+
+            // Recorremos solo los que están marcados
+            document.querySelectorAll('.cliente-checkbox:checked').forEach(cb => {
+                const id = cb.getAttribute('data-id');
+                seleccionados.push(id);
+
+                // Buscamos el input de ajuste que pertenece a esta misma fila (tr)
+                const inputAjuste = cb.closest('tr').querySelector('.input-ajuste');
+                if (inputAjuste && inputAjuste.value > 0) {
+                    ajustes[id] = inputAjuste.value;
+                }
+            });
 
             if (seleccionados.length === 0) return alert('Selecciona clientes');
 
-            if (confirm(`¿Enviar ${seleccionados.length} recordatorios automáticos?`)) {
+            if (confirm(`¿Enviar ${seleccionados.length} recordatorios con ajustes aplicados?`)) {
                 btnMasivo.disabled = true;
-                btnMasivo.innerText = 'Encolando mensajes...';
+                btnMasivo.innerText = 'Encolando...';
 
                 fetch("{{ route('admin.enviar.masivo') }}", {
                         method: 'POST',
@@ -368,7 +389,8 @@
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
                         body: JSON.stringify({
-                            user_ids: seleccionados
+                            user_ids: seleccionados,
+                            ajustes: ajustes // Enviamos los montos a restar
                         })
                     })
                     .then(res => res.json())
