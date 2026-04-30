@@ -4,9 +4,14 @@ FROM php:8.3-apache
 # Instalar dependencias del sistema y extensiones de PHP para Postgres y Node
 RUN apt-get update && apt-get install -y \
     libpq-dev \
+    libzip-dev \
+    zip \
     unzip \
     curl \
-    && docker-php-ext-install pdo pdo_pgsql pcntl
+    && docker-php-ext-install pdo pdo_pgsql pcntl zip
+
+# Habilitar el módulo rewrite de Apache (necesario para Laravel)
+RUN a2enmod rewrite
 
 # Instalar Node.js (necesario para Vite/npm)
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
@@ -22,7 +27,7 @@ COPY . .
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Instalar dependencias de PHP
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-interaction --optimize-autoloader --no-dev
 
 RUN composer dump-autoload
 
