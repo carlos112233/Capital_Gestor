@@ -19,10 +19,16 @@ class ClienteApiController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = User::query();
-
         if ($request->filled('q')) {
-            $query->where('name', 'ilike', '%' . $request->q . '%')
-                  ->orWhere('telefono', 'ilike', '%' . $request->q . '%'); // Ahora busca también por teléfono
+            $query->when($request->filled('q'), function ($query) use ($request) {
+                $search = '%' . strtolower($request->q) . '%';
+                // Buscamos por nombre, email o el nuevo campo telefono
+                $query->where(function($q) use ($search) {
+                    $q->where('name', 'ilike', $search)
+                      ->orWhere('email', 'ilike', $search)
+                      ->orWhere('telefono', 'ilike', $search);
+                });
+            }); // Ahora busca también por teléfono
         }
 
         // Agregamos 'telefono' al select

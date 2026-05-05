@@ -16,12 +16,15 @@ class ArticuloApiController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $query = Articulo::query()
-            ->where('nombre', '!=', 'Saldar pago')
-            ->where('stock', '>=', 1);
+        $query = Articulo::latest();
 
         if ($request->filled('q')) {
-            $query->where('nombre', 'ilike', '%' . $request->q . '%');
+            $query->when($request->filled('q'), function ($query) use ($request) {
+                $query->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($request->q) . '%']);
+            })  ->orderBy('nombre', 'asc')
+            ->toBase()
+            ->get();
+            
         }
 
         // Quitamos 'imagen' de aquí porque no existe en la tabla

@@ -97,11 +97,19 @@ class DashboardController extends Controller
             $saldoParaMensaje = $saldoOriginal - $montoAjuste;
 
             // 3. Crear mensaje con el nuevo saldo
-            $mensaje = "Hola *" . $user->name . "*, le saludamos de *Gestor Capital*.\n\n"
-                . "Le informamos que su saldo actual a cubrir es de: *$" . number_format($saldoParaMensaje, 2) . "*\n\n"
-                . "*DATOS PARA PAGO:*\n"
-                . "BBVA: *158 086 7512*\n"
-                . "Mercado Pago: *722969010384935035*";
+            $mensaje = "Hola " . $user->name . ", saludos solo para informarte que tu saldo actual a cubrir es de *$" .
+                number_format($saldoParaMensaje, 2) .
+                "*\n si deseas más informacion el cobro de tu saldo, mandanos un mensaje.\n" .
+                "--------------------------\n" .
+                "*DATOS PARA PAGO:*\n\n" .
+                "*BBVA:*\n" .
+                "Cuenta: *158 086 7512*\n" .
+                "CLABE: *012 650 01580867512 5*\n\n" .
+                "*Mercado Pago:*\n" .
+                "CLABE: *722969010384935035*\n\n" .
+                "--------------------------\n" .
+                'Favor de enviar el comprobante a este número.';
+
             \Log::info($mensaje);
             SendWhatsAppJob::dispatch($user, $mensaje)->delay(now()->addSeconds($retraso));
             $retraso += 15;
