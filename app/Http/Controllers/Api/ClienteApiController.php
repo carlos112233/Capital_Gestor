@@ -23,10 +23,10 @@ class ClienteApiController extends Controller
             $query->when($request->filled('q'), function ($query) use ($request) {
                 $search = '%' . strtolower($request->q) . '%';
                 // Buscamos por nombre, email o el nuevo campo telefono
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->where('name', 'ilike', $search)
-                      ->orWhere('email', 'ilike', $search)
-                      ->orWhere('telefono', 'ilike', $search);
+                        ->orWhere('email', 'ilike', $search)
+                        ->orWhere('telefono', 'ilike', $search);
                 });
             }); // Ahora busca también por teléfono
         }
@@ -86,7 +86,10 @@ class ClienteApiController extends Controller
             'name'     => 'required|string|max:255',
             'telefono' => 'nullable|string|max:20', // Validamos el teléfono en el update
             'email'    => [
-                'required', 'string', 'email', 'max:255',
+                'required',
+                'string',
+                'email',
+                'max:255',
                 Rule::unique('users', 'email')->ignore($cliente->id),
             ],
             'password' => 'nullable|string|min:8',
@@ -128,9 +131,22 @@ class ClienteApiController extends Controller
             ->orderBy('nombre')
             ->toBase()
             ->get();
+            
+        $query = User::query();
+        if ($request->filled('q')) {
+            $query->when($request->filled('q'), function ($query) use ($request) {
+                $search = '%' . strtolower($request->q) . '%';
+                // Buscamos por nombre, email o el nuevo campo telefono
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'ilike', $search)
+                        ->orWhere('email', 'ilike', $search)
+                        ->orWhere('telefono', 'ilike', $search);
+                });
+            }); // Ahora busca también por teléfono
+        }
 
         // Agregamos 'telefono' también aquí para que Flutter lo tenga disponible
-        $clientes = User::select('id', 'name', 'email', 'telefono')
+        $clientes = $query->select('id', 'name', 'email', 'telefono')
             ->orderBy('name')
             ->toBase()
             ->get();
