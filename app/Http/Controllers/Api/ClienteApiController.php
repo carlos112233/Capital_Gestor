@@ -126,9 +126,19 @@ class ClienteApiController extends Controller
     }
 
     public function articuloCliente(Request $request): JsonResponse
-    {
-        $articulos = Articulo::select('id', 'nombre', 'stock', 'precio', 'descripcion')
-            ->orderBy('nombre')
+    {        
+        $queryA = Articulo::query();
+         if ($request->filled('a')) {
+                $search = '%' . strtolower($request->a) . '%';
+                $queryA->where('nombre', 'ilike', $search )->orderBy('nombre', 'asc')
+            ->toBase()
+            ->get();
+            
+        }
+
+        // Quitamos 'imagen' de aquí porque no existe en la tabla
+        $articulos = $queryA->select('id', 'nombre', 'precio', 'stock')
+            ->orderBy('nombre', 'asc')
             ->toBase()
             ->get();
             
