@@ -70,12 +70,20 @@
                                         <input type="checkbox" id="select-all"
                                             class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                                     </th>
+                                    <th
+                                        class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Pagar
+                                    </th>
                                 </tr>
 
                             </thead>
 
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse($resumen as $r)
+                                    @php
+                                        $entrada[] = $r->saldo;
+
+                                    @endphp
                                     @if ($r->saldo > 0)
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap">{{ $r->name }}</td>
@@ -161,6 +169,12 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-center"> <input type="checkbox"
                                                     class="cliente-checkbox  rounded border-gray-300 text-indigo-600 shadow-sm"
                                                     data-id="{{ $r->id }}" data-url="{{ $urlWa }}"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                <a href="{{ route('admin.entradas.create', ['cliente_id' => $r['id'], 'saldo' => $r['saldo'], 'saldar' => 1]) }}"
+                                                    class="btn-whatsapp text-indigo-600 hover:text-indigo-900">
+                                                    Saldar Deuda
+                                                </a>
+                                            </td>
                                         </tr>
                                     @elseif($r->saldo < 0)
                                         <tr>
@@ -169,7 +183,15 @@
                                                 <span
                                                     class="text-red-600 font-bold">${{ number_format($r->saldo, 2) }}</span>
                                             </td>
+                                            <td colspan="3" class="px-6 py-4 text-center text-gray-500">
 
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                <a href="{{ route('admin.entradas.create', ['cliente_id' => $r['id'], 'saldo' => $r['saldo'], 'saldar' => 1]) }}"
+                                                    class="btn-whatsapp text-indigo-600 hover:text-indigo-900">
+                                                    Saldar Deuda
+                                                </a>
+                                            </td>
                                         </tr>
                                     @endif
 
@@ -189,7 +211,7 @@
                                     <td class="px-6 py-4 text-right text-green-600">
                                         ${{ number_format($totalSaldo, 2) }}
                                     </td>
-                                    <td colspan="3" class="px-6 py-4 text-right"></td>
+                                    <td colspan="4" class="px-6 py-4 text-right"></td>
                                 </tr>
                             </tfoot>
                         </table>
