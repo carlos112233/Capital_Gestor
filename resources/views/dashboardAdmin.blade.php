@@ -393,8 +393,8 @@
 
                 // Buscamos el input de ajuste que pertenece a esta misma fila (tr)
                 const inputAjuste = cb.closest('tr').querySelector('.input-ajuste');
-                if (inputAjuste && inputAjuste.value > 0) {
-                    ajustes[id] = inputAjuste.value;
+                if (inputAjuste && inputAjuste.value !== "") { // Aceptamos incluso si es 0
+                    ajustes[id] = parseFloat(inputAjuste.value);
                 }
             });
 

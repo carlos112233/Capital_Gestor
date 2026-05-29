@@ -75,30 +75,26 @@ class DashboardController extends Controller
     public function enviarRecordatoriosMasivos(Request $request)
     {
         $userIds = $request->input('user_ids');
-        $ajustes = $request->input('ajustes', []); // Recibimos el array de ajustes [id => monto]
-
-        if (!$userIds || !is_array($userIds)) {
-            return response()->json(['message' => 'No seleccionaste usuarios.'], 400);
-        }
+        // Laravel convierte el JSON { "1": "50" } en un array asociativo [ 1 => 50 ]
+        $ajustes = $request->input('ajustes', []);
 
         $usuarios = User::whereIn('id', $userIds)->get();
-        $retraso = 0;
 
         foreach ($usuarios as $user) {
             if (!$user->telefono) continue;
 
-            // 1. Saldo original de la BD
+            // Calculamos saldo base
             $totalDeuda = $user->ventas()->sum('total_venta') ?? 0;
             $totalPagado = $user->entradas()->sum('precio_venta') ?? 0;
-            $saldoOriginal = $totalDeuda - $totalPagado;
 
-            // 2. Aplicar ajuste temporal (solo para el mensaje)
+            // CORRECCIÓN AQUÍ:
+            // Buscamos el ajuste usando el ID del usuario como llave
             $montoAjuste = isset($ajustes[$user->id]) ? (float)$ajustes[$user->id] : 0;
-            $saldoParaMensaje = $saldoOriginal - $montoAjuste;
 
-            // 3. Crear mensaje con el nuevo saldo
+            $saldo = $totalDeuda - $totalPagado - $montoAjuste;
+
             $mensaje = "Hola " . $user->name . ", saludos solo para informarte que tu saldo actual a cubrir es de *$" .
-                number_format($saldoParaMensaje, 2) .
+                number_format($saldo, 2) .
                 "*\n si deseas más informacion el cobro de tu saldo, mandanos un mensaje.\n" .
                 "--------------------------\n" .
                 "*DATOS PARA PAGO:*\n\n" .
@@ -110,11 +106,23 @@ class DashboardController extends Controller
                 "--------------------------\n" .
                 'Favor de enviar el comprobante a este número.';
 
-            \Log::info($mensaje);
-            SendWhatsAppJob::dispatch($user, $mensaje)->delay(now()->addSeconds($retraso));
-            $retraso += 15;
+            // Insertamos en la tabla para que el motor de Node.js lo vea
+            DB::table('whatsapp_pending_messages')->insert([
+                'numero' => $this->formatearNumero($user->telefono),
+                'mensaje' => $mensaje,
+                'status' => 'pendiente',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         }
 
-        return response()->json(['message' => 'Mensajes encolados con saldos ajustados.']);
+        return response()->json(['message' => 'Mensajes guardados con ajustes aplicados.']);
+    }
+
+    // Función auxiliar para limpiar el número
+    private function formatearNumero($num)
+    {
+        $num = preg_replace('/[^0-9]/', '', $num);
+        return (strlen($num) == 10) ? '521' . $num : $num; // open-wa prefiere 521 para México
     }
 }
