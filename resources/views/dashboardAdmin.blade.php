@@ -3,7 +3,7 @@
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Resumen semanal') }}
         </h2>
-    </x-slot>
+    </x-slot>   
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-12" style="padding:  0px 35px">
@@ -92,9 +92,10 @@
                                                     class="text-green-600 font-bold">${{ number_format($r->saldo, 2) }}</span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                @php  $urlWa = '#'; @endphp
                                                 @if ($r->telefono)
                                                     @php
-                                                        $urlWa = '#';
+                                                      
                                                         // 1. Quitamos espacios, guiones o paréntesis que pueda tener el número
                                                         $soloNumeros = preg_replace('/[^0-9]/', '', $r->telefono);
 
