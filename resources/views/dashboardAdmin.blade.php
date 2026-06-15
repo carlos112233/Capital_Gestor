@@ -224,134 +224,60 @@
 </x-app-layout>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-
 <script>
+    // --- 1. EXPORTACIÓN A EXCEL ---
     function exportarExcel() {
         const tabla = document.getElementById('tabla-resumen');
         if (!tabla) return;
 
-        // 1. Convertir la tabla a una "Hoja de Trabajo" (Worksheet)
-        // Usamos { raw: false } para que respete el formato de texto de los números
-        const ws = XLSX.utils.table_to_sheet(tabla, {
-            raw: false
-        });
+        const ws = XLSX.utils.table_to_sheet(tabla, { raw: false });
 
-        // 2. Definir los estilos
-        const estiloVerde = {
-            font: {
-                color: {
-                    rgb: "16A34A"
-                },
-                bold: true
-            }, // Verde de Tailwind (600)
-            alignment: {
-                horizontal: "right"
-            }
-        };
-        const estiloRojo = {
-            font: {
-                color: {
-                    rgb: "DC2626"
-                },
-                bold: true
-            }, // Rojo de Tailwind (600)
-            alignment: {
-                horizontal: "right"
-            }
-        };
-        const estiloBold = {
-            font: {
-                bold: true
-            }
-        };
+        const estiloVerde = { font: { color: { rgb: "16A34A" }, bold: true }, alignment: { horizontal: "right" } };
+        const estiloRojo = { font: { color: { rgb: "DC2626" }, bold: true }, alignment: { horizontal: "right" } };
 
-        // 3. Recorrer todas las celdas de la hoja
         for (let cell in ws) {
-            // Ignorar propiedades que no son celdas (como !ref o !cols)
             if (cell[0] === '!') continue;
-
             const cellData = ws[cell];
             const valorStr = cellData.v.toString();
 
-            // Si la celda contiene un símbolo de moneda "$" o es un número
-            if (valorStr.includes('$') || !isNaN(parseFloat(valorStr))) {
-
-                // Limpiamos el texto para saber si es negativo o positivo
+            if (valorStr.includes('$')) {
                 const valorNumerico = parseFloat(valorStr.replace(/[$,]/g, ''));
-
-                if (valorNumerico > 0) {
-                    cellData.s = estiloVerde;
-                } else if (valorNumerico < 0) {
-                    cellData.s = estiloRojo;
-                } else {
-                    cellData.s = {
-                        alignment: {
-                            horizontal: "right"
-                        }
-                    };
-                }
+                cellData.s = (valorNumerico > 0) ? estiloVerde : estiloRojo;
             }
-
-            // Estilo especial para la cabecera (primera fila)
             if (cell.replace(/[^0-9]/g, '') === "1") {
-                cellData.s = {
-                    font: {
-                        bold: true
-                    },
-                    fill: {
-                        fgColor: {
-                            rgb: "F3F4F6"
-                        }
-                    }
-                };
+                cellData.s = { font: { bold: true }, fill: { fgColor: { rgb: "F3F4F6" } } };
             }
         }
 
-        // 4. Crear el libro y descargar
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Resumen");
-        XLSX.writeFile(wb, "Resumen_quinsenal.xlsx");
+        XLSX.writeFile(wb, "Resumen_Saldo.xlsx");
     }
-    document.addEventListener('DOMContentLoaded', function() {
-        const input = document.getElementById('search');
-        const table = document.querySelector('table tbody');
 
-        input.addEventListener('input', function() {
-            const filter = this.value.toLowerCase();
-            const rows = table.querySelectorAll('tr');
-
-            rows.forEach(row => {
-                const cell = row.querySelector('td:first-child'); // columna Cliente
-                if (!cell) return;
-
-                const text = cell.textContent.toLowerCase();
-                row.style.display = text.includes(filter) ? '' : 'none';
-            });
-        });
-    });
-
-
-    // --- 2. LÓGICA DE BUSCADOR, SELECCIÓN Y ENVÍO MASIVO ---
+    // --- 2. LÓGICA UNIFICADA: BUSCADOR Y WHATSAPP MASIVO ---
     document.addEventListener('DOMContentLoaded', function() {
         const inputBusqueda = document.getElementById('search');
         const selectAll = document.getElementById('select-all');
         const checkboxes = document.querySelectorAll('.cliente-checkbox');
         const btnMasivo = document.getElementById('btn-envio-masivo');
         const countSpan = document.getElementById('count-selected');
-        const tableBody = document.querySelector('table tbody');
+        const tableBody = document.querySelector('#tabla-resumen tbody');
 
-        // A. Buscador en tiempo real
+        // A. Buscador en tiempo real corregido
         inputBusqueda.addEventListener('input', function() {
             const filter = this.value.toLowerCase();
             const rows = tableBody.querySelectorAll('tr');
 
             rows.forEach(row => {
-                const cellCliente = row.querySelector('td:nth-child(2)');
+                // Buscamos en la PRIMERA columna (Cliente)
+                const cellCliente = row.querySelector('td:first-child'); 
                 if (cellCliente) {
                     const text = cellCliente.textContent.toLowerCase();
-                    row.style.display = text.includes(filter) ? '' : 'none';
-                    // Desmarcar si se oculta
-                    if (row.style.display === 'none') {
+                    const visible = text.includes(filter);
+                    row.style.display = visible ? '' : 'none';
+                    
+                    // Si ocultamos la fila, desmarcamos su checkbox por seguridad
+                    if (!visible) {
                         const cb = row.querySelector('.cliente-checkbox');
                         if (cb) cb.checked = false;
                     }
@@ -360,68 +286,72 @@
             actualizarContador();
         });
 
-        // B. Seleccionar Todos
+        // B. Seleccionar Todos (solo los visibles)
         selectAll.addEventListener('change', function() {
-            checkboxes.forEach(cb => {
-                // Solo seleccionar los que están visibles en el filtro
-                if (cb.closest('tr').style.display !== 'none') {
-                    cb.checked = selectAll.checked;
+            const rows = tableBody.querySelectorAll('tr');
+            rows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    const cb = row.querySelector('.cliente-checkbox');
+                    if (cb) cb.checked = selectAll.checked;
                 }
             });
             actualizarContador();
         });
 
-        // C. Actualizar contador al marcar individualmente
+        // C. Actualizar contador
+        function actualizarContador() {
+            const seleccionados = document.querySelectorAll('.cliente-checkbox:checked').length;
+            if(countSpan) countSpan.innerText = seleccionados;
+            btnMasivo.disabled = (seleccionados === 0);
+        }
+
         checkboxes.forEach(cb => {
             cb.addEventListener('change', actualizarContador);
         });
 
-        function actualizarContador() {
-            const seleccionados = document.querySelectorAll('.cliente-checkbox:checked').length;
-            countSpan.innerText = seleccionados;
-            btnMasivo.disabled = (seleccionados === 0);
-        }
-
-        // D. PROCESO DE ENVÍO MASIVO (CON RETRASO)
+        // D. Envío Masivo
         btnMasivo.addEventListener('click', function() {
             const seleccionados = [];
-            const ajustes = {}; // Objeto para guardar id:monto
+            const ajustes = {};
 
-            // Recorremos solo los que están marcados
             document.querySelectorAll('.cliente-checkbox:checked').forEach(cb => {
                 const id = cb.getAttribute('data-id');
                 seleccionados.push(id);
 
-                // Buscamos el input de ajuste que pertenece a esta misma fila (tr)
                 const inputAjuste = cb.closest('tr').querySelector('.input-ajuste');
-                if (inputAjuste && inputAjuste.value !== "") { // Aceptamos incluso si es 0
+                if (inputAjuste && inputAjuste.value !== "") {
                     ajustes[id] = parseFloat(inputAjuste.value);
                 }
             });
 
             if (seleccionados.length === 0) return alert('Selecciona clientes');
 
-            if (confirm(`¿Enviar ${seleccionados.length} recordatorios con ajustes aplicados?`)) {
+            if (confirm(`¿Enviar ${seleccionados.length} recordatorios automáticos?`)) {
                 btnMasivo.disabled = true;
                 btnMasivo.innerText = 'Encolando...';
 
                 fetch("{{ route('admin.enviar.masivo') }}", {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: JSON.stringify({
-                            user_ids: seleccionados,
-                            ajustes: ajustes // Enviamos los montos a restar
-                        })
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        user_ids: seleccionados,
+                        ajustes: ajustes
                     })
-                    .then(res => res.json())
-                    .then(data => {
-                        alert(data.message);
-                        btnMasivo.innerText = 'Cobrar Seleccionados';
-                        btnMasivo.disabled = false;
-                    });
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message);
+                    btnMasivo.innerText = 'WhatsApp Masivo';
+                    btnMasivo.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al enviar los mensajes.');
+                    btnMasivo.disabled = false;
+                });
             }
         });
     });
