@@ -14,17 +14,24 @@ class DashboardController extends Controller
     // Dashboard para administradores
     public function indexAdmin()
     {
-
-        $resumen = User::withSum('ventas', 'total_venta')
-            ->withSum('entradas', 'precio_venta')
+    $fechaLimite = now()->subDays(20);
+     $resumen = User::withSum(['ventas' => function($query) use ($fechaLimite) {
+                // Filtramos las ventas por fecha
+                $query->where('created_at', '>=', $fechaLimite);
+            }], 'total_venta')
+            ->withSum(['entradas' => function($query) use ($fechaLimite) {
+                // Filtramos las entradas por fecha
+                $query->where('created_at', '>=', $fechaLimite);
+            }], 'precio_venta')
             ->get()
             ->map(function ($User) {
+                // Los nombres de las columnas cambian ligeramente al usar el array en withSum
                 $totalDeuda = $User->ventas_sum_total_venta ?? 0;
                 $totalPagado = $User->entradas_sum_precio_venta ?? 0;
 
                 $User->total_deuda = $totalDeuda;
                 $User->total_pagado = $totalPagado;
-                $User->saldo =   $totalDeuda - $totalPagado;
+                $User->saldo = $totalDeuda - $totalPagado;
 
                 return $User;
             });
@@ -93,9 +100,9 @@ class DashboardController extends Controller
 
             $saldo = $totalDeuda - $totalPagado - $montoAjuste;
 
-            $mensaje = "Hola " . $user->name . ", saludos solo para informarte que tu saldo actual a cubrir es de *$" .
+            $mensaje = "Hola excelente tarde,  " . $user->name . ", solo es para informarte de tu saldo actual a cubrir es de *$" .
                 number_format($saldo, 2) .
-                "*\n si deseas más informacion el cobro de tu saldo, mandanos un mensaje.\n" .
+                "*\n tienes dudas o deseas más informacion sobre el monto a cobrar de tu saldo, mandame un mensaje.\n\n" .
                 "--------------------------\n" .
                 "*DATOS PARA PAGO:*\n\n" .
                 "*BBVA:*\n" .

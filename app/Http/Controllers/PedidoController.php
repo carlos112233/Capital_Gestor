@@ -20,13 +20,13 @@ class PedidoController extends Controller
 
         if ($user->hasRole('admin')) {
             // Mostrar todos los pedidos
-            $pedidos = Pedido::with(['user', 'articulo', 'venta'])->latest()->paginate(10);;
+            $pedidos = Pedido::with(['user', 'articulo', 'venta'])->latest()->paginate(25);;
         } else {
             // Mostrar solo los pedidos del user autenticado
             $pedidos = Pedido::with(['user', 'articulo', 'venta'])
                 ->where('user_id', $user->id)
                 ->latest()
-                ->paginate(10);
+                ->paginate(25);
         }
         if ($request->filled('q')) {
             $search = $request->input('q');

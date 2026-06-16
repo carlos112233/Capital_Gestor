@@ -33,7 +33,7 @@ class VentaController extends Controller
             });
         }
 
-        $ventas = $ventasQuery->paginate(20);
+        $ventas = $ventasQuery->paginate(25);
 
         if ($request->ajax()) {
             return view('ventas._tabla', compact('ventas'))->render();
