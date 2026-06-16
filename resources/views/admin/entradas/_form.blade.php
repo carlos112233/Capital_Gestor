@@ -74,59 +74,61 @@
 {{-- BOTONES IGUALES... --}}
 
 <script>
+    // Estos datos ahora son ligeros porque el controlador solo envía 3 columnas
     const articulos = @json($articulos);
     const tipoPago = document.getElementById('tipo_pago');
     const articuloSelect = document.getElementById('articulo_id');
     const precioInput = document.getElementById('precio_venta');
     
-    // Si es una edición, tomamos el ID actual, si no, lo dejamos vacío para que JS lo maneje
     let selectedArticuloId = "{{ $entrada->articulo_id ?? '' }}";
-    
-    // Si venimos de la URL de "Saldar", buscamos el ID del artículo que se llama 'Saldar pago'
-    if ("{{ $esSaldar }}" == "1") {
-        const artSaldar = articulos.find(a => a.nombre === 'Saldar pago');
-        if (artSaldar) selectedArticuloId = artSaldar.id;
-    }
+    const esSaldarFlujo = "{{ $esSaldar }}" == "1";
 
-    function llenarArticulos() {
+    function actualizarListaArticulos() {
         const tipo = tipoPago.value;
-        articuloSelect.innerHTML = '<option value="" disabled>Seleccione un artículo</option>';
-        let options = [];
-
-        articulos.forEach(art => {
-            // Normalizar a minúsculas para evitar errores de escritura
-            const nombreArt = art.nombre.toLowerCase();
-            if(tipo == '1' && nombreArt != 'saldar pago') {
-                options.push(art);
-            } else if(tipo == '2' && nombreArt == 'saldar pago') {
-                options.push(art);
-            }
+        articuloSelect.innerHTML = '<option value="" disabled selected>Seleccione un artículo</option>';
+        
+        // Filtramos en memoria (muy rápido)
+        const filtrados = articulos.filter(art => {
+            const esSaldarPago = art.nombre.toLowerCase() === 'saldar pago';
+            return (tipo === '2') ? esSaldarPago : !esSaldarPago;
         });
 
-        options.forEach(art => {
+        filtrados.forEach(art => {
             const opt = document.createElement('option');
             opt.value = art.id;
             opt.textContent = art.nombre;
-            if(art.id == selectedArticuloId) {
+            opt.dataset.precio = art.precio;
+            
+            // Si venimos de "Saldar deuda", seleccionamos automáticamente el artículo correcto
+            if (esSaldarFlujo && art.nombre.toLowerCase() === 'saldar pago') {
+                opt.selected = true;
+            } else if (art.id == selectedArticuloId) {
                 opt.selected = true;
             }
+            
             articuloSelect.appendChild(opt);
         });
     }
 
+    // Evento al cambiar Tipo de Pago
     tipoPago.addEventListener('change', function() {
-        llenarArticulos();
-        // Al cambiar manualmente, actualizamos el precio basado en el artículo
-        const firstArt = articulos.find(a => a.id == articuloSelect.value);
-        if (firstArt && "{{ $esSaldar }}" != "1") { // Solo auto-cambiar precio si no es el flujo de "Saldar"
-             precioInput.value = Math.round(firstArt.precio);
+        actualizarListaArticulos();
+        
+        // Si no es el flujo de saldar, ponemos el precio del primer artículo de la lista
+        if (!esSaldarFlujo && articuloSelect.options.length > 1) {
+            const primerArt = articulos.find(a => a.id == articuloSelect.value);
+            if (primerArt) precioInput.value = parseFloat(primerArt.precio).toFixed(2);
         }
     });
 
+    // Evento al cambiar Artículo
     articuloSelect.addEventListener('change', function() {
-        const precio = articulos.find(a => a.id == this.value)?.precio ?? 0;
-        precioInput.value = Math.round(precio);
+        const art = articulos.find(a => a.id == this.value);
+        if (art && !esSaldarFlujo) {
+            precioInput.value = parseFloat(art.precio).toFixed(2);
+        }
     });
 
-    document.addEventListener('DOMContentLoaded', llenarArticulos);
+    // Iniciar al cargar
+    document.addEventListener('DOMContentLoaded', actualizarListaArticulos);
 </script>

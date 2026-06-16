@@ -45,9 +45,15 @@ $userSelected = $userSelected ?? ($pedido->user_id ?? Auth::id());
     {{-- Costo --}}
     <div class="mb-2">
         <label class="block font-bold text-gray-700">Costo unitario</label>
+        @if(Auth::user()->hasRole('admin'))
+            <input type="number" name="pedidos[{{ $i }}][costo]"
+                   class="costo-input w-full border-gray-300 rounded-lg"
+                   value="{{ old("pedidos.$i.costo", $p['costo'] ?? '') }}" required>
+        @else
         <input type="number" name="pedidos[{{ $i }}][costo]"
                class="costo-input w-full border-gray-300 rounded-lg bg-gray-50"
                value="{{ old("pedidos.$i.costo", $p['costo'] ?? '') }}" readonly required>
+        @endif       
     </div>
 
     {{-- Descripción --}}
