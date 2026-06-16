@@ -14,24 +14,16 @@ class DashboardController extends Controller
     // Dashboard para administradores
     public function indexAdmin()
     {
-    $fechaLimite = now()->subDays(20);
-     $resumen = User::withSum(['ventas' => function($query) use ($fechaLimite) {
-                // Filtramos las ventas por fecha
-                $query->where('created_at', '>=', $fechaLimite);
-            }], 'total_venta')
-            ->withSum(['entradas' => function($query) use ($fechaLimite) {
-                // Filtramos las entradas por fecha
-                $query->where('created_at', '>=', $fechaLimite);
-            }], 'precio_venta')
+        $resumen = User::withSum('ventas', 'total_venta')
+            ->withSum('entradas', 'precio_venta')
             ->get()
             ->map(function ($User) {
-                // Los nombres de las columnas cambian ligeramente al usar el array en withSum
                 $totalDeuda = $User->ventas_sum_total_venta ?? 0;
                 $totalPagado = $User->entradas_sum_precio_venta ?? 0;
 
                 $User->total_deuda = $totalDeuda;
                 $User->total_pagado = $totalPagado;
-                $User->saldo = $totalDeuda - $totalPagado;
+                $User->saldo =   $totalDeuda - $totalPagado;
 
                 return $User;
             });
