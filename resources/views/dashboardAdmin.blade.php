@@ -173,7 +173,7 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                                 <a href="{{ route('admin.entradas.create', ['cliente_id' => $r['id'], 'saldo' => $r['saldo'], 'saldar' => 1]) }}"
                                                     class="btn-whatsapp text-indigo-600 hover:text-indigo-900">
-                                                    Saldar Deuda
+                                                    Pago saldado
                                                 </a>
                                             </td>
                                         </tr>
@@ -190,7 +190,7 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                                 <a href="{{ route('admin.entradas.create', ['cliente_id' => $r['id'], 'saldo' => $r['saldo'], 'saldar' => 1]) }}"
                                                     class="btn-whatsapp text-indigo-600 hover:text-indigo-900">
-                                                    Saldar Deuda
+                                                    Pago saldado
                                                 </a>
                                             </td>
                                         </tr>
