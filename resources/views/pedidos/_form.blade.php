@@ -44,7 +44,7 @@
                     class="articulo-select w-full border-gray-300 rounded-lg" required>
                     <option value="">Seleccione un artículo...</option>
                     @foreach ($articulos as $articulo)
-                        @if ($articulo->nombre !== 'Saldar pago')
+                        @if ($articulo->nombre !== 'Pago saldado')
                             <option value="{{ $articulo->id }}"
                                 {{ old("pedidos.$i.articulo_id", $p['articulo_id'] ?? '') == $articulo->id ? 'selected' : '' }}>
                                 {{ $articulo->nombre }}

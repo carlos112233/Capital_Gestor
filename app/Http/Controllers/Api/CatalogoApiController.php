@@ -22,7 +22,7 @@ class CatalogoApiController extends Controller
     {
         // 1. Usamos query() para mayor claridad
         $query = Articulo::query()
-            ->where('nombre', '!=', 'Saldar pago')
+            ->where('nombre', '!=', 'Pago saldado')
             ->where('stock', '>=', 1);
 
         // 2. Ajuste para PostgreSQL: ILIKE

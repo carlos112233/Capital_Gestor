@@ -20,7 +20,7 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($ventas as $venta)
-                                @if ($venta->articulo->nombre != 'Saldar pago')
+                                @if ($venta->articulo->nombre != 'Pago saldado')
                                     <tr>
                                         <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                                             {{ $venta->id }}</td>

@@ -16,7 +16,7 @@ class CatalogoController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = Articulo::where('nombre', '!=', 'Saldar pago')
+        $query = Articulo::where('nombre', '!=', 'Pago saldado')
     ->where('stock', '>=', 1);
 
         if ($request->filled('q')) {

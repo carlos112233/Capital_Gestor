@@ -11,9 +11,9 @@
     <label for="tipo_pago" class="block text-gray-700 font-bold mb-2">Tipo de Pago</label>
     <select name="tipo_pago" id="tipo_pago" class="w-full border-gray-300 rounded-lg shadow-sm" required>
         <option value="" disabled {{ !isset($entrada) && !$esSaldar ? 'selected' : '' }}>Seleccione un tipo</option>
-        <option value="1" {{ (isset($entrada) && $entrada->articulo->nombre != 'Saldar pago') ? 'selected' : '' }}>Por artículo</option>
+        <option value="1" {{ (isset($entrada) && $entrada->articulo->nombre != 'Pago saldado') ? 'selected' : '' }}>Por artículo</option>
         {{-- Si esSaldar es true, seleccionamos esta opción por defecto --}}
-        <option value="2" {{ $esSaldar || (isset($entrada) && $entrada->articulo->nombre == 'Saldar pago') ? 'selected' : '' }}>Saldar adeudo</option>
+        <option value="2" {{ $esSaldar || (isset($entrada) && $entrada->articulo->nombre == 'Pago saldado') ? 'selected' : '' }}>Saldar adeudo</option>
     </select>
 </div>
 
@@ -89,7 +89,7 @@
         
         // Filtramos en memoria (muy rápido)
         const filtrados = articulos.filter(art => {
-            const esSaldarPago = art.nombre.toLowerCase() === 'saldar pago';
+            const esSaldarPago = art.nombre.toLowerCase() === 'Pago saldado';
             return (tipo === '2') ? esSaldarPago : !esSaldarPago;
         });
 
@@ -100,7 +100,7 @@
             opt.dataset.precio = art.precio;
             
             // Si venimos de "Saldar deuda", seleccionamos automáticamente el artículo correcto
-            if (esSaldarFlujo && art.nombre.toLowerCase() === 'saldar pago') {
+            if (esSaldarFlujo && art.nombre.toLowerCase() === 'Pago saldado') {
                 opt.selected = true;
             } else if (art.id == selectedArticuloId) {
                 opt.selected = true;
