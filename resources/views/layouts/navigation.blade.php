@@ -148,7 +148,7 @@
                     @endif
                 </x-responsive-nav-link>
 
-                <x-responsive-nav-link : :href="route('pedidos.index')" :active="request()->routeIs('pedidos.*')">
+                <x-responsive-nav-link :href="route('pedidos.index')" :active="request()->routeIs('pedidos.*')">
                     {{ __('Pedidos') }}
                 </x-responsive-nav-link>
 
@@ -168,7 +168,7 @@
                     </x-responsive-nav-link>
                 @endif
 
-                   <x-responsive-nav-link : :href="route('datos.index')" :active="request()->routeIs('datos.*')">
+                   <x-responsive-nav-link  :href="route('datos.index')" :active="request()->routeIs('datos.*')">
                     <b>{{ __('Método de pago') }}</b>
                 </x-responsive-nav-link>
 

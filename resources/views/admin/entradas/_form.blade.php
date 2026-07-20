@@ -11,9 +11,9 @@
     <label for="tipo_pago" class="block text-gray-700 font-bold mb-2">Tipo de Pago</label>
     <select name="tipo_pago" id="tipo_pago" class="w-full border-gray-300 rounded-lg shadow-sm" required>
         <option value="" disabled {{ !isset($entrada) && !$esSaldar ? 'selected' : '' }}>Seleccione un tipo</option>
-        <option value="1" {{ (isset($entrada) && $entrada->articulo->nombre != 'Pago saldado') ? 'selected' : '' }}>Por artículo</option>
+        <option value="1" {{ (isset($entrada) && $entrada->articulo->nombre.toLowerCase() != 'pago saldado') ? 'selected' : '' }}>Por artículo</option>
         {{-- Si esSaldar es true, seleccionamos esta opción por defecto --}}
-        <option value="2" {{ $esSaldar || (isset($entrada) && $entrada->articulo->nombre == 'Pago saldado') ? 'selected' : '' }}>Pago saldado</option>
+        <option value="2" {{ $esSaldar || (isset($entrada) && $entrada->articulo->nombre.toLowerCase() == 'pago saldado') ? 'selected' : '' }}>Saldar adeudo</option>
     </select>
 </div>
 
@@ -61,7 +61,7 @@
 <div class="mb-4">
     <label for="descripcion" class="block text-gray-700 font-bold mb-2">Descripción del pedido</label>
     <textarea id="descripcion" name="descripcion"
-              class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ $esSaldar ? 'Pago saldado pendiente' : old('descripcion', $entrada->descripcion ?? '') }}</textarea>
+              class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ $esSaldar ? 'Saldar adeudo pendiente' : old('descripcion', $entrada->descripcion ?? '') }}</textarea>
 </div>
 <div class="flex justify-end">
     <a href="{{ route('admin.entradas.index') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg mr-2">
@@ -89,7 +89,7 @@
         
         // Filtramos en memoria (muy rápido)
         const filtrados = articulos.filter(art => {
-            const esSaldarPago = art.nombre.toLowerCase() === 'Pago saldado';
+            const esSaldarPago = art.nombre.toLowerCase() === 'pago saldado';
             return (tipo === '2') ? esSaldarPago : !esSaldarPago;
         });
 
@@ -100,7 +100,7 @@
             opt.dataset.precio = art.precio;
             
             // Si venimos de "Saldar deuda", seleccionamos automáticamente el artículo correcto
-            if (esSaldarFlujo && art.nombre.toLowerCase() === 'Pago saldado') {
+            if (esSaldarFlujo && art.nombre.toLowerCase() === 'pago saldado') {
                 opt.selected = true;
             } else if (art.id == selectedArticuloId) {
                 opt.selected = true;
