@@ -77,6 +77,12 @@ class User extends Authenticatable
      */
     public function getTotalDeudaAttribute(): float
     {
+        if (array_key_exists('total_deuda', $this->attributes)) {
+            return (float) $this->attributes['total_deuda'];
+        }
+        if (array_key_exists('ventas_sum_total_venta', $this->attributes)) {
+            return (float) $this->attributes['ventas_sum_total_venta'];
+        }
         return (float) $this->ventas()->sum('total_venta');
     }
 
@@ -85,6 +91,12 @@ class User extends Authenticatable
      */
     public function getTotalPagadoAttribute(): float
     {
+        if (array_key_exists('total_pagado', $this->attributes)) {
+            return (float) $this->attributes['total_pagado'];
+        }
+        if (array_key_exists('entradas_sum_precio_venta', $this->attributes)) {
+            return (float) $this->attributes['entradas_sum_precio_venta'];
+        }
         return (float) $this->entradas()->sum('precio_venta');
     }
 
@@ -93,6 +105,10 @@ class User extends Authenticatable
      */
     public function getSaldoPendienteAttribute(): float
     {
+        if (array_key_exists('saldo', $this->attributes)) {
+            return (float) $this->attributes['saldo'];
+        }
+
         return $this->total_deuda - $this->total_pagado;
     }
 
@@ -115,11 +131,21 @@ class User extends Authenticatable
      */
     public function getSaldoCorteAnteriorAttribute(): float
     {
-        $ventasHastaCorte = (float) $this->ventas()
-            ->where('created_at', '<=', $this->fecha_corte_anterior)
-            ->sum('total_venta');
+        if (array_key_exists('saldo_corte_anterior', $this->attributes)) {
+            return (float) $this->attributes['saldo_corte_anterior'];
+        }
 
-        $saldoAnterior = $ventasHastaCorte - $this->total_pagado;
+        $ventasHastaCorte = array_key_exists('ventas_corte_sum', $this->attributes)
+            ? (float) $this->attributes['ventas_corte_sum']
+            : (float) $this->ventas()
+                ->where('created_at', '<=', $this->fecha_corte_anterior)
+                ->sum('total_venta');
+
+        $totalPagado = array_key_exists('entradas_sum_precio_venta', $this->attributes)
+            ? (float) $this->attributes['entradas_sum_precio_venta']
+            : $this->total_pagado;
+
+        $saldoAnterior = $ventasHastaCorte - $totalPagado;
 
         return (float) max(0, $saldoAnterior);
     }
@@ -129,6 +155,10 @@ class User extends Authenticatable
      */
     public function getSaldoCorteActualAttribute(): float
     {
+        if (array_key_exists('saldo_corte_actual', $this->attributes)) {
+            return (float) $this->attributes['saldo_corte_actual'];
+        }
+
         $saldoActual = $this->saldo_pendiente - $this->saldo_corte_anterior;
 
         return (float) max(0, $saldoActual);

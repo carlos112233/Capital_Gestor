@@ -14,15 +14,28 @@ class DashboardController extends Controller
     // Dashboard para administradores
     public function indexAdmin()
     {
+        $fechaCorteAnterior = (new User())->fecha_corte_anterior;
+
         $resumen = User::withSum('ventas', 'total_venta')
+            ->withSum(['ventas as ventas_corte_sum' => function ($query) use ($fechaCorteAnterior) {
+                $query->where('created_at', '<=', $fechaCorteAnterior);
+            }], 'total_venta')
             ->withSum('entradas', 'precio_venta')
             ->get()
             ->map(function ($User) {
-                $User->total_deuda = $User->ventas_sum_total_venta ?? $User->total_deuda;
-                $User->total_pagado = $User->entradas_sum_precio_venta ?? $User->total_pagado;
-                $User->saldo = $User->total_deuda - $User->total_pagado;
-                $User->saldo_corte_anterior = $User->saldo_corte_anterior;
-                $User->saldo_corte_actual = $User->saldo_corte_actual;
+                $totalDeuda = (float) ($User->ventas_sum_total_venta ?? 0);
+                $totalPagado = (float) ($User->entradas_sum_precio_venta ?? 0);
+                $ventasCorte = (float) ($User->ventas_corte_sum ?? 0);
+
+                $saldo = $totalDeuda - $totalPagado;
+                $saldoAnterior = max(0, $ventasCorte - $totalPagado);
+                $saldoActual = max(0, $saldo - $saldoAnterior);
+
+                $User->total_deuda = $totalDeuda;
+                $User->total_pagado = $totalPagado;
+                $User->saldo = $saldo;
+                $User->saldo_corte_anterior = $saldoAnterior;
+                $User->saldo_corte_actual = $saldoActual;
 
                 return $User;
             });
