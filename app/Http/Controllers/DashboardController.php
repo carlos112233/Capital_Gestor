@@ -91,38 +91,13 @@ class DashboardController extends Controller
         // Laravel convierte el JSON { "1": "50" } en un array asociativo [ 1 => 50 ]
         $ajustes = $request->input('ajustes', []);
 
-        $usuarios = User::whereIn('id', $userIds)->get();
+        $usuarios = User::with(['ventas.articulo'])->whereIn('id', $userIds)->get();
 
         foreach ($usuarios as $user) {
             if (!$user->telefono) continue;
 
-            // Calculamos saldo base usando el accessor centralizado
             $montoAjuste = isset($ajustes[$user->id]) ? (float)$ajustes[$user->id] : 0;
-            $saldo = $user->saldo_pendiente - $montoAjuste;
-            $saldoAnterior = $user->saldo_corte_anterior;
-            $saldoActual = $user->saldo_corte_actual;
-
-            $desgloseTexto = "";
-            if ($saldoAnterior > 0) {
-                $desgloseTexto = "*Corte Anterior (Vencido):* $" . number_format($saldoAnterior, 2) . "\n" .
-                    "*Corte Actual (Quincena actual):* $" . number_format($saldoActual, 2) . "\n" .
-                    "--------------------------\n";
-            }
-
-            $mensaje = "Hola excelente tarde,  " . $user->name . ", solo es para informarte de tu saldo actual a cubrir es de *$" .
-                number_format($saldo, 2) .
-                "*\n\n" .
-                $desgloseTexto .
-                "tienes dudas o deseas más informacion sobre el monto a cobrar de tu saldo, mandame un mensaje.\n\n" .
-                "--------------------------\n" .
-                "*DATOS PARA PAGO:*\n\n" .
-                "*BBVA:*\n" .
-                "Cuenta: *158 086 7512*\n" .
-                "CLABE: *012 650 01580867512 5*\n\n" .
-                "*Mercado Pago:*\n" .
-                "CLABE: *722969010384935035*\n\n" .
-                "--------------------------\n" .
-                'Favor de enviar el comprobante a este número.';
+            $mensaje = $this->generarMensajeRecordatorio($user, $montoAjuste);
 
             // Insertamos en la tabla para que el motor de Node.js lo vea
             DB::table('whatsapp_pending_messages')->insert([
@@ -135,6 +110,50 @@ class DashboardController extends Controller
         }
 
         return response()->json(['message' => 'Mensajes guardados con ajustes aplicados.']);
+    }
+
+    public function generarMensajeRecordatorio(User $user, float $montoAjuste = 0): string
+    {
+        $saldo = $user->saldo_pendiente - $montoAjuste;
+        $saldoAnterior = $user->saldo_corte_anterior;
+        $saldoActual = $user->saldo_corte_actual;
+
+        $desgloseTexto = "";
+        if ($saldoAnterior > 0) {
+            $desgloseTexto .= "*Corte Anterior (Vencido):* $" . number_format($saldoAnterior, 2) . "\n" .
+                "*Corte Actual (Quincena actual):* $" . number_format($saldoActual, 2) . "\n" .
+                "--------------------------\n";
+        }
+
+        $ventasCliente = $user->ventas ? $user->ventas->filter(function ($venta) {
+            return $venta->articulo && $venta->articulo->nombre !== 'Pago saldado';
+        }) : collect();
+
+        if ($ventasCliente->isNotEmpty()) {
+            $desgloseTexto .= "*Detalle de compras:*\n";
+            foreach ($ventasCliente as $venta) {
+                $nombreArticulo = $venta->articulo ? $venta->articulo->nombre : 'Artículo';
+                $desgloseTexto .= "- " . $venta->cantidad . "x " . $nombreArticulo .
+                    ($venta->cantidad > 1 ? " ($" . number_format($venta->precio_venta, 2) . " c/u)" : "") .
+                    " - $" . number_format($venta->total_venta, 2) . "\n";
+            }
+            $desgloseTexto .= "--------------------------\n";
+        }
+
+        return "Hola excelente tarde,  " . $user->name . ", solo es para informarte de tu saldo actual a cubrir es de *$" .
+            number_format($saldo, 2) .
+            "*\n\n" .
+            $desgloseTexto .
+            "tienes dudas o deseas más informacion sobre el monto a cobrar de tu saldo, mandame un mensaje.\n\n" .
+            "--------------------------\n" .
+            "*DATOS PARA PAGO:*\n\n" .
+            "*BBVA:*\n" .
+            "Cuenta: *158 086 7512*\n" .
+            "CLABE: *012 650 01580867512 5*\n\n" .
+            "*Mercado Pago:*\n" .
+            "CLABE: *722969010384935035*\n\n" .
+            "--------------------------\n" .
+            'Favor de enviar el comprobante a este número.';
     }
 
     // Función auxiliar para limpiar el número
