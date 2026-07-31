@@ -58,7 +58,13 @@
                                         Cliente</th>
                                     <th
                                         class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Saldo</th>
+                                        Corte Anterior</th>
+                                    <th
+                                        class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Corte Actual</th>
+                                    <th
+                                        class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Saldo Total</th>
                                     <th
                                         class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         WhatsApp</th>
@@ -87,6 +93,16 @@
                                     @if ($r->saldo > 0)
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap">{{ $r->name }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right">
+                                                @if($r->saldo_corte_anterior > 0)
+                                                    <span class="text-red-600 font-bold">${{ number_format($r->saldo_corte_anterior, 2) }}</span>
+                                                @else
+                                                    <span class="text-gray-400">$0.00</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right">
+                                                <span class="text-gray-700">${{ number_format($r->saldo_corte_actual, 2) }}</span>
+                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right">
                                                 <span
                                                     class="text-green-600 font-bold">${{ number_format($r->saldo, 2) }}</span>
@@ -180,6 +196,8 @@
                                     @elseif($r->saldo < 0)
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap">{{ $r->name }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-gray-400">$0.00</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-gray-400">$0.00</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right">
                                                 <span
                                                     class="text-red-600 font-bold">${{ number_format($r->saldo, 2) }}</span>
@@ -198,7 +216,7 @@
 
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">
+                                        <td colspan="9" class="px-6 py-4 text-center text-gray-500">
                                             No hay datos registrados
                                         </td>
                                     </tr>
@@ -208,11 +226,11 @@
                             {{-- Fila de sumatoria --}}
                             <tfoot class="bg-gray-100 font-bold">
                                 <tr>
-                                    <td colspan="1" class="px-6 py-4 text-right">Sumatoria a favor:</td>
+                                    <td colspan="3" class="px-6 py-4 text-right">Sumatoria a favor:</td>
                                     <td class="px-6 py-4 text-right text-green-600">
                                         ${{ number_format($totalSaldo, 2) }}
                                     </td>
-                                    <td colspan="4" class="px-6 py-4 text-right"></td>
+                                    <td colspan="5" class="px-6 py-4 text-right"></td>
                                 </tr>
                             </tfoot>
                         </table>

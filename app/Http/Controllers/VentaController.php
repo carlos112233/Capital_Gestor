@@ -11,10 +11,13 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Notifications\NuevoPedidoNotification;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Validation\ValidationException; // Importación necesaria
+use Illuminate\Validation\ValidationException;
 
 class VentaController extends Controller
 {
+    /**
+     * Muestra el listado de ventas.
+     */
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -41,181 +44,241 @@ class VentaController extends Controller
         return view('ventas.index', compact('ventas'));
     }
 
+    /**
+     * Muestra el formulario para crear una venta.
+     */
     public function create(Request $request)
     {
-        $articulos = Articulo::where('stock', '>', 0)->get(); // Mejora: solo artículos con stock
+        $articulos = Articulo::where('stock', '>', 0)
+            ->whereNotIn('nombre', ['Pago saldado', 'saldo', 'Saldo', 'Abono', 'abono'])
+            ->orderBy('nombre', 'asc')
+            ->get();
         $clientes = User::orderBy('name', 'asc')->get();
         $articuloId = $request->get('articulo_id');
+
         return view('ventas.create', compact('articulos', 'clientes', 'articuloId'));
     }
 
+    /**
+     * Almacena una nueva venta en la base de datos.
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'articulo_id' => 'required|exists:articulos,id',
-            'cantidad' => 'required|integer|min:1',
-            'cliente_id' => 'nullable|exists:users,id',
+            'articulo_id'  => 'required|exists:articulos,id',
+            'cantidad'     => 'required|integer|min:1',
+            'cliente_id'   => 'nullable|exists:users,id',
             'precio_venta' => 'required|numeric|min:0',
-            'descripcion' => 'nullable|string',
+            'descripcion'  => 'nullable|string',
         ]);
 
         try {
-            return DB::transaction(function () use ($validated) {
+            return DB::transaction(function () use ($validated, $request) {
                 $articulo = Articulo::lockForUpdate()->findOrFail($validated['articulo_id']);
-                $cantidadVenta = (int) $validated['cantidad']; // Casteo explícito
+                $cantidadVenta = (int) $validated['cantidad'];
 
+                // Validar stock disponible
                 if ($articulo->stock < $cantidadVenta) {
                     throw ValidationException::withMessages([
                         'cantidad' => "Stock insuficiente. Disponible: {$articulo->stock}",
                     ]);
                 }
 
+                // 1. Determinar el ID del usuario cliente en la venta
+                $finalUserId = (Auth::user()->hasRole('admin') && $request->filled('cliente_id'))
+                    ? $validated['cliente_id']
+                    : Auth::id();
+
+                // 2. Descontar stock del artículo
                 $articulo->decrement('stock', $cantidadVenta);
 
-                // Aseguramos que el total_venta sea tratado como float/decimal
-                $totalVenta = $articulo->precio * $cantidadVenta;
+                // 3. Calcular total con base en el precio validado
+                $totalVenta = ((float) $validated['precio_venta']) * $cantidadVenta;
 
+                // 4. Crear la venta
                 $venta = $articulo->ventas()->create([
-                    'user_id'      => Auth::user()->hasRole('admin') ? $validated['cliente_id'] : Auth::id(),
+                    'user_id'      => $finalUserId,
                     'cantidad'     => $cantidadVenta,
-                    'precio_venta' => $articulo->precio,
+                    'precio_venta' => $validated['precio_venta'],
                     'total_venta'  => $totalVenta,
                     'descripcion'  => $validated['descripcion'] ?? null,
                 ]);
 
-                if (!Auth::user()->hasRole('admin')) {
-                    $pedido = Pedido::create([
-                        'user_id'     => Auth::id(),
-                        'articulo_id' => $articulo->id,
-                        'descripcion' => $validated['descripcion'] ?? '',
-                        'costo'       => $totalVenta,
-                        'venta_id'    => $venta->id,
-                        'cantidad'    => $cantidadVenta,
-                    ]);
+                // 5. Crear el pedido asociado al cliente (finalUserId)
+                $pedido = Pedido::create([
+                    'user_id'     => $finalUserId,
+                    'articulo_id' => $articulo->id,
+                    'descripcion' => $validated['descripcion'] ?? '',
+                    'costo'       => $totalVenta,
+                    'venta_id'    => $venta->id,
+                    'cantidad'    => $cantidadVenta,
+                ]);
 
-                    try {
-                        Notification::route('mail', 'gestorcapital.0925@gmail.com')
-                            ->notify(new NuevoPedidoNotification($pedido));
-                    } catch (\Exception $e) {
-                        \Log::error("Error notificación: " . $e->getMessage());
-                    }
+                // 6. Notificar por correo
+                try {
+                    Notification::route('mail', 'gestorcapital.0925@gmail.com')
+                        ->notify(new NuevoPedidoNotification($pedido));
+                } catch (\Exception $e) {
+                    \Log::error("Error notificación NuevoPedido: " . $e->getMessage());
                 }
 
-                return redirect()->route('catalogo.index')->with('success', '¡Venta registrada!');
+                return redirect()->route('catalogo.index')->with('success', '¡Venta registrada con éxito!');
             });
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             \Log::critical("Error en Store Venta: " . $e->getMessage());
-            return redirect()->back()->with('error', 'Error en base de datos.');
+            return redirect()->back()->with('error', 'Error en base de datos al registrar la venta.');
         }
     }
 
+    /**
+     * Muestra una venta específica.
+     */
+    public function show(Venta $venta)
+    {
+        $venta->load(['user', 'articulo']);
+        return view('ventas.show', compact('venta'));
+    }
 
+    /**
+     * Muestra el formulario para editar una venta.
+     */
     public function edit($id)
     {
         try {
-            // Obtener el pedido con su venta
-            $venta = Venta::with(['user', 'articulo'])->find($id);
+            $venta = Venta::with(['user', 'articulo'])->findOrFail($id);
 
-            // Verificar permisos: si no es admin, solo puede editar sus propios pedidos
+            // Verificar permisos: si no es admin, solo puede editar sus propias ventas
             if (!Auth::user()->hasRole('admin') && $venta->user_id != Auth::id()) {
-                abort(403, 'No tienes permiso para editar este pedido.');
+                abort(403, 'No tienes permiso para editar esta venta.');
             }
 
-            $articulos = Articulo::all();
-            $clientes  = User::orderBy('name', 'asc')->get(); // si admin, puede cambiar el usuario
+            $articulos = Articulo::whereNotIn('nombre', ['Pago saldado', 'saldo', 'Saldo', 'Abono', 'abono'])
+                ->orderBy('nombre', 'asc')
+                ->get();
+            $clientes  = User::orderBy('name', 'asc')->get();
         } catch (\Exception $e) {
             \Log::critical("Error en Edit Venta: " . $e->getMessage());
             return redirect()->back()->with('error', 'Error en base de datos.');
         }
+
         return view('ventas.edit', compact('venta', 'articulos', 'clientes'));
     }
 
+    /**
+     * Actualiza una venta y ajusta el inventario proporcionalmente.
+     */
     public function update(Request $request, Venta $venta)
     {
+        $validated = $request->validate([
+            'articulo_id'  => 'required|exists:articulos,id',
+            'cantidad'     => 'required|integer|min:1',
+            'cliente_id'   => 'nullable|exists:users,id',
+            'precio_venta' => 'required|numeric|min:0',
+            'descripcion'  => 'nullable|string',
+        ]);
 
         try {
-            
-            if (!empty($p['id'])) {
-                // Actualizar pedido y su venta existente
-                $pedidoExistente = Pedido::find($p['id']);
-                $pedidoExistente->update([
-                    'articulo_id' => $p['articulo_id'],
-                    'descripcion' => $p['descripcion'] ?? '',
-                    'costo'       => $total,
-                    'cantidad'    => $p['cantidad'],
-                    'user_id'     => $p['user_id'],
-                ]);
-
-                $pedidoExistente->venta()->update([
-                    'articulo_id'  => $p['articulo_id'],
-                    'cantidad'     => $p['cantidad'],
-                    'precio_venta' => $p['costo'],
-                    'total_venta'  => $total,
-                    'user_id'     => $p['user_id'],
-                    'descripcion'  => $p['descripcion'] ?? '',
-                ]);
-            } elseif(!empty($venta['id'])) {
-               
-                // 1. Validar incluyendo el ID de la venta y usando los nombres correctos
-                $validated = $request->validate([
-                    'articulo_id'  => 'required|exists:articulos,id',
-                    'cantidad'     => 'required|integer|min:1',
-                    'cliente_id'   => 'nullable|exists:users,id',
-                    'precio_venta' => 'required|numeric|min:0', // Asegúrate que el input se llame así
-                    'descripcion'  => 'nullable|string',
-                ]);
-               
-                // 2. Determinar el usuario
-                $userId = (Auth::user()->hasRole('admin') && !empty($validated['cliente_id']))
+            return DB::transaction(function () use ($validated, $request, $venta) {
+                $userId = (Auth::user()->hasRole('admin') && $request->filled('cliente_id'))
                     ? $validated['cliente_id']
                     : Auth::id();
 
-                // 3. Buscar la venta
-                $venta = Venta::findOrFail($venta['id']);
+                $cantidadAnterior = (int) $venta->cantidad;
+                $nuevaCantidad = (int) $validated['cantidad'];
 
-                // 4. Calcular total (usando el nombre de variable validado)
-                $total = $validated['cantidad'] * $validated['precio_venta'];
-                // 5. Actualizar
+                // 1. Ajuste de stock si se cambia de artículo o de cantidad
+                if ($venta->articulo_id != $validated['articulo_id']) {
+                    // Restituir stock al artículo anterior
+                    $articuloAnterior = Articulo::lockForUpdate()->findOrFail($venta->articulo_id);
+                    $articuloAnterior->increment('stock', $cantidadAnterior);
+
+                    // Descontar stock del nuevo artículo
+                    $nuevoArticulo = Articulo::lockForUpdate()->findOrFail($validated['articulo_id']);
+                    if ($nuevoArticulo->stock < $nuevaCantidad) {
+                        throw ValidationException::withMessages([
+                            'cantidad' => "Stock insuficiente en el artículo seleccionado. Disponible: {$nuevoArticulo->stock}",
+                        ]);
+                    }
+                    $nuevoArticulo->decrement('stock', $nuevaCantidad);
+                } else {
+                    // Mismo artículo: ajustar diferencia de stock
+                    $articulo = Articulo::lockForUpdate()->findOrFail($venta->articulo_id);
+                    $diferencia = $nuevaCantidad - $cantidadAnterior;
+
+                    if ($diferencia > 0) {
+                        if ($articulo->stock < $diferencia) {
+                            throw ValidationException::withMessages([
+                                'cantidad' => "Stock insuficiente para incrementar la cantidad. Disponible: {$articulo->stock}",
+                            ]);
+                        }
+                        $articulo->decrement('stock', $diferencia);
+                    } elseif ($diferencia < 0) {
+                        $articulo->increment('stock', abs($diferencia));
+                    }
+                }
+
+                $total = ((float) $validated['precio_venta']) * $nuevaCantidad;
+
+                // 2. Actualizar la Venta
                 $venta->update([
                     'articulo_id'  => $validated['articulo_id'],
-                    'cantidad'     => $validated['cantidad'],
+                    'cantidad'     => $nuevaCantidad,
                     'precio_venta' => $validated['precio_venta'],
                     'total_venta'  => $total,
                     'user_id'      => $userId,
-                    'descripcion'  => $validated['descripcion'] ?? '',
+                    'descripcion'  => $validated['descripcion'] ?? null,
                 ]);
-            }
-            return redirect()->route('catalogo.index')->with('success', '¡Venta se actualizo correctamente!');
+
+                // 3. Actualizar el Pedido vinculado si existe
+                $pedidoExistente = Pedido::where('venta_id', $venta->id)->first();
+                if ($pedidoExistente) {
+                    $pedidoExistente->update([
+                        'articulo_id' => $validated['articulo_id'],
+                        'descripcion' => $validated['descripcion'] ?? '',
+                        'costo'       => $total,
+                        'cantidad'    => $nuevaCantidad,
+                        'user_id'     => $userId,
+                    ]);
+                }
+
+                return redirect()->route('catalogo.index')->with('success', '¡Venta actualizada correctamente!');
+            });
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             \Log::critical("Error en Update Venta: " . $e->getMessage());
-            return redirect()->back()->with('error', 'Error en base de datos.');
+            return redirect()->back()->with('error', 'Error en base de datos al actualizar la venta.');
         }
     }
 
-    // ... resto de métodos con lógica similar
-
+    /**
+     * Elimina una venta y restituye el stock en inventario.
+     */
     public function destroy(Venta $venta)
     {
         if (!Auth::user()->hasRole('admin') && $venta->user_id !== Auth::id()) {
-            return $this->error('No autorizado', 403);
+            abort(403, 'No autorizado para eliminar esta venta.');
         }
 
         try {
             DB::transaction(function () use ($venta) {
-                // CAMBIO POSTGRES: Usar findOrFail para asegurar el bloqueo en la transacción
                 $articulo = Articulo::lockForUpdate()->find($venta->articulo_id);
                 if ($articulo) {
                     $articulo->increment('stock', (int) $venta->cantidad);
                 }
+
+                // Eliminar pedido vinculado si existe
+                Pedido::where('venta_id', $venta->id)->delete();
                 $venta->delete();
             });
 
-            return redirect()->route('ventas.index')->with('success', '¡Venta registrada!');
+            return redirect()->route('ventas.index')->with('success', '¡Venta eliminada correctamente!');
         } catch (\Exception $e) {
             \Log::error("Postgres Delete Error: " . $e->getMessage());
-            return $this->error('Error al eliminar', 500);
+            return redirect()->route('ventas.index')->with('error', 'Error al eliminar la venta.');
         }
     }
 }
+

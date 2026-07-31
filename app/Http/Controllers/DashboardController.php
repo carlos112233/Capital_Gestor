@@ -18,12 +18,11 @@ class DashboardController extends Controller
             ->withSum('entradas', 'precio_venta')
             ->get()
             ->map(function ($User) {
-                $totalDeuda = $User->ventas_sum_total_venta ?? 0;
-                $totalPagado = $User->entradas_sum_precio_venta ?? 0;
-
-                $User->total_deuda = $totalDeuda;
-                $User->total_pagado = $totalPagado;
-                $User->saldo =   $totalDeuda - $totalPagado;
+                $User->total_deuda = $User->ventas_sum_total_venta ?? $User->total_deuda;
+                $User->total_pagado = $User->entradas_sum_precio_venta ?? $User->total_pagado;
+                $User->saldo = $User->total_deuda - $User->total_pagado;
+                $User->saldo_corte_anterior = $User->saldo_corte_anterior;
+                $User->saldo_corte_actual = $User->saldo_corte_actual;
 
                 return $User;
             });
@@ -34,7 +33,7 @@ class DashboardController extends Controller
         if (Auth::user()->hasRole('admin')) {
             return view('dashboardAdmin', compact('resumen', 'totalSaldo'));
         } else {
-            redirect()->intended(route('dashboard'));
+            return redirect()->intended(route('dashboard'));
         }
     }
 
@@ -43,9 +42,10 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
-        // Calculamos totales para el usuario logueado
-        $totalDeuda = $user->ventas()->sum('total_venta');
-        $totalPagado = $user->entradas()->sum('precio_venta');
+        // Calculamos totales utilizando los accessors contables centralizados
+        $totalDeuda = $user->total_deuda;
+        $totalPagado = $user->total_pagado;
+        // En la vista del cliente, saldo positivo significa a favor y negativo adeudo
         $saldo = $totalPagado - $totalDeuda;
 
         // Creamos un "resumen" para la vista, usando la misma estructura que tu tabla
@@ -56,6 +56,8 @@ class DashboardController extends Controller
                 'total_deuda' => $totalDeuda,
                 'total_pagado' => $totalPagado,
                 'saldo' => $saldo,
+                'saldo_corte_anterior' => $user->saldo_corte_anterior,
+                'saldo_corte_actual' => $user->saldo_corte_actual,
             ]
         ]);
 
@@ -66,8 +68,6 @@ class DashboardController extends Controller
             return view('dashboard', compact('resumen', 'totalSaldo'));
         } else {
             return redirect()->intended(route('dashboardAdmin'));
-            // o si prefieres directo:
-            // return redirect()->route('dashboardAdmin');
         }
     }
 
@@ -82,19 +82,24 @@ class DashboardController extends Controller
         foreach ($usuarios as $user) {
             if (!$user->telefono) continue;
 
-            // Calculamos saldo base
-            $totalDeuda = $user->ventas()->sum('total_venta') ?? 0;
-            $totalPagado = $user->entradas()->sum('precio_venta') ?? 0;
-
-            // CORRECCIÓN AQUÍ:
-            // Buscamos el ajuste usando el ID del usuario como llave
+            // Calculamos saldo base usando el accessor centralizado
             $montoAjuste = isset($ajustes[$user->id]) ? (float)$ajustes[$user->id] : 0;
+            $saldo = $user->saldo_pendiente - $montoAjuste;
+            $saldoAnterior = $user->saldo_corte_anterior;
+            $saldoActual = $user->saldo_corte_actual;
 
-            $saldo = $totalDeuda - $totalPagado - $montoAjuste;
+            $desgloseTexto = "";
+            if ($saldoAnterior > 0) {
+                $desgloseTexto = "*Corte Anterior (Vencido):* $" . number_format($saldoAnterior, 2) . "\n" .
+                    "*Corte Actual (Quincena actual):* $" . number_format($saldoActual, 2) . "\n" .
+                    "--------------------------\n";
+            }
 
             $mensaje = "Hola excelente tarde,  " . $user->name . ", solo es para informarte de tu saldo actual a cubrir es de *$" .
                 number_format($saldo, 2) .
-                "*\n tienes dudas o deseas más informacion sobre el monto a cobrar de tu saldo, mandame un mensaje.\n\n" .
+                "*\n\n" .
+                $desgloseTexto .
+                "tienes dudas o deseas más informacion sobre el monto a cobrar de tu saldo, mandame un mensaje.\n\n" .
                 "--------------------------\n" .
                 "*DATOS PARA PAGO:*\n\n" .
                 "*BBVA:*\n" .

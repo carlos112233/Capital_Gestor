@@ -17,7 +17,9 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Saldo</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Corte Anterior (Vencido)</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Corte Actual</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Saldo Total</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -25,17 +27,31 @@
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $r->nombre }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right">
-                                            @if($r->saldo >= 0)
-                                                <span class="text-green-600 font-bold">+${{ number_format($r->saldo) }}</span>
+                                            @if($r->saldo_corte_anterior > 0)
+                                                <span class="text-red-600 font-bold">-${{ number_format($r->saldo_corte_anterior, 2) }}</span>
                                             @else
-                                                <span class="text-red-600 font-bold">${{ number_format($r->saldo) }}</span>
+                                                <span class="text-gray-400">$0.00</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                                            @if($r->saldo_corte_actual > 0)
+                                                <span class="text-gray-700">-${{ number_format($r->saldo_corte_actual, 2) }}</span>
+                                            @else
+                                                <span class="text-gray-400">$0.00</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                                            @if($r->saldo >= 0)
+                                                <span class="text-green-600 font-bold">+${{ number_format($r->saldo, 2) }}</span>
+                                            @else
+                                                <span class="text-red-600 font-bold">-${{ number_format(abs($r->saldo), 2) }}</span>
                                             @endif
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="1" class="px-6 py-4 text-center text-gray-500">
-                                            No hay datos para esta semana
+                                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">
+                                            No hay datos para este periodo
                                         </td>
                                     </tr>
                                 @endforelse

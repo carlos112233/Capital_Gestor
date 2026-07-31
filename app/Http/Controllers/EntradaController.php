@@ -55,9 +55,17 @@ class EntradaController extends Controller
      */
     public function create(): View
     {
-        $articulos = Articulo::select('id', 'nombre', 'precio')
-        ->orderBy('nombre')
-        ->get();
+        // Priorizar artículos financieros de abono/saldo en la selección
+        $articulos = Articulo::whereIn('nombre', ['Pago saldado', 'saldo', 'Saldo', 'Abono', 'abono'])
+            ->orWhere('nombre', 'LIKE', '%saldo%')
+            ->orderBy('nombre')
+            ->get();
+
+        if ($articulos->isEmpty()) {
+            $articulos = Articulo::select('id', 'nombre', 'precio')
+                ->orderBy('nombre')
+                ->get();
+        }
 
     // Solo traemos ID y nombre de los usuarios.
     $users = User::select('id', 'name')
@@ -105,8 +113,15 @@ class EntradaController extends Controller
 
     public function edit(Entrada $entrada)
     {
-        $users = User::orderBy('name', 'asc')->get();;
-        $articulos = Articulo::all();
+        $users = User::orderBy('name', 'asc')->get();
+        $articulos = Articulo::whereIn('nombre', ['Pago saldado', 'saldo', 'Saldo', 'Abono', 'abono'])
+            ->orWhere('nombre', 'LIKE', '%saldo%')
+            ->orderBy('nombre')
+            ->get();
+
+        if ($articulos->isEmpty()) {
+            $articulos = Articulo::all();
+        }
         $entrada->load(['user',  'articulo']);
 
         return view('admin.entradas.edit', compact('users', 'articulos', 'entrada'));
@@ -123,13 +138,17 @@ class EntradaController extends Controller
         ]);
 
         $fecha = Carbon::now();
+        $userId = (Auth::user()->hasRole('admin') && $request->filled('cliente_id'))
+            ? $request['cliente_id']
+            : Auth::id();
+
         $request->merge([
             'fecha_generado' => $fecha,
-            'user_id' => Auth::user()->hasRole('admin') ? $request['cliente_id'] : Auth::id(),
+            'user_id'        => $userId,
         ]);
         $entrada->update($request->all());
 
-        return redirect()->route('admin.entradas.index')->with('success', 'Venta actualizada correctamente.');
+        return redirect()->route('admin.entradas.index')->with('success', 'Entrada de capital actualizada correctamente.');
     }
 
     public function destroy(Entrada $entrada)
@@ -137,6 +156,6 @@ class EntradaController extends Controller
         $entrada->delete();
 
         return redirect()->route('admin.entradas.index')
-            ->with('success', 'Venta eliminada correctamente.');
+            ->with('success', 'Entrada de capital eliminada correctamente.');
     }
 }
