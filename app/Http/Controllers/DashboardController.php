@@ -129,9 +129,22 @@ class DashboardController extends Controller
             return $venta->articulo && $venta->articulo->nombre !== 'Pago saldado';
         }) : collect();
 
-        if ($ventasCliente->isNotEmpty()) {
+        $ventasPorCubrir = collect();
+        if ($saldo > 0 && $ventasCliente->isNotEmpty()) {
+            $acumulado = 0.0;
+            // Recorremos desde la venta más reciente hacia atrás para obtener solo lo que falta por pagar (FIFO)
+            foreach ($ventasCliente->reverse() as $venta) {
+                if ($acumulado >= $saldo - 0.01) {
+                    break;
+                }
+                $ventasPorCubrir->prepend($venta);
+                $acumulado += (float) $venta->total_venta;
+            }
+        }
+
+        if ($ventasPorCubrir->isNotEmpty()) {
             $desgloseTexto .= "*Detalle de compras:*\n";
-            foreach ($ventasCliente as $venta) {
+            foreach ($ventasPorCubrir as $venta) {
                 $nombreArticulo = $venta->articulo ? $venta->articulo->nombre : 'Artículo';
                 $desgloseTexto .= "- " . $venta->cantidad . "x " . $nombreArticulo .
                     ($venta->cantidad > 1 ? " ($" . number_format($venta->precio_venta, 2) . " c/u)" : "") .

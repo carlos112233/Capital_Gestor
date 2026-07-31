@@ -87,3 +87,48 @@ test('ignora productos de pago saldado al generar el detalle de compras', functi
         ->toContain('- 1x Pantalón Levi\'s - $1,000.00')
         ->not->toContain('Pago saldado');
 });
+
+test('muestra únicamente las compras más recientes pendientes de pago hasta cubrir el saldo adeudado (FIFO)', function () {
+    $controller = new DashboardController();
+
+    $user = new User([
+        'name' => 'Fercho',
+        'telefono' => '5511223344',
+    ]);
+    // Fercho tiene un historial largo pero solo debe $150.00
+    $user->setAttribute('saldo', 150.00);
+    $user->setAttribute('saldo_corte_anterior', 0);
+    $user->setAttribute('saldo_corte_actual', 150.00);
+
+    $articuloViejo = new Articulo(['nombre' => 'Torta de milanesa vieja pagada']);
+    $articulo1 = new Articulo(['nombre' => 'Cemita de milanesa de pollo grande']);
+    $articulo2 = new Articulo(['nombre' => 'Pan de dulce']);
+    $articulo3 = new Articulo(['nombre' => 'Empanaditas de longaniza']);
+
+    // Compra antigua ya pagada (no debe aparecer)
+    $ventaVieja = new Venta(['cantidad' => 1, 'precio_venta' => 500.00, 'total_venta' => 500.00]);
+    $ventaVieja->setRelation('articulo', $articuloViejo);
+
+    // Compras recientes que suman el saldo de $150.00 (60 + 10 + 30 + 50 = 150)
+    $venta1 = new Venta(['cantidad' => 1, 'precio_venta' => 60.00, 'total_venta' => 60.00]);
+    $venta1->setRelation('articulo', $articulo1);
+
+    $venta2 = new Venta(['cantidad' => 1, 'precio_venta' => 10.00, 'total_venta' => 10.00]);
+    $venta2->setRelation('articulo', $articulo2);
+
+    $venta3 = new Venta(['cantidad' => 1, 'precio_venta' => 30.00, 'total_venta' => 30.00]);
+    $venta3->setRelation('articulo', $articulo3);
+
+    $venta4 = new Venta(['cantidad' => 1, 'precio_venta' => 50.00, 'total_venta' => 50.00]);
+    $venta4->setRelation('articulo', $articulo1);
+
+    $user->setRelation('ventas', collect([$ventaVieja, $venta1, $venta2, $venta3, $venta4]));
+
+    $mensaje = $controller->generarMensajeRecordatorio($user);
+
+    expect($mensaje)
+        ->toContain('- 1x Cemita de milanesa de pollo grande - $60.00')
+        ->toContain('- 1x Pan de dulce - $10.00')
+        ->toContain('- 1x Empanaditas de longaniza - $30.00')
+        ->not->toContain('Torta de milanesa vieja pagada');
+});
