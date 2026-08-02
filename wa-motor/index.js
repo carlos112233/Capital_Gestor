@@ -4,6 +4,7 @@ const { Pool } = require('pg');
 const QRCodeImage = require('qrcode');
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 require('dotenv').config();
 
 // 1. CONFIGURACIÓN DE LA BASE DE DATOS (PostgreSQL Local / Server)
@@ -18,19 +19,27 @@ const pool = new Pool({
 // Detectar ejecutable de Chrome / Chromium en el servidor
 function findChromePath() {
     const paths = [
-        '/usr/bin/google-chrome-stable',
-        '/usr/bin/google-chrome',
+        '/usr/bin/chromium',
         '/usr/bin/chromium-browser',
-        '/usr/bin/chromium'
+        '/usr/bin/google-chrome',
+        '/usr/bin/google-chrome-stable',
+        '/usr/local/bin/chromium'
     ];
     for (const p of paths) {
         if (fs.existsSync(p)) return p;
     }
-    return undefined;
+
+    try {
+        const found = execSync('which chromium || which chromium-browser || which google-chrome || which google-chrome-stable', { encoding: 'utf8' }).trim();
+        if (found && fs.existsSync(found)) return found;
+    } catch (e) {}
+
+    // Fallback estándar en Linux
+    return '/usr/bin/chromium';
 }
 
 const chromePath = findChromePath();
-console.log(`🌐 Navegador detectado para WhatsApp: ${chromePath || 'Chromium integrado de Puppeteer'}`);
+console.log(`🌐 Navegador detectado para WhatsApp: ${chromePath}`);
 
 // 2. CONFIGURACIÓN DEL CLIENTE WHATSAPP CON OPCIONES ACTUALIZADAS
 const client = new Client({
