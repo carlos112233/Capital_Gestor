@@ -5,28 +5,38 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ config('app.name', 'Capital Gestor') }}</title>
+        <link rel="icon" type="image/png" href="{{ asset('img/Logo.png') }}">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans text-gray-900 antialiased">
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
-            <div class="mb-2">
-                <a href="/" class="flex justify-center">
+    <body class="font-sans antialiased text-slate-800 bg-slate-900 selection:bg-indigo-500 selection:text-white">
+        <div class="min-h-screen flex flex-col sm:justify-center items-center py-8 px-4 relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+            
+            <!-- Glow decorative background -->
+            <div class="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="mb-4 relative z-10">
+                <a href="/" class="flex justify-center group">
                     <img src="{{ file_exists(public_path('img/Logo.svg')) ? asset('img/Logo.svg') : asset('img/Logo.png') }}?v={{ time() }}" 
-                         style="height: 190px; width: auto; object-fit: contain;" 
-                         class="mx-auto drop-shadow-md transition-transform hover:scale-105" 
-                         alt="El Sabor Urbano Logo">
+                         style="height: 180px; width: auto; object-fit: contain;" 
+                         class="mx-auto drop-shadow-2xl transition-transform duration-300 group-hover:scale-105" 
+                         alt="Capital Gestor Logo">
                 </a>
             </div>
 
-            <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
+            <div class="w-full sm:max-w-md bg-white border border-slate-100 shadow-2xl rounded-2xl p-6 sm:p-8 relative z-10">
                 {{ $slot }}
+            </div>
+
+            <div class="mt-6 text-center text-xs text-slate-400 relative z-10 font-medium">
+                &copy; {{ date('Y') }} Capital Gestor &bull; Todos los derechos reservados
             </div>
         </div>
     </body>

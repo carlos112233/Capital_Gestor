@@ -1,28 +1,38 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Perfil') }}
-        </h2>
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-black text-slate-800 tracking-tight">
+                    Mi Perfil
+                </h2>
+                <p class="text-sm text-slate-500 font-medium mt-0.5">Gestiona la información de tu cuenta y la configuración de seguridad</p>
+            </div>
+            <div class="px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 text-xs font-bold flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
+                {{ Auth::user()->name }}
+            </div>
+        </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-profile-information-form')
-                </div>
+    <div class="py-6 space-y-6">
+        <!-- Información Personal -->
+        <div class="p-6 sm:p-8 bg-white border border-slate-200/80 shadow-xs sm:rounded-2xl">
+            <div class="max-w-xl">
+                @include('profile.partials.update-profile-information-form')
             </div>
+        </div>
 
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-password-form')
-                </div>
+        <!-- Seguridad y Contraseña -->
+        <div class="p-6 sm:p-8 bg-white border border-slate-200/80 shadow-xs sm:rounded-2xl">
+            <div class="max-w-xl">
+                @include('profile.partials.update-password-form')
             </div>
+        </div>
 
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.delete-user-form')
-                </div>
+        <!-- Zona de Peligro: Eliminar Cuenta -->
+        <div class="p-6 sm:p-8 bg-rose-50/50 border border-rose-100 shadow-xs sm:rounded-2xl">
+            <div class="max-w-xl">
+                @include('profile.partials.delete-user-form')
             </div>
         </div>
     </div>

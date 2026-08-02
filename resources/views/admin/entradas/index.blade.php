@@ -17,9 +17,16 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <form method="GET" action="{{ route('admin.entradas.index') }}" class="mb-6 flex gap-2">
-                <input id="q" type="text" name="q" value="{{ request('q') }}"
-                    placeholder="Buscar por nombre…" autocomplete="off"
-                    class="w-full border-gray-300 rounded-lg shadow-sm focus:ring focus:ring-indigo-200">
+                <div class="relative w-full">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input id="q" type="text" name="q" value="{{ request('q') }}"
+                        placeholder="Buscar por usuario, artículo o concepto..." autocomplete="off"
+                        class="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 text-sm font-medium transition-all outline-none bg-white shadow-xs">
+                </div>
             </form>
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">

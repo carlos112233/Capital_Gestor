@@ -50,8 +50,10 @@ client.on('qr', async (qr) => {
         const qrPath = path.join(__dirname, 'qr.png');
         await QRCodeImage.toFile(qrPath, qr, { width: 400 });
         const brainPath = '/home/araiza/.gemini/antigravity-ide/brain/20e4ef77-10df-4090-9fac-89a163a822e6/qr.png';
-        fs.copyFileSync(qrPath, brainPath);
-        console.log('📸 Imagen del QR guardada como qr.png');
+        const publicPath = path.join(__dirname, '..', 'public', 'img', 'qr.png');
+        if (fs.existsSync(brainPath)) fs.copyFileSync(qrPath, brainPath);
+        fs.copyFileSync(qrPath, publicPath);
+        console.log('📸 Imagen del QR guardada en public/img/qr.png');
     } catch (e) {
         console.error('Error guardando imagen QR:', e.message);
     }

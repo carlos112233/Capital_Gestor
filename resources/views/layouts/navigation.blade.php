@@ -31,13 +31,82 @@
         <!-- Derecha: Notificaciones & Menú del Usuario -->
         <div class="flex items-center gap-3 sm:gap-4">
             
-            <!-- Icono de Alertas / Notificaciones -->
-            <button class="relative p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors focus:outline-none" title="Notificaciones">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9" />
-                </svg>
-                <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white"></span>
-            </button>
+            <!-- Icono de Alertas / Notificaciones Interactivo -->
+            <div class="relative" x-data="{ notifOpen: false }">
+                <button @click="notifOpen = !notifOpen" @click.away="notifOpen = false"
+                    class="relative p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
+                    title="Notificaciones">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9" />
+                    </svg>
+                    <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse"></span>
+                </button>
+
+                <!-- Menú Desplegable de Notificaciones -->
+                <div x-show="notifOpen" x-transition:enter="transition ease-out duration-100"
+                    x-transition:enter-start="transform opacity-0 scale-95"
+                    x-transition:enter-end="transform opacity-100 scale-100"
+                    x-transition:leave="transition ease-in duration-75"
+                    x-transition:leave-start="transform opacity-100 scale-100"
+                    x-transition:leave-end="transform opacity-0 scale-95"
+                    class="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-2 z-50 overflow-hidden"
+                    style="display: none;">
+                    
+                    <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Notificaciones del Sistema
+                        </h4>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">3 Nuevas</span>
+                    </div>
+
+                    <div class="max-h-72 overflow-y-auto divide-y divide-slate-100 text-xs">
+                        <div class="p-3.5 hover:bg-slate-50 transition-colors flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-xl bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-bold text-slate-800">Mensajes de WhatsApp</p>
+                                <p class="text-slate-500 mt-0.5">El envío masivo de recordatorios está encolado y listo.</p>
+                                <span class="text-[10px] text-slate-400 mt-1 block">Hace 5 minutos</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3.5 hover:bg-slate-50 transition-colors flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-bold text-slate-800">Nueva Venta / Pedido</p>
+                                <p class="text-slate-500 mt-0.5">Se registraron compras recientes en la plataforma.</p>
+                                <span class="text-[10px] text-slate-400 mt-1 block">Hace 15 minutos</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3.5 hover:bg-slate-50 transition-colors flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-bold text-slate-800">Conciliación de Saldo</p>
+                                <p class="text-slate-500 mt-0.5">Cobro registrado con éxito en el sistema.</p>
+                                <span class="text-[10px] text-slate-400 mt-1 block">Hace 1 hora</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="px-4 py-2 bg-slate-50 border-t border-slate-100 text-center">
+                        <button @click="notifOpen = false" class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800">
+                            Marcar todas como leídas
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
 

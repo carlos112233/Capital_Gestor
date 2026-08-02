@@ -110,7 +110,17 @@ class CobroController extends Controller
             return $item['fecha'] >= $inicioMes;
         })->sum('monto');
 
-        $cobrosPendientes = $todosLosRegistros->where('estado', 'PENDIENTE')->sum('monto');
+        // Calcular Sumatoria a Favor igual que en el Dashboard Admin
+        $resumenUsuarios = User::select('id')
+            ->withSum('ventas', 'total_venta')
+            ->withSum('entradas', 'precio_venta')
+            ->get();
+        $cobrosPendientes = $resumenUsuarios->sum(function ($u) {
+            $totalDeuda = (float) ($u->ventas_sum_total_venta ?? 0);
+            $totalPagado = (float) ($u->entradas_sum_precio_venta ?? 0);
+            return max(0, $totalDeuda - $totalPagado);
+        });
+
         $totalTransacciones = $todosLosRegistros->count();
 
         // Paginación manual de la colección
