@@ -23,6 +23,7 @@ function findChromePath() {
         '/usr/bin/google-chrome',
         '/usr/bin/chromium-browser',
         '/usr/bin/chromium',
+        '/usr/lib/chromium/chromium',
         '/usr/local/bin/chromium'
     ];
     for (const p of paths) {
@@ -34,11 +35,17 @@ function findChromePath() {
         if (found && fs.existsSync(found)) return found;
     } catch (e) {}
 
+    try {
+        const puppeteer = require('puppeteer');
+        const pPath = puppeteer.executablePath();
+        if (pPath && fs.existsSync(pPath)) return pPath;
+    } catch (e) {}
+
     return undefined;
 }
 
 const chromePath = findChromePath();
-console.log(`🌐 Navegador detectado para WhatsApp: ${chromePath || 'Chromium integrado de Puppeteer'}`);
+console.log(`🌐 Navegador detectado para WhatsApp: ${chromePath || 'Chromium nativo de Puppeteer'}`);
 
 const puppeteerOptions = {
     headless: true,
