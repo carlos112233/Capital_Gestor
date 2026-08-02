@@ -33,13 +33,13 @@ function findChromePath() {
     try {
         const found = execSync('which chromium || which chromium-browser || which google-chrome || which google-chrome-stable 2>/dev/null', { encoding: 'utf8' }).trim();
         if (found && fs.existsSync(found)) return found;
-    } catch (e) { }
+    } catch (e) {}
 
     try {
         const puppeteer = require('puppeteer');
         const pPath = puppeteer.executablePath();
         if (pPath && fs.existsSync(pPath)) return pPath;
-    } catch (e) { }
+    } catch (e) {}
 
     return undefined;
 }
@@ -87,15 +87,14 @@ if (chromePath) {
     puppeteerOptions.executablePath = chromePath;
 }
 
-// 2. CONFIGURACIÓN DEL CLIENTE WHATSAPP CON OPCIONES ACTUALIZADAS
+// 2. CONFIGURACIÓN DEL CLIENTE WHATSAPP CON CACHÉ LOCAL ULTRA-RÁPIDO
 const client = new Client({
     authStrategy: new LocalAuth({
         dataPath: './.wwebjs_auth' // Guarda la sesión permanentemente
     }),
     puppeteer: puppeteerOptions,
     webVersionCache: {
-        type: 'remote',
-        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1014587000-alpha.html'
+        type: 'localReleases'
     }
 });
 
@@ -113,7 +112,7 @@ client.on('qr', async (qr) => {
         const brainPath = '/home/araiza/.gemini/antigravity-ide/brain/20e4ef77-10df-4090-9fac-89a163a822e6/qr.png';
         const publicImgPath = path.join(__dirname, '..', 'public', 'img', 'qr.png');
         const publicPath = path.join(__dirname, '..', 'public', 'qr.png');
-
+        
         if (fs.existsSync(brainPath)) fs.copyFileSync(qrPath, brainPath);
         fs.copyFileSync(qrPath, publicImgPath);
         fs.copyFileSync(qrPath, publicPath);

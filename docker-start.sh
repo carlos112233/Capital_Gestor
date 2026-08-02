@@ -1,9 +1,6 @@
 #!/bin/bash
 
-# Limpiar caché previa de sesión de WhatsApp
-rm -rf /var/www/html/wa-motor/.wwebjs_auth
-
-# Iniciar motor de WhatsApp en segundo plano
+# Iniciar motor de WhatsApp en segundo plano (mantiene la sesión en .wwebjs_auth)
 node /var/www/html/wa-motor/index.js &
 
 # Ejecutar migraciones
