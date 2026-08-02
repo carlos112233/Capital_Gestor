@@ -19,10 +19,10 @@ const pool = new Pool({
 // Detectar ejecutable de Chrome / Chromium en el servidor
 function findChromePath() {
     const paths = [
-        '/usr/bin/chromium',
-        '/usr/bin/chromium-browser',
-        '/usr/bin/google-chrome',
         '/usr/bin/google-chrome-stable',
+        '/usr/bin/google-chrome',
+        '/usr/bin/chromium-browser',
+        '/usr/bin/chromium',
         '/usr/local/bin/chromium'
     ];
     for (const p of paths) {
@@ -30,39 +30,43 @@ function findChromePath() {
     }
 
     try {
-        const found = execSync('which chromium || which chromium-browser || which google-chrome || which google-chrome-stable', { encoding: 'utf8' }).trim();
+        const found = execSync('which chromium || which chromium-browser || which google-chrome || which google-chrome-stable 2>/dev/null', { encoding: 'utf8' }).trim();
         if (found && fs.existsSync(found)) return found;
     } catch (e) {}
 
-    // Fallback estándar en Linux
-    return '/usr/bin/chromium';
+    return undefined;
 }
 
 const chromePath = findChromePath();
-console.log(`🌐 Navegador detectado para WhatsApp: ${chromePath}`);
+console.log(`🌐 Navegador detectado para WhatsApp: ${chromePath || 'Chromium integrado de Puppeteer'}`);
+
+const puppeteerOptions = {
+    headless: true,
+    bypassCSP: true,
+    args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu',
+        '--disable-extensions',
+        '--disable-web-security',
+        '--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
+    ]
+};
+
+if (chromePath) {
+    puppeteerOptions.executablePath = chromePath;
+}
 
 // 2. CONFIGURACIÓN DEL CLIENTE WHATSAPP CON OPCIONES ACTUALIZADAS
 const client = new Client({
     authStrategy: new LocalAuth({
         dataPath: './.wwebjs_auth' // Guarda la sesión permanentemente
     }),
-    puppeteer: {
-        headless: true,
-        executablePath: chromePath,
-        bypassCSP: true,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu',
-            '--disable-extensions',
-            '--disable-web-security',
-            '--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
-        ]
-    },
+    puppeteer: puppeteerOptions,
     webVersionCache: {
         type: 'remote',
         remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1014587000-alpha.html'
