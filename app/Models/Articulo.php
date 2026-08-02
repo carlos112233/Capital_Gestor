@@ -20,7 +20,15 @@ class Articulo extends Model
     ];
 
     public function ventas(): HasMany
-{
-    return $this->hasMany(Venta::class);
-}
+    {
+        return $this->hasMany(Venta::class);
+    }
+
+    /**
+     * Scope para filtrar únicamente artículos comerciales (excluyendo artículos de flujo como 'Pago saldado' y 'Abono').
+     */
+    public function scopeComerciales($query)
+    {
+        return $query->whereNotIn('nombre', ['Pago saldado', 'Abono', 'pago saldado', 'abono']);
+    }
 }

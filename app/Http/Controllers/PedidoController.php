@@ -17,24 +17,28 @@ class PedidoController extends Controller
     public function index(Request $request): View
     {
         $user = Auth::user();
+        $query = Pedido::with(['user', 'articulo', 'venta'])->latest();
 
-        if ($user->hasRole('admin')) {
-            // Mostrar todos los pedidos
-            $pedidos = Pedido::with(['user', 'articulo', 'venta'])->latest()->paginate(25);;
-        } else {
-            // Mostrar solo los pedidos del user autenticado
-            $pedidos = Pedido::with(['user', 'articulo', 'venta'])
-                ->where('user_id', $user->id)
-                ->latest()
-                ->paginate(25);
+        if (!$user->hasRole('admin')) {
+            $query->where('user_id', $user->id);
         }
+
         if ($request->filled('q')) {
-            $search = $request->input('q');
-            $pedidos->whereHas('user', function ($query) use ($search) {
-               $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
+            $search = '%' . strtolower($request->input('q')) . '%';
+            $query->where(function($q) use ($search) {
+                $q->whereHas('user', function ($u) use ($search) {
+                    $u->whereRaw('LOWER(name) LIKE ?', [$search]);
+                })->orWhereHas('articulo', function ($a) use ($search) {
+                    $a->whereRaw('LOWER(nombre) LIKE ?', [$search]);
+                })->orWhereRaw('LOWER(descripcion) LIKE ?', [$search]);
             });
         }
-        return view('pedidos.index', compact('pedidos'));
+
+        $pedidos = $query->paginate(25)->withQueryString();
+        $articulos = Articulo::orderBy('nombre', 'asc')->get();
+        $users = User::orderBy('name', 'asc')->get();
+
+        return view('pedidos.index', compact('pedidos', 'articulos', 'users'));
     }
 
 

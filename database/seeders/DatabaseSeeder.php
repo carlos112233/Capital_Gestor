@@ -15,6 +15,16 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        $this->call(RoleSeeder::class); // <-- AÑADE ESTA LÍNEA
+        $this->call(RoleSeeder::class);
+        $this->call(UsuariosSeeder::class);
+
+        \App\Models\Articulo::firstOrCreate(
+            ['nombre' => 'Pago saldado'],
+            ['precio' => 0, 'stock' => 999999, 'descripcion' => 'Artículo del sistema para saldar adeudos']
+        );
+        \App\Models\Articulo::firstOrCreate(
+            ['nombre' => 'Abono'],
+            ['precio' => 0, 'stock' => 999999, 'descripcion' => 'Artículo del sistema para abonos']
+        );
     }
 }

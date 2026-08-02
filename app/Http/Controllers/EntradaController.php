@@ -42,12 +42,17 @@ class EntradaController extends Controller
 
 
 
+        $articulos = Articulo::orderBy('nombre', 'asc')->get();
+        $users = User::select('id', 'name')
+            ->orderBy('name')
+            ->get();
+
         if ($request->ajax()) {
             $entradas = $entradasQuery->orderBy('created_at', 'desc')->get();
-            return view('admin.entradas._tabla', compact('entradas'))->render();
+            return view('admin.entradas._tabla', compact('entradas', 'articulos', 'users'))->render();
         }
-        $entradas = $entradasQuery->orderBy('created_at', 'desc')->paginate(10);
-        return view('admin.entradas.index', compact('entradas'));
+        $entradas = $entradasQuery->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+        return view('admin.entradas.index', compact('entradas', 'articulos', 'users'));
     }
 
     /**
@@ -84,25 +89,23 @@ class EntradaController extends Controller
         $validated = $request->validate([
             'cliente_id'   => 'nullable|exists:users,id',
             'articulo_id'  => 'required|exists:articulos,id',
-            'precio_venta' => 'required|integer',
+            'precio_venta' => 'required|numeric',
             'descripcion'  => 'nullable|string|max:1000',
         ]);
 
         // 2. Determinar el user_id de forma segura
-        // Si el usuario es admin y eligió un cliente, usamos ese ID.
-        // De lo contrario, usamos el ID del usuario que está logueado.
         $userId = (Auth::user()->hasRole('admin') && $request->filled('cliente_id'))
             ? $validated['cliente_id']
             : Auth::id();
 
         // 3. Crear el registro
-        // Es mejor pasar un array explícito que usar $request->all()
         Entrada::create([
             'articulo_id'    => $validated['articulo_id'],
             'user_id'        => $userId,
+            'cliente_id'     => $validated['cliente_id'] ?? $userId,
             'precio_venta'   => $validated['precio_venta'],
-            'descripcion'    => $validated['descripcion'],
-            'fecha_generado' => now(), // now() es un helper de Laravel para Carbon::now()
+            'descripcion'    => $validated['descripcion'] ?? null,
+            'fecha_generado' => now(),
         ]);
 
         // 4. Redireccionar
@@ -133,7 +136,7 @@ class EntradaController extends Controller
         $request->validate([
             'articulo_id' => 'required|exists:articulos,id',
             'cliente_id' => 'nullable|exists:users,id',
-            'precio_venta' => 'required|integer',
+            'precio_venta' => 'required|numeric',
             'descripcion' => 'nullable|string',
         ]);
 
@@ -145,6 +148,7 @@ class EntradaController extends Controller
         $request->merge([
             'fecha_generado' => $fecha,
             'user_id'        => $userId,
+            'cliente_id'     => $request->input('cliente_id') ?: $userId,
         ]);
         $entrada->update($request->all());
 

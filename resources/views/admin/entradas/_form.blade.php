@@ -10,10 +10,10 @@
 <div class="mb-4">
     <label for="tipo_pago" class="block text-gray-700 font-bold mb-2">Tipo de Pago</label>
     <select name="tipo_pago" id="tipo_pago" class="w-full border-gray-300 rounded-lg shadow-sm" required>
-        <option value="" disabled {{ !isset($entrada) && !$esSaldar ? 'selected' : '' }}>Seleccione un tipo</option>
-        <option value="1" {{ (isset($entrada) && $entrada->articulo->nombre != 'Pago saldado') ? 'selected' : '' }}>Por artículo</option>
+        <option value="" disabled {{ !isset($entrada->id) && !$esSaldar ? 'selected' : '' }}>Seleccione un tipo</option>
+        <option value="1" {{ (isset($entrada->id) && optional($entrada->articulo)->nombre != 'Pago saldado') ? 'selected' : '' }}>Por artículo</option>
         {{-- Si esSaldar es true, seleccionamos esta opción por defecto --}}
-        <option value="2" {{ $esSaldar || (isset($entrada) && $entrada->articulo->nombre == 'Pago saldado') ? 'selected' : '' }}>Saldar adeudo</option>
+        <option value="2" {{ $esSaldar || (isset($entrada->id) && optional($entrada->articulo)->nombre == 'Pago saldado') ? 'selected' : '' }}>Saldar adeudo</option>
     </select>
 </div>
 
@@ -63,23 +63,31 @@
     <textarea id="descripcion" name="descripcion"
               class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ $esSaldar ? 'Saldar adeudo pendiente' : old('descripcion', $entrada->descripcion ?? '') }}</textarea>
 </div>
-<div class="flex justify-end">
-    <a href="{{ route('admin.entradas.index') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg mr-2">
+<div class="flex justify-end gap-3 mt-4 border-t border-slate-100 pt-4">
+    <button type="button" x-data x-on:click="$dispatch('close-modal', 'create-entrada'); $dispatch('close-modal', 'edit-entrada-{{ $entrada->id ?? 0 }}')"
+        class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm shadow-sm transition-all duration-200 hover:border-slate-400 focus:outline-none cursor-pointer">
         Cancelar
-    </a>
-    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+    </button>
+    <button type="submit" 
+        class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-indigo-500/35 transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none cursor-pointer">
         Guardar
     </button>
 </div>
 {{-- BOTONES IGUALES... --}}
 
 <script>
-    // Estos datos ahora son ligeros porque el controlador solo envía 3 columnas
-    const articulos = @json($articulos);
-    const tipoPago = document.getElementById('tipo_pago');
-    const articuloSelect = document.getElementById('articulo_id');
-    const precioInput = document.getElementById('precio_venta');
+(function() {
+    const articulos = @json($articulos ?? []);
+    const currentScript = document.currentScript;
+    const form = currentScript ? currentScript.closest('form') : document;
+    if (!form) return;
+
+    const tipoPago = form.querySelector('[name="tipo_pago"]');
+    const articuloSelect = form.querySelector('[name="articulo_id"]');
+    const precioInput = form.querySelector('[name="precio_venta"]');
     
+    if (!tipoPago || !articuloSelect || !precioInput) return;
+
     let selectedArticuloId = "{{ $entrada->articulo_id ?? '' }}";
     const esSaldarFlujo = "{{ $esSaldar }}" == "1";
 
@@ -87,7 +95,6 @@
         const tipo = tipoPago.value;
         articuloSelect.innerHTML = '<option value="" disabled selected>Seleccione un artículo</option>';
         
-        // Filtramos en memoria (muy rápido)
         const filtrados = articulos.filter(art => {
             const esSaldarPago = art.nombre.toLowerCase() === 'pago saldado';
             return (tipo === '2') ? esSaldarPago : !esSaldarPago;
@@ -99,7 +106,6 @@
             opt.textContent = art.nombre;
             opt.dataset.precio = art.precio;
             
-            // Si venimos de "Saldar deuda", seleccionamos automáticamente el artículo correcto
             if (esSaldarFlujo && art.nombre.toLowerCase() === 'pago saldado') {
                 opt.selected = true;
             } else if (art.id == selectedArticuloId) {
@@ -110,18 +116,14 @@
         });
     }
 
-    // Evento al cambiar Tipo de Pago
     tipoPago.addEventListener('change', function() {
         actualizarListaArticulos();
-        
-        // Si no es el flujo de saldar, ponemos el precio del primer artículo de la lista
         if (!esSaldarFlujo && articuloSelect.options.length > 1) {
             const primerArt = articulos.find(a => a.id == articuloSelect.value);
             if (primerArt) precioInput.value = parseFloat(primerArt.precio).toFixed(2);
         }
     });
 
-    // Evento al cambiar Artículo
     articuloSelect.addEventListener('change', function() {
         const art = articulos.find(a => a.id == this.value);
         if (art && !esSaldarFlujo) {
@@ -129,6 +131,6 @@
         }
     });
 
-    // Iniciar al cargar
-    document.addEventListener('DOMContentLoaded', actualizarListaArticulos);
+    actualizarListaArticulos();
+})();
 </script>

@@ -16,23 +16,96 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
-            @include('layouts.navigation')
+    <body class="font-sans antialiased text-slate-800 bg-slate-50/90" x-data="{ sidebarOpen: true, mobileOpen: false }">
+        <div class="min-h-screen flex flex-col bg-slate-50/90">
+            
+            <!-- Sidebar Lateral Colapsable -->
+            @include('layouts.sidebar')
 
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
+            <!-- Contenido Principal (con padding izquierdo adaptable al estado del sidebar) -->
+            <div :class="sidebarOpen ? 'lg:pl-64' : 'lg:pl-20'" 
+                 class="flex-1 flex flex-col transition-all duration-300 ease-in-out min-w-0">
+                
+                <!-- Navbar Superior -->
+                @include('layouts.navigation')
+
+                <!-- Page Heading (Si existe) -->
+                @isset($header)
+                    <div class="bg-white border-b border-slate-200/60 px-4 sm:px-6 lg:px-8 py-4 shadow-2xs">
+                        <div class="max-w-7xl mx-auto">
+                            {{ $header }}
+                        </div>
                     </div>
-                </header>
-            @endisset
+                @endisset
 
-            <!-- Page Content -->
-            <main>
-                {{ $slot }}
-            </main>
+                <!-- Page Content -->
+                <main class="flex-1 px-4 sm:px-6 lg:px-8 py-6 max-w-7xl w-full mx-auto">
+                    {{ $slot }}
+                </main>
+            </div>
         </div>
+
+        <!-- SweetAlert2 -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                @if (session('success'))
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Operación Exitosa!',
+                        text: "{{ session('success') }}",
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                @endif
+
+                @if (session('error'))
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: "{{ session('error') }}",
+                        confirmButtonColor: '#ef4444'
+                    });
+                @endif
+
+                @if (session('info'))
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Información',
+                        text: "{{ session('info') }}",
+                        confirmButtonColor: '#3b82f6'
+                    });
+                @endif
+            });
+
+            window.openModal = function(name) {
+                window.dispatchEvent(new CustomEvent('open-modal', { detail: name }));
+            };
+            window.closeModal = function(name) {
+                window.dispatchEvent(new CustomEvent('close-modal', { detail: name }));
+            };
+
+            function confirmDelete(formOrId, itemName = 'este registro') {
+                Swal.fire({
+                    title: '¿Estás seguro?',
+                    text: `Se eliminará ${itemName}. ¡Esta acción no se puede deshacer!`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        if (typeof formOrId === 'string') {
+                            document.getElementById(formOrId).submit();
+                        } else if (formOrId instanceof HTMLElement) {
+                            formOrId.submit();
+                        }
+                    }
+                });
+                return false;
+            }
+        </script>
     </body>
 </html>

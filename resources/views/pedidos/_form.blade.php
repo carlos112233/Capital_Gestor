@@ -14,13 +14,20 @@
         border-radius: 0.5rem !important;
         padding: 0.5rem !important;
         border: 1px solid #d1d5db !important;
-    }
 </style>
 
-<div id="pedidos-container">
+<div class="pedidos-container">
     @foreach ($pedidos as $i => $p)
-        <div class="pedido-item mb-4 border p-4 rounded-lg bg-white shadow-sm">
-
+        <div class="pedido-item mb-4 border p-4 rounded-lg bg-white shadow-sm relative">
+            <div class="flex justify-end mb-2">
+                <button type="button"
+                    class="btn-eliminar-item p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-full transition-colors duration-150 focus:outline-none cursor-pointer"
+                    title="Eliminar este ítem">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
 
             @if (Auth::user()->hasRole('admin'))
                 <div class="mb-2">
@@ -82,8 +89,6 @@
                 <textarea name="pedidos[{{ $i }}][descripcion]" class="w-full border-gray-300 rounded-lg">{{ old("pedidos.$i.descripcion", $p['descripcion'] ?? '') }}</textarea>
             </div>
 
-    
-
             @if (isset($p['id']))
                 <input type="hidden" name="pedidos[{{ $i }}][id]" value="{{ $p['id'] }}">
             @endif
@@ -92,34 +97,40 @@
 </div>
 
 <div class="flex justify-end mb-4">
-    <button type="button" id="agregar-pedido"
-        class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">+</button>
+    <button type="button" title="Añadir ítem" class="btn-agregar-pedido inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-lg shadow-md shadow-indigo-500/25 hover:shadow-lg transition-all duration-200 cursor-pointer">+</button>
 </div>
 
-<div class="flex justify-end gap-2">
-    <a href="{{ route('pedidos.index') }}"
-        class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">Cancelar</a>
-    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Guardar</button>
+<div class="flex justify-end gap-3 mt-4 border-t border-slate-100 pt-4">
+    <button type="button" x-data x-on:click="$dispatch('close-modal', 'create-pedido'); $dispatch('close-modal', 'edit-pedido-{{ $pedido->id ?? 0 }}')"
+        class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm shadow-sm transition-all duration-200 hover:border-slate-400 focus:outline-none cursor-pointer">Cancelar</button>
+    <button type="submit" 
+        class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-indigo-500/35 transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none cursor-pointer">Guardar</button>
 </div>
 
 <script>
-    // 1. Mapa de precios (Tu lógica original)
+(function() {
     const precios = {
         @foreach ($articulos as $articulo)
             "{{ $articulo->id }}": {{ $articulo->precio ?? 0 }},
         @endforeach
     };
 
-    // 2. Función de costo (Tu lógica original)
+    const currentScript = document.currentScript;
+    const form = currentScript ? currentScript.closest('form') : null;
+    if (!form) return;
+
+    const container = form.querySelector('.pedidos-container') || form.querySelector('#pedidos-container');
+    const btnAgregar = form.querySelector('.btn-agregar-pedido') || form.querySelector('#agregar-pedido');
+
     function actualizarCosto(select) {
         const block = select.closest('.pedido-item');
+        if (!block) return;
         const costo = block.querySelector('.costo-input');
-        costo.value = precios[select.value] ?? '';
+        if (costo) costo.value = precios[select.value] ?? '';
     }
 
-    // 3. Función para activar el buscador
     function activarBuscador(el) {
-        if (el.tomselect) return;
+        if (!el || el.tomselect || typeof TomSelect === 'undefined') return;
         new TomSelect(el, {
             create: false,
             placeholder: "Buscar artículo...",
@@ -129,55 +140,77 @@
         });
     }
 
-    // --- VARIABLE PARA EL MOLDE LIMPIO ---
     let moldeLimpio = null;
-    let index = {{ count($pedidos) }};
+    let index = form.querySelectorAll('.pedido-item').length || 1;
 
-    document.addEventListener("DOMContentLoaded", function() {
-        // 4. GUARDAR MOLDE ANTES DE ACTIVAR NADA
-        const original = document.querySelector('.pedido-item');
-        moldeLimpio = original.cloneNode(true);
+    function initForm() {
+        const original = form.querySelector('.pedido-item');
+        if (original && !moldeLimpio) {
+            moldeLimpio = original.cloneNode(true);
+            moldeLimpio.querySelectorAll('input, textarea').forEach(el => el.value = '');
+            const selectMolde = moldeLimpio.querySelector('.articulo-select');
+            if (selectMolde) selectMolde.value = "";
+        }
 
-        // Limpiar el molde para que esté vacío para futuros usos
-        moldeLimpio.querySelectorAll('input, textarea').forEach(el => el.value = '');
-        const selectMolde = moldeLimpio.querySelector('.articulo-select');
-        selectMolde.value = "";
-
-        // 5. Inicializar buscador en las filas que ya existen (Edición o Errores de validación)
-        document.querySelectorAll('.articulo-select').forEach(select => {
+        form.querySelectorAll('.articulo-select').forEach(select => {
             activarBuscador(select);
             actualizarCosto(select);
         });
-    });
+    }
 
-    // 6. Lógica del botón AGREGAR (+) corregida
-    document.getElementById('agregar-pedido').addEventListener('click', () => {
-        const container = document.getElementById('pedidos-container');
+    initForm();
 
-        // CLONAMOS EL MOLDE LIMPIO (No el que ya tiene Tom Select)
-        const clone = moldeLimpio.cloneNode(true);
-
-        // Cambiar índices [0] -> [1], [2]... (Tu lógica original)
-        clone.querySelectorAll('input, textarea, select').forEach(el => {
-            if (el.name) {
-                el.name = el.name.replace(/\[\d+\]/, `[${index}]`);
+    // Eliminar ítem individual del arreglo
+    form.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-eliminar-item');
+        if (btn) {
+            const item = btn.closest('.pedido-item');
+            const items = form.querySelectorAll('.pedido-item');
+            if (items.length > 1) {
+                if (item) item.remove();
+            } else if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Atención',
+                    text: 'El pedido debe contener al menos un ítem.',
+                    timer: 2500,
+                    showConfirmButton: false
+                });
+            } else {
+                alert('El pedido debe contener al menos un ítem.');
             }
-            if (el.type === 'number') el.value = el.name.includes('cantidad') ? 1 : '';
-            // Limpiar el ID si lo tiene (para que no se duplique en el HTML)
-            if (el.id) el.id = "";
-        });
-
-        // Quitar el input hidden del ID en caso de que el molde lo tenga
-        const hiddenId = clone.querySelector('input[type="hidden"][name*="[id]"]');
-        if (hiddenId) hiddenId.remove();
-
-        // Insertar el clon
-        container.appendChild(clone);
-
-        // ACTIVAR EL BUSCADOR EN EL NUEVO SELECT
-        const nuevoSelect = clone.querySelector('.articulo-select');
-        activarBuscador(nuevoSelect);
-
-        index++;
+        }
     });
+
+    if (btnAgregar) {
+        btnAgregar.addEventListener('click', () => {
+            if (!container) return;
+            if (!moldeLimpio) {
+                const firstItem = form.querySelector('.pedido-item');
+                if (firstItem) {
+                    moldeLimpio = firstItem.cloneNode(true);
+                    moldeLimpio.querySelectorAll('input, textarea').forEach(el => el.value = '');
+                    const selectMolde = moldeLimpio.querySelector('.articulo-select');
+                    if (selectMolde) selectMolde.value = "";
+                }
+            }
+            if (!moldeLimpio) return;
+
+            const clone = moldeLimpio.cloneNode(true);
+            clone.querySelectorAll('input, textarea, select').forEach(el => {
+                if (el.name) {
+                    el.name = el.name.replace(/\[\d+\]/, `[${index}]`);
+                }
+                if (el.type === 'number') el.value = el.name.includes('cantidad') ? 1 : '';
+                if (el.id) el.id = "";
+            });
+            const hiddenId = clone.querySelector('input[type="hidden"][name*="[id]"]');
+            if (hiddenId) hiddenId.remove();
+            container.appendChild(clone);
+            const nuevoSelect = clone.querySelector('.articulo-select');
+            activarBuscador(nuevoSelect);
+            index++;
+        });
+    }
+})();
 </script>

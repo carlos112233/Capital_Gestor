@@ -36,12 +36,18 @@ class VentaController extends Controller
             });
         }
 
-        $ventas = $ventasQuery->paginate(25);
+        $ventas = $ventasQuery->paginate(25)->withQueryString();
+
+        $articulos = Articulo::comerciales()
+            ->where('stock', '>', 0)
+            ->orderBy('nombre', 'asc')
+            ->get();
+        $clientes = User::orderBy('name', 'asc')->get();
 
         if ($request->ajax()) {
-            return view('ventas._tabla', compact('ventas'))->render();
+            return view('ventas._tabla', compact('ventas', 'articulos', 'clientes'))->render();
         }
-        return view('ventas.index', compact('ventas'));
+        return view('ventas.index', compact('ventas', 'articulos', 'clientes'));
     }
 
     /**
@@ -104,25 +110,15 @@ class VentaController extends Controller
                     'descripcion'  => $validated['descripcion'] ?? null,
                 ]);
 
-                // 5. Crear el pedido asociado al cliente (finalUserId)
-                $pedido = Pedido::create([
-                    'user_id'     => $finalUserId,
-                    'articulo_id' => $articulo->id,
-                    'descripcion' => $validated['descripcion'] ?? '',
-                    'costo'       => $totalVenta,
-                    'venta_id'    => $venta->id,
-                    'cantidad'    => $cantidadVenta,
-                ]);
-
-                // 6. Notificar por correo
-                try {
-                    Notification::route('mail', 'gestorcapital.0925@gmail.com')
-                        ->notify(new NuevoPedidoNotification($pedido));
-                } catch (\Exception $e) {
-                    \Log::error("Error notificación NuevoPedido: " . $e->getMessage());
+                // Si la venta proviene de un pedido existente, vinculamos la venta al pedido
+                if ($request->filled('pedido_id')) {
+                    $pedido = Pedido::find($request->input('pedido_id'));
+                    if ($pedido) {
+                        $pedido->update(['venta_id' => $venta->id]);
+                    }
                 }
 
-                return redirect()->route('catalogo.index')->with('success', '¡Venta registrada con éxito!');
+                return redirect()->route('ventas.index')->with('success', '¡Venta registrada con éxito!');
             });
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
@@ -243,7 +239,7 @@ class VentaController extends Controller
                     ]);
                 }
 
-                return redirect()->route('catalogo.index')->with('success', '¡Venta actualizada correctamente!');
+                return redirect()->route('ventas.index')->with('success', '¡Venta actualizada correctamente!');
             });
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();

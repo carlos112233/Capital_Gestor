@@ -37,21 +37,37 @@
                                         {{ \Carbon\Carbon::parse($entrada->fecha_generado)->translatedFormat('l d/m/Y') }}
                                     </td>
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
-                                        {{-- Botón Editar --}}
-                                        <a href="{{ route('admin.entradas.edit', $entrada) }}"
-                                            class="text-indigo-600 hover:text-indigo-900">
+                                        {{-- Botón Editar Modal --}}
+                                        <button type="button" onclick="openModal('edit-entrada-{{ $entrada->id }}')"
+                                            class="text-indigo-600 hover:text-indigo-900 font-semibold cursor-pointer">
                                             Editar
-                                        </a>
-                                        {{-- Botón Eliminar --}}
-                                        <form class="inline-block ml-4"
+                                        </button>
+
+                                        {{-- Botón Eliminar con SweetAlert2 --}}
+                                        <form id="delete-entrada-{{ $entrada->id }}" class="inline-block ml-4"
                                             action="{{ route('admin.entradas.destroy', $entrada) }}" method="POST"
-                                            onsubmit="return confirm('¿Eliminar esta venta?');">
+                                            onsubmit="return confirmDelete(this, 'esta entrada');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-900">
+                                            <button type="submit" class="text-red-600 hover:text-red-900 font-semibold cursor-pointer">
                                                 Eliminar
                                             </button>
                                         </form>
+
+                                        <!-- Modal Editar Entrada -->
+                                        <x-modal name="edit-entrada-{{ $entrada->id }}">
+                                            <div class="p-6 text-left">
+                                                <div class="flex justify-between items-center pb-3 border-b mb-4">
+                                                    <h3 class="text-lg font-bold text-gray-900">Editar Entrada #{{ $entrada->id }}</h3>
+                                                    <button type="button" onclick="closeModal('edit-entrada-{{ $entrada->id }}')" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+                                                </div>
+                                                <form method="POST" action="{{ route('admin.entradas.update', $entrada) }}">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    @include('admin.entradas._form', ['entrada' => $entrada])
+                                                </form>
+                                            </div>
+                                        </x-modal>
                                     </td>
                                 </tr>
                             @empty

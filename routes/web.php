@@ -40,18 +40,16 @@ Route::middleware('auth')->group(function () {
     Route::resource('pedidos', PedidoController::class);
     Route::resource('ventas', VentaController::class);
     Route::resource('datos', TransferenciaController::class);
-    // --- AÑADIR ESTA LÍNEA ---
-
-
+    Route::get('cobros', [\App\Http\Controllers\CobroController::class, 'index'])->name('cobros.index');
 
     Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-        // Dashboard de Admin (lo usaremos más adelante)
-        // Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::resource('clientes', ClienteController::class);
         Route::resource('articulos', ArticuloController::class);
         Route::resource('entradas', EntradaController::class);
         Route::resource('pedidos', PedidoController::class);
-          Route::post('enviar-masivo', [DashboardController::class, 'enviarRecordatoriosMasivos'])->name('enviar.masivo');
+        Route::get('configuracion', [\App\Http\Controllers\ConfiguracionController::class, 'index'])->name('configuracion.index');
+        Route::post('configuracion/logo', [\App\Http\Controllers\ConfiguracionController::class, 'updateLogo'])->name('configuracion.logo');
+        Route::post('enviar-masivo', [DashboardController::class, 'enviarRecordatoriosMasivos'])->name('enviar.masivo');
     });
 });
 

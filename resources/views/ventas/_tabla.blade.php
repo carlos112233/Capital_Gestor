@@ -42,21 +42,37 @@
                                             ${{ number_format($venta->total_venta, 2) }}</td>
                                         @if (Auth::user()->hasRole('admin'))
                                             <td class="px-1 py-4 text-center whitespace-nowrap text-sm text-gray-500">
-                                                {{-- Botón Editar --}}
-                                                <a href="{{ route('ventas.edit', $venta) }}"
-                                                    class="text-indigo-600 hover:text-indigo-900">
+                                                {{-- Botón Editar Modal --}}
+                                                <button type="button" onclick="openModal('edit-venta-{{ $venta->id }}')"
+                                                    class="text-indigo-600 hover:text-indigo-900 font-semibold cursor-pointer">
                                                     Editar
-                                                </a>
-                                                {{-- Botón Eliminar --}}
-                                                <form class="inline-block ml-4"
+                                                </button>
+
+                                                {{-- Botón Eliminar con SweetAlert2 --}}
+                                                <form id="delete-venta-{{ $venta->id }}" class="inline-block ml-4"
                                                     action="{{ route('ventas.destroy', $venta) }}" method="POST"
-                                                    onsubmit="return confirm('¿Eliminar esta venta?');">
+                                                    onsubmit="return confirmDelete(this, 'esta venta');">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="text-red-600 hover:text-red-900">
+                                                    <button type="submit" class="text-red-600 hover:text-red-900 font-semibold cursor-pointer">
                                                         Eliminar
-                                                        </buttoIn>
+                                                    </button>
                                                 </form>
+
+                                                <!-- Modal Editar Venta -->
+                                                <x-modal name="edit-venta-{{ $venta->id }}">
+                                                    <div class="p-6 text-left">
+                                                        <div class="flex justify-between items-center pb-3 border-b mb-4">
+                                                            <h3 class="text-lg font-bold text-gray-900">Editar Venta #{{ $venta->id }}</h3>
+                                                            <button type="button" onclick="closeModal('edit-venta-{{ $venta->id }}')" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+                                                        </div>
+                                                        <form method="POST" action="{{ route('ventas.update', $venta) }}">
+                                                            @csrf
+                                                            @method('PUT')
+                                                            @include('ventas._form', ['venta' => $venta])
+                                                        </form>
+                                                    </div>
+                                                </x-modal>
                                             </td>
                                         @endif
                                     </tr>

@@ -38,7 +38,16 @@
 
 <div class="mb-4">
     <label for="image" class="block text-gray-700 font-bold mb-2">Imagen de Perfil</label>
-    <input type="file" name="image" id="image" accept="image/*" class="border rounded w-full p-2 bg-white">
+    <div x-data="{ fileName: '' }" class="relative">
+        <label class="flex items-center justify-center gap-3 w-full px-4 py-3 rounded-xl border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-indigo-50/50 hover:bg-indigo-50 text-indigo-700 font-semibold text-sm cursor-pointer transition-all duration-200 shadow-sm">
+            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+            <span x-text="fileName ? fileName : 'Haga clic para seleccionar imagen de perfil o arrastre aquí'"></span>
+            <input type="file" name="image" id="image" accept="image/*" class="hidden"
+                   @change="fileName = $event.target.files[0] ? $event.target.files[0].name : ''">
+        </label>
+    </div>
     <p class="text-gray-500 text-xs mt-1">Formatos permitidos: JPG, PNG. Máximo 2MB.</p>
     @error('image')
         <span class="text-red-500 text-sm">{{ $message }}</span>
@@ -54,11 +63,12 @@
 </div>
 
 <div class="flex justify-end mt-6">
-    <a href="{{ route('admin.clientes.index') }}"
-        class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg mr-2 transition duration-200">
+    <button type="button" x-data x-on:click="$dispatch('close-modal', 'create-cliente'); $dispatch('close-modal', 'edit-cliente-{{ $cliente->id ?? 0 }}')"
+        class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm shadow-sm transition-all duration-200 hover:border-slate-400 focus:outline-none cursor-pointer mr-3">
         Cancelar
-    </a>
-    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-lg transition duration-200">
-        {{ isset($cliente) ? 'Actualizar Cliente' : 'Guardar Cliente' }}
+    </button>
+    <button type="submit" 
+        class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-indigo-500/35 transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none cursor-pointer">
+        {{ (isset($cliente) && $cliente->id) ? 'Actualizar Cliente' : 'Guardar Cliente' }}
     </button>
 </div>

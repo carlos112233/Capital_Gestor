@@ -28,19 +28,38 @@
                                             {{ $articulo->stock }}</td>
                                         <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">$
                                             {{ number_format($articulo->precio, 2) }} MXN.</td>
-                                        <td
-                                            class="px-6 py-4 text-center whitespace-nowrap text-center text-sm font-medium">
-                                            <a href="{{ route('admin.articulos.edit', $articulo) }}"
-                                                class="text-indigo-600 hover:text-indigo-900">Editar</a>
-                                            <form class="inline-block ml-4"
-                                                action="{{ route('admin.articulos.destroy', $articulo) }}"
-                                                method="POST"
-                                                onsubmit="return confirm('¿Estás seguro de que quieres eliminar este artículo?');">
+                                        <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium">
+                                            {{-- Botón Editar Modal --}}
+                                            <button type="button" onclick="openModal('edit-articulo-{{ $articulo->id }}')"
+                                                class="text-indigo-600 hover:text-indigo-900 font-semibold cursor-pointer">
+                                                Editar
+                                            </button>
+
+                                            {{-- Botón Eliminar con SweetAlert2 --}}
+                                            <form id="delete-articulo-{{ $articulo->id }}" class="inline-block ml-4"
+                                                action="{{ route('admin.articulos.destroy', $articulo) }}" method="POST"
+                                                onsubmit="return confirmDelete(this, 'este artículo');">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit"
-                                                    class="text-red-600 hover:text-red-900">Eliminar</button>
+                                                <button type="submit" class="text-red-600 hover:text-red-900 font-semibold cursor-pointer">
+                                                    Eliminar
+                                                </button>
                                             </form>
+
+                                            <!-- Modal Editar Artículo -->
+                                            <x-modal name="edit-articulo-{{ $articulo->id }}">
+                                                <div class="p-6 text-left">
+                                                    <div class="flex justify-between items-center pb-3 border-b mb-4">
+                                                        <h3 class="text-lg font-bold text-gray-900">Editar Artículo: {{ $articulo->nombre }}</h3>
+                                                        <button type="button" onclick="closeModal('edit-articulo-{{ $articulo->id }}')" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+                                                    </div>
+                                                    <form method="POST" action="{{ route('admin.articulos.update', $articulo) }}" enctype="multipart/form-data">
+                                                        @csrf
+                                                        @method('PUT')
+                                                        @include('admin.articulos._form', ['articulo' => $articulo])
+                                                    </form>
+                                                </div>
+                                            </x-modal>
                                         </td>
                                     </tr>
                                 @endif

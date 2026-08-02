@@ -1,0 +1,20 @@
+2026/08/01-21:55:04.160 1f2e Reusing MANIFEST /home/araiza/Proyectos/Capital_Gestor/wa-motor/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/08/01-21:55:04.161 1f2e Recovering log #1787
+2026/08/01-21:55:04.166 1f2e Reusing old log /home/araiza/Proyectos/Capital_Gestor/wa-motor/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/001787.log 
+2026/08/01-21:55:11.780 1f2c Compacting 1@2 + 6@3 files
+2026/08/01-21:55:11.803 1f2c Generated table #1819@2: 13635 keys, 2139709 bytes
+2026/08/01-21:55:11.821 1f2c Generated table #1820@2: 10655 keys, 2135401 bytes
+2026/08/01-21:55:11.837 1f2c Generated table #1821@2: 8975 keys, 2130146 bytes
+2026/08/01-21:55:11.880 1f2c Generated table #1822@2: 119031 keys, 2275274 bytes
+2026/08/01-21:55:11.920 1f2c Generated table #1823@2: 96190 keys, 2245330 bytes
+2026/08/01-21:55:11.956 1f2c Generated table #1824@2: 95983 keys, 2245830 bytes
+2026/08/01-21:55:11.959 1f2c Generated table #1825@2: 4788 keys, 111511 bytes
+2026/08/01-21:55:11.959 1f2c Compacted 1@2 + 6@3 files => 13283201 bytes
+2026/08/01-21:55:11.962 1f2c compacted to: files[ 0 0 52 7 0 0 0 ]
+2026/08/01-21:55:11.963 1f2c Delete type=2 #1782
+2026/08/01-21:55:11.963 1f2c Delete type=2 #1780
+2026/08/01-21:55:11.963 1f2c Delete type=2 #1781
+2026/08/01-21:55:11.963 1f2c Delete type=2 #1779
+2026/08/01-21:55:11.963 1f2c Delete type=2 #1777
+2026/08/01-21:55:11.963 1f2c Delete type=2 #1797
+2026/08/01-21:55:11.963 1f2c Delete type=2 #1778

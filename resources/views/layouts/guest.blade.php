@@ -16,9 +16,12 @@
     </head>
     <body class="font-sans text-gray-900 antialiased">
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
-            <div>
-                <a href="/">
-                             <img src="{{ asset('img/Logo.png') }}" style="width: 280px; height: 220px;" alt="Logo">
+            <div class="mb-2">
+                <a href="/" class="flex justify-center">
+                    <img src="{{ file_exists(public_path('img/Logo.svg')) ? asset('img/Logo.svg') : asset('img/Logo.png') }}?v={{ time() }}" 
+                         style="height: 190px; width: auto; object-fit: contain;" 
+                         class="mx-auto drop-shadow-md transition-transform hover:scale-105" 
+                         alt="El Sabor Urbano Logo">
                 </a>
             </div>
 

@@ -1,4 +1,7 @@
 {{-- resources/views/ventas/_form.blade.php --}}
+@php
+    $articuloId = $articuloId ?? null;
+@endphp
 
 <div class="mb-4">
     <label for="articulo_id" class="block text-gray-700 font-bold mb-2">Artículo</label>
@@ -63,40 +66,46 @@
     @enderror
 </div>
 
-<div class="flex justify-end">
-    <a href="{{ route('ventas.index') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg mr-2">
+<div class="flex justify-end gap-3 mt-4 border-t border-slate-100 pt-4">
+    <button type="button" x-data x-on:click="$dispatch('close-modal', 'create-venta'); $dispatch('close-modal', 'edit-venta-{{ $venta->id ?? 0 }}')"
+        class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm shadow-sm transition-all duration-200 hover:border-slate-400 focus:outline-none cursor-pointer">
         Cancelar
-    </a>
-    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+    </button>
+    <button type="submit" 
+        class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-indigo-500/35 transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none cursor-pointer">
         Guardar
     </button>
 </div>
 
 {{-- Script para autocompletar el precio según el artículo seleccionado --}}
 <script>
+(function() {
     const precios = {
         @foreach($articulos as $articulo)
             "{{ $articulo->id }}": {{ $articulo->precio ?? 0 }}@if(!$loop->last),@endif
         @endforeach
     };
 
-    const articuloSelect = document.getElementById('articulo_id');
-    const precioInput = document.getElementById('precio_venta');
+    const currentScript = document.currentScript;
+    const form = currentScript ? currentScript.closest('form') : document;
+    if (!form) return;
 
-    articuloSelect.addEventListener('change', function() {
-        const selectedId = this.value;
-        if (precios[selectedId]) {
-            precioInput.value = precios[selectedId];
-        } else {
-            precioInput.value = '';
-        }
-    });
+    const articuloSelect = form.querySelector('[name="articulo_id"]');
+    const precioInput = form.querySelector('[name="precio_venta"]');
 
-    // Inicializa el precio al cargar la página si hay artículo seleccionado
-    document.addEventListener('DOMContentLoaded', function() {
-        const selectedId = articuloSelect.value;
-        if (precios[selectedId]) {
-            precioInput.value = precios[selectedId];
+    if (articuloSelect && precioInput) {
+        articuloSelect.addEventListener('change', function() {
+            const selectedId = this.value;
+            if (precios[selectedId]) {
+                precioInput.value = precios[selectedId];
+            } else {
+                precioInput.value = '';
+            }
+        });
+
+        if (articuloSelect.value && precios[articuloSelect.value]) {
+            precioInput.value = precios[articuloSelect.value];
         }
-    });
+    }
+})();
 </script>

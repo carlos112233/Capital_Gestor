@@ -12,26 +12,13 @@ class ArticuloController extends Controller
 {
     public function index(Request $request)
     {
-        $articulosCollection = Articulo::latest()
+        $articulos = Articulo::comerciales()
             ->when($request->filled('q'), function ($query) use ($request) {
                 $query->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($request->q) . '%']);
             })
-            ->get()
-            ->sortBy('nombre')
-            ->values();
-
-        // paginación manual
-        $page = request()->get('page', 1);
-        $perPage = 10;
-        $items = $articulosCollection->slice(($page - 1) * $perPage, $perPage)->all();
-
-        $articulos = new LengthAwarePaginator(
-            $items,
-            $articulosCollection->count(),
-            $perPage,
-            $page,
-            ['path' => request()->url(), 'query' => request()->query()]
-        );
+            ->orderBy('nombre', 'asc')
+            ->paginate(10)
+            ->withQueryString();
 
         if ($request->ajax()) {
             return view('admin.articulos._tabla', compact('articulos'))->render();
