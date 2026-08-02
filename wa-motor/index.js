@@ -44,7 +44,18 @@ function findChromePath() {
     return undefined;
 }
 
-const chromePath = findChromePath();
+let chromePath = findChromePath();
+
+if (!chromePath) {
+    console.log('⏳ No se detectó navegador en el sistema. Descargando Chromium automáticamente...');
+    try {
+        execSync('npx puppeteer browsers install chrome', { cwd: __dirname, stdio: 'inherit' });
+        chromePath = findChromePath();
+    } catch (e) {
+        console.error('Error al descargar navegador automáticamente:', e.message);
+    }
+}
+
 console.log(`🌐 Navegador detectado para WhatsApp: ${chromePath || 'Chromium nativo de Puppeteer'}`);
 
 const puppeteerOptions = {
