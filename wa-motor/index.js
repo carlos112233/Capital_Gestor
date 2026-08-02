@@ -87,14 +87,14 @@ if (chromePath) {
     puppeteerOptions.executablePath = chromePath;
 }
 
-// 2. CONFIGURACIÓN DEL CLIENTE WHATSAPP CON CACHÉ LOCAL ULTRA-RÁPIDO
+// 2. CONFIGURACIÓN DEL CLIENTE WHATSAPP CON CACHÉ LOCAL VÁLIDO
 const client = new Client({
     authStrategy: new LocalAuth({
         dataPath: './.wwebjs_auth' // Guarda la sesión permanentemente
     }),
     puppeteer: puppeteerOptions,
     webVersionCache: {
-        type: 'localReleases'
+        type: 'local'
     }
 });
 
