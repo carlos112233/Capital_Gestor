@@ -33,13 +33,13 @@ function findChromePath() {
     try {
         const found = execSync('which chromium || which chromium-browser || which google-chrome || which google-chrome-stable 2>/dev/null', { encoding: 'utf8' }).trim();
         if (found && fs.existsSync(found)) return found;
-    } catch (e) { }
+    } catch (e) {}
 
     try {
         const puppeteer = require('puppeteer');
         const pPath = puppeteer.executablePath();
         if (pPath && fs.existsSync(pPath)) return pPath;
-    } catch (e) { }
+    } catch (e) {}
 
     return undefined;
 }
@@ -87,16 +87,34 @@ if (chromePath) {
     puppeteerOptions.executablePath = chromePath;
 }
 
-// 2. CONFIGURACIÓN DEL CLIENTE WHATSAPP CON CACHÉ LOCAL ULTRA-RÁPIDO
+// 2. CONFIGURACIÓN DEL CLIENTE WHATSAPP CON CACHÉ LOCAL VÁLIDO
 const client = new Client({
     authStrategy: new LocalAuth({
         dataPath: './.wwebjs_auth' // Guarda la sesión permanentemente
     }),
     puppeteer: puppeteerOptions,
     webVersionCache: {
-        type: 'localReleases'
+        type: 'local'
     }
 });
+
+// Función para limpiar imágenes QR cuando la sesión esté conectada
+function limpiarQRArchivos() {
+    try {
+        const qrPath = path.join(__dirname, 'qr.png');
+        const publicImgPath = path.join(__dirname, '..', 'public', 'img', 'qr.png');
+        const publicPath = path.join(__dirname, '..', 'public', 'qr.png');
+        const brainPath = '/home/araiza/.gemini/antigravity-ide/brain/20e4ef77-10df-4090-9fac-89a163a822e6/qr.png';
+
+        if (fs.existsSync(qrPath)) fs.unlinkSync(qrPath);
+        if (fs.existsSync(publicImgPath)) fs.unlinkSync(publicImgPath);
+        if (fs.existsSync(publicPath)) fs.unlinkSync(publicPath);
+        if (fs.existsSync(brainPath)) fs.unlinkSync(brainPath);
+        console.log('🧹 QR eliminado automáticamente porque la sesión ya se encuentra vinculada y activa.');
+    } catch (e) {
+        console.error('Error al limpiar archivos QR:', e.message);
+    }
+}
 
 // 3. EVENTOS DEL SISTEMA
 client.on('qr', async (qr) => {
@@ -112,7 +130,7 @@ client.on('qr', async (qr) => {
         const brainPath = '/home/araiza/.gemini/antigravity-ide/brain/20e4ef77-10df-4090-9fac-89a163a822e6/qr.png';
         const publicImgPath = path.join(__dirname, '..', 'public', 'img', 'qr.png');
         const publicPath = path.join(__dirname, '..', 'public', 'qr.png');
-
+        
         if (fs.existsSync(brainPath)) fs.copyFileSync(qrPath, brainPath);
         fs.copyFileSync(qrPath, publicImgPath);
         fs.copyFileSync(qrPath, publicPath);
@@ -124,6 +142,7 @@ client.on('qr', async (qr) => {
 
 client.on('ready', () => {
     console.log('🚀 MOTOR LISTO: WhatsApp está conectado y escuchando la base de datos PostgreSQL.');
+    limpiarQRArchivos();
     iniciarBucleEnvio();
 });
 
