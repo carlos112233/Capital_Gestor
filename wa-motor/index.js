@@ -26,13 +26,13 @@ function findChromePath() {
     for (const p of paths) {
         if (fs.existsSync(p)) return p;
     }
-    return undefined; // Si es undefined, Puppeteer usará su propio Chromium integrado
+    return undefined;
 }
 
 const chromePath = findChromePath();
 console.log(`🌐 Navegador detectado para WhatsApp: ${chromePath || 'Chromium integrado de Puppeteer'}`);
 
-// 2. CONFIGURACIÓN DEL CLIENTE WHATSAPP
+// 2. CONFIGURACIÓN DEL CLIENTE WHATSAPP CON OPCIONES ACTUALIZADAS
 const client = new Client({
     authStrategy: new LocalAuth({
         dataPath: './.wwebjs_auth' // Guarda la sesión permanentemente
@@ -40,6 +40,7 @@ const client = new Client({
     puppeteer: {
         headless: true,
         executablePath: chromePath,
+        bypassCSP: true,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -49,12 +50,13 @@ const client = new Client({
             '--no-zygote',
             '--disable-gpu',
             '--disable-extensions',
-            '--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+            '--disable-web-security',
+            '--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
         ]
     },
     webVersionCache: {
         type: 'remote',
-        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html'
+        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1014587000-alpha.html'
     }
 });
 
