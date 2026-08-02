@@ -28,3 +28,9 @@ Thumbs.db
 **.node-persist**
 **_IGNORE_**
 # end managed by open-wa
+
+# WhatsApp Motor Session & QR files
+wa-motor/.wwebjs_auth/
+wa-motor/qr.png
+public/img/qr.png
+public/qr.png
