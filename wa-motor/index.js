@@ -98,6 +98,24 @@ const client = new Client({
     }
 });
 
+// Función para limpiar imágenes QR cuando la sesión esté conectada
+function limpiarQRArchivos() {
+    try {
+        const qrPath = path.join(__dirname, 'qr.png');
+        const publicImgPath = path.join(__dirname, '..', 'public', 'img', 'qr.png');
+        const publicPath = path.join(__dirname, '..', 'public', 'qr.png');
+        const brainPath = '/home/araiza/.gemini/antigravity-ide/brain/20e4ef77-10df-4090-9fac-89a163a822e6/qr.png';
+
+        if (fs.existsSync(qrPath)) fs.unlinkSync(qrPath);
+        if (fs.existsSync(publicImgPath)) fs.unlinkSync(publicImgPath);
+        if (fs.existsSync(publicPath)) fs.unlinkSync(publicPath);
+        if (fs.existsSync(brainPath)) fs.unlinkSync(brainPath);
+        console.log('🧹 QR eliminado automáticamente porque la sesión ya se encuentra vinculada y activa.');
+    } catch (e) {
+        console.error('Error al limpiar archivos QR:', e.message);
+    }
+}
+
 // 3. EVENTOS DEL SISTEMA
 client.on('qr', async (qr) => {
     console.log('\n=============================================');
@@ -124,6 +142,7 @@ client.on('qr', async (qr) => {
 
 client.on('ready', () => {
     console.log('🚀 MOTOR LISTO: WhatsApp está conectado y escuchando la base de datos PostgreSQL.');
+    limpiarQRArchivos();
     iniciarBucleEnvio();
 });
 
