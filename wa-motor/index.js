@@ -57,6 +57,7 @@ if (!chromePath) {
 }
 
 console.log(`🌐 Navegador detectado para WhatsApp: ${chromePath || 'Chromium nativo de Puppeteer'}`);
+console.log('⌛ Iniciando Chromium y cargando WhatsApp Web... Por favor espera unos segundos.');
 
 const puppeteerOptions = {
     headless: true,
@@ -71,6 +72,13 @@ const puppeteerOptions = {
         '--disable-gpu',
         '--disable-extensions',
         '--disable-web-security',
+        '--disable-background-networking',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-breakpad',
+        '--disable-component-extensions-with-background-pages',
+        '--disable-ipc-flooding-protection',
+        '--disable-renderer-backgrounding',
         '--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
     ]
 };
