@@ -12,14 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('whatsapp_pending_messages', function (Blueprint $table) {
-            $table->text('error_message')->nullable()->after('status');
+            if (!Schema::hasColumn('whatsapp_pending_messages', 'error_message')) {
+                $table->text('error_message')->nullable()->after('status');
+            }
         });
     }
 
     public function down(): void
     {
         Schema::table('whatsapp_pending_messages', function (Blueprint $table) {
-            $table->dropColumn('error_message');
+            if (Schema::hasColumn('whatsapp_pending_messages', 'error_message')) {
+                $table->dropColumn('error_message');
+            }
         });
     }
 };
