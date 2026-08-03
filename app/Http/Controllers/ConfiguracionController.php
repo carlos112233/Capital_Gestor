@@ -53,10 +53,13 @@ class ConfiguracionController extends Controller
         $statusPath = public_path('wa-status.json');
         $qrExists = File::exists(public_path('img/qr.png')) || File::exists(public_path('qr.png'));
         
-        // Obtener el nombre real y dinámico de la Base de Datos conectada en PostgreSQL
+        // Obtener el driver y nombre real dinámico de la Base de Datos en uso (MySQL vs PostgreSQL)
         try {
+            $dbDriver = DB::connection()->getDriverName();
+            $dbDriverLabel = ($dbDriver === 'mysql') ? 'MySQL' : 'PostgreSQL';
             $realDbName = DB::connection()->getDatabaseName();
         } catch (\Throwable $e) {
+            $dbDriverLabel = 'PostgreSQL';
             $realDbName = config('database.connections.pgsql.database');
         }
 
@@ -76,6 +79,7 @@ class ConfiguracionController extends Controller
             'error_type' => null,
             'detail' => null,
             'solution_hint' => null,
+            'db_driver' => $dbDriverLabel,
             'db_name' => $realDbName,
             'qr_exists' => $qrExists,
             'messages' => $pendingMessages,
@@ -97,6 +101,7 @@ class ConfiguracionController extends Controller
                 $json = json_decode(File::get($statusPath), true);
                 if (is_array($json)) {
                     $json['qr_exists'] = $qrExists;
+                    $json['db_driver'] = $dbDriverLabel;
                     $json['db_name'] = $json['db_info']['database'] ?? $realDbName;
                     $json['messages'] = $pendingMessages;
 

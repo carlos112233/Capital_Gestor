@@ -184,7 +184,7 @@
                     <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21 3.582 4 8 4s8-1.79 8-4" />
                     </svg>
-                    <span class="text-xs font-semibold text-slate-500">Base de Datos PostgreSQL Activa:</span>
+                    <span class="text-xs font-semibold text-slate-500">Base de Datos <span class="font-bold text-slate-700" x-text="db_driver || 'PostgreSQL'"></span> Activa:</span>
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-extrabold text-xs border border-indigo-200/80 shadow-2xs">
                         <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
                         <span x-text="db_name"></span>
@@ -337,6 +337,7 @@
                 error_type: null,
                 detail: null,
                 solution_hint: null,
+                db_driver: '{{ DB::connection()->getDriverName() === "mysql" ? "MySQL" : "PostgreSQL" }}',
                 db_name: '{{ DB::connection()->getDatabaseName() }}',
                 messages: @json($pendingMessages ?? []),
                 qr_exists: {{ file_exists(public_path('img/qr.png')) ? 'true' : 'false' }},
@@ -369,6 +370,9 @@
                             this.error_type = data.error_type || null;
                             this.detail = data.detail || null;
                             this.solution_hint = data.solution_hint || null;
+                            if (data.db_driver) {
+                                this.db_driver = data.db_driver;
+                            }
                             if (data.db_name) {
                                 this.db_name = data.db_name;
                             } else if (data.db_info && data.db_info.database) {
