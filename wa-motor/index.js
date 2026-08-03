@@ -165,7 +165,7 @@ if (!chromePath) {
 console.log(`🌐 Navegador detectado para WhatsApp: ${chromePath || 'Chromium nativo de Puppeteer'}`);
 guardarEstado('cargando', 'Iniciando navegador Chromium ultra-ligero y conectando a WhatsApp Web...');
 
-// Parámetros ultra-optimizados de memoria para prevenir reinicios OOM en servidores Render de 512MB RAM
+// Parámetros optimizados con 256MB RAM V8 heap para completar la autenticación cifrada de WhatsApp Web sin bloqueos
 const puppeteerOptions = {
     headless: true,
     bypassCSP: true,
@@ -178,8 +178,7 @@ const puppeteerOptions = {
         '--no-first-run',
         '--no-zygote',
         '--renderer-process-limit=1',
-        '--disable-site-isolation-trials', // Elimina el aislamiento multi-sitio ahorrando ~100MB RAM
-        '--js-flags=--max-old-space-size=128', // Limita la memoria V8 de Chromium a máximo 128MB
+        '--js-flags=--max-old-space-size=256', // Permite 256MB V8 heap para que los workers de cifrado de WhatsApp completen el escaneo
         '--disable-gpu',
         '--disable-software-rasterizer',
         '--disable-extensions',

@@ -55,6 +55,17 @@ class ConfiguracionController extends Controller
             $realDbName = config('database.connections.pgsql.database');
         }
 
+        $responsePayload = [
+            'status' => $qrExists ? 'qr_pendiente' : 'conectado',
+            'message' => $qrExists ? 'Código QR listo para escanear' : 'WhatsApp vinculado y activo en el sistema.',
+            'error_type' => null,
+            'detail' => null,
+            'solution_hint' => null,
+            'db_name' => $realDbName,
+            'qr_exists' => $qrExists,
+            'updated_at' => now()->toIso8601String()
+        ];
+
         if (File::exists($statusPath)) {
             try {
                 $json = json_decode(File::get($statusPath), true);
@@ -67,21 +78,12 @@ class ConfiguracionController extends Controller
                         $json['message'] = 'Generando imagen del código QR en el servidor...';
                     }
 
-                    return response()->json($json);
+                    $responsePayload = $json;
                 }
             } catch (\Throwable $e) {}
         }
         
-        return response()->json([
-            'status' => $qrExists ? 'qr_pendiente' : 'conectado',
-            'message' => $qrExists ? 'Código QR listo para escanear' : 'WhatsApp vinculado y activo en el sistema.',
-            'error_type' => null,
-            'detail' => null,
-            'solution_hint' => null,
-            'db_name' => $realDbName,
-            'qr_exists' => $qrExists,
-            'updated_at' => now()->toIso8601String()
-        ]);
+        return response()->json($responsePayload)->header('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate');
     }
 
     /**

@@ -267,7 +267,12 @@
 
                 fetchStatus() {
                     this.qrError = false;
-                    fetch('{{ route('admin.configuracion.wa-status') }}')
+                    fetch('{{ route('admin.configuracion.wa-status') }}?_t=' + new Date().getTime(), {
+                        headers: {
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache'
+                        }
+                    })
                         .then(res => res.json())
                         .then(data => {
                             this.status = data.status || 'desconectado';
