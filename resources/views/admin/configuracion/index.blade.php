@@ -72,7 +72,7 @@
             <template x-if="status === 'qr_pendiente' || (qr_exists && status !== 'conectado' && status !== 'error')">
                 <div class="flex flex-col md:flex-row items-center gap-8 bg-amber-50/60 p-6 rounded-2xl border border-amber-200/80">
                     <div class="w-64 h-64 bg-white p-3 rounded-2xl shadow-md border border-slate-200 flex items-center justify-center relative overflow-hidden flex-shrink-0">
-                        <img :src="qrUrl" @error="qrError = true" @load="qrError = false" x-show="!qrError" alt="Código QR WhatsApp" class="max-w-full max-h-full object-contain rounded-lg">
+                        <img :src="qrUrl" x-on:error="qrError = true" x-on:load="qrError = false" x-show="!qrError" alt="Código QR WhatsApp" class="max-w-full max-h-full object-contain rounded-lg">
                         <div x-show="qrError" class="flex flex-col items-center justify-center text-center p-4 space-y-2">
                             <svg class="w-8 h-8 text-amber-500 animate-spin" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
