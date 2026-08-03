@@ -18,9 +18,13 @@
 <div class="mb-4">
     <label for="articulo_id" class="block text-gray-700 font-bold mb-2">Artículo</label>
     <select name="articulo_id" class="articulo_id_select w-full border-gray-300 rounded-lg shadow-sm" required>
-        <option value="" disabled selected>Seleccione un artículo</option>
+        <option value="" disabled {{ !$esSaldar && !old('articulo_id', $entrada->articulo_id ?? '') ? 'selected' : '' }}>Seleccione un artículo</option>
         @foreach($articulos as $art)
-            <option value="{{ $art->id }}" data-precio="{{ $art->precio }}" {{ (old('articulo_id', $entrada->articulo_id ?? '') == $art->id) ? 'selected' : '' }}>
+            @php
+                $esPagoSaldado = strtolower($art->nombre) === 'pago saldado';
+                $isSelected = old('articulo_id', $entrada->articulo_id ?? '') == $art->id || ($esSaldar && $esPagoSaldado);
+            @endphp
+            <option value="{{ $art->id }}" data-precio="{{ $art->precio }}" {{ $isSelected ? 'selected' : '' }}>
                 {{ $art->nombre }}
             </option>
         @endforeach
@@ -73,3 +77,85 @@
         Guardar
     </button>
 </div>
+
+<script>
+    (function() {
+        function initFormLogic() {
+            const tipoPagoSelects = document.querySelectorAll('.tipo_pago_select');
+            tipoPagoSelects.forEach(tipoPago => {
+                const form = tipoPago.closest('form');
+                if (!form || form.dataset.initialized) return;
+                form.dataset.initialized = 'true';
+
+                const articuloSelect = form.querySelector('.articulo_id_select');
+                const precioInput = form.querySelector('.precio_venta_input');
+                if (!articuloSelect) return;
+
+                function updateArticulos() {
+                    const val = tipoPago.value;
+                    let saldadoOption = null;
+                    let firstRegularOption = null;
+
+                    Array.from(articuloSelect.options).forEach(opt => {
+                        if (opt.value === "") return;
+                        const isSaldado = opt.textContent.trim().toLowerCase() === 'pago saldado';
+
+                        if (val === "2") { // Saldar adeudo
+                            if (isSaldado) {
+                                opt.hidden = false;
+                                opt.disabled = false;
+                                opt.selected = true;
+                                saldadoOption = opt;
+                            } else {
+                                opt.hidden = true;
+                                opt.disabled = true;
+                                opt.selected = false;
+                            }
+                        } else if (val === "1") { // Por artículo
+                            if (isSaldado) {
+                                opt.hidden = true;
+                                opt.disabled = true;
+                                opt.selected = false;
+                            } else {
+                                opt.hidden = false;
+                                opt.disabled = false;
+                                if (!firstRegularOption) firstRegularOption = opt;
+                            }
+                        }
+                    });
+
+                    if (val === "2" && saldadoOption) {
+                        saldadoOption.selected = true;
+                    }
+                }
+
+                tipoPago.addEventListener('change', function() {
+                    updateArticulos();
+                    if (tipoPago.value === '1' && articuloSelect.selectedIndex > 0) {
+                        const selOpt = articuloSelect.options[articuloSelect.selectedIndex];
+                        if (selOpt && selOpt.dataset.precio && precioInput) {
+                            precioInput.value = parseFloat(selOpt.dataset.precio).toFixed(2);
+                        }
+                    }
+                });
+
+                articuloSelect.addEventListener('change', function() {
+                    const selOpt = articuloSelect.options[articuloSelect.selectedIndex];
+                    if (selOpt && selOpt.dataset.precio && tipoPago.value === '1' && precioInput) {
+                        precioInput.value = parseFloat(selOpt.dataset.precio).toFixed(2);
+                    }
+                });
+
+                if (tipoPago.value) {
+                    updateArticulos();
+                }
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initFormLogic);
+        } else {
+            initFormLogic();
+        }
+    })();
+</script>
