@@ -5,13 +5,16 @@ const QRCodeImage = require('qrcode');
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-require('dotenv').config();
+
+// Cargar variables de entorno desde el directorio raíz de la aplicación (.env) y del motor
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // 1. CONFIGURACIÓN DE LA BASE DE DATOS (Soporte para Render & PostgreSQL Local)
 const poolConfig = process.env.DATABASE_URL
     ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
     : {
-        user: process.env.DB_USER || 'crm_admin',
+        user: process.env.DB_USERNAME || process.env.DB_USER || 'crm_admin',
         host: process.env.DB_HOST || '127.0.0.1',
         database: process.env.DB_DATABASE || 'capital_gestor_db',
         password: process.env.DB_PASSWORD || 'Carlosaraiza2810',
@@ -23,7 +26,7 @@ const pool = new Pool(poolConfig);
 let currentDbInfo = {
     database: process.env.DB_DATABASE || 'capital_gestor_db',
     host: process.env.DATABASE_URL ? 'Render Cloud PostgreSQL' : (process.env.DB_HOST || '127.0.0.1'),
-    user: process.env.DB_USER || 'crm_admin',
+    user: process.env.DB_USERNAME || process.env.DB_USER || 'crm_admin',
     connected: false
 };
 
@@ -35,7 +38,7 @@ pool.query('SELECT current_database(), current_user', (err, res) => {
         guardarEstado('error', 'Error de conexión a la Base de Datos PostgreSQL', {
             error_type: 'Base de Datos',
             detail: err.stack || err.message,
-            solution_hint: 'Verifica la variable DATABASE_URL en Render o credenciales DB_HOST/DB_USER/DB_PASSWORD en el .env.'
+            solution_hint: 'Verifica la variable DATABASE_URL en Render o las variables DB_USERNAME / DB_PASSWORD en el archivo .env.'
         });
     } else {
         const dbName = res.rows[0].current_database;
@@ -58,7 +61,7 @@ pool.on('error', (err) => {
     guardarEstado('error', 'Error de conexión a la Base de Datos PostgreSQL', {
         error_type: 'Base de Datos',
         detail: err.stack || err.message,
-        solution_hint: 'Verifica la variable DATABASE_URL o credenciales DB_HOST/DB_USER/DB_PASSWORD en el servidor.'
+        solution_hint: 'Verifica la variable DATABASE_URL o credenciales DB_HOST/DB_USERNAME/DB_PASSWORD en el servidor.'
     });
 });
 
@@ -71,6 +74,7 @@ function guardarEstado(estado, mensaje, opciones = {}) {
         detail: opciones.detail || null,
         solution_hint: opciones.solution_hint || null,
         db_info: currentDbInfo,
+        db_name: currentDbInfo.database,
         updated_at: new Date().toISOString()
     };
     try {
@@ -161,7 +165,7 @@ if (!chromePath) {
 console.log(`🌐 Navegador detectado para WhatsApp: ${chromePath || 'Chromium nativo de Puppeteer'}`);
 guardarEstado('cargando', 'Iniciando navegador Chromium ultra-ligero y conectando a WhatsApp Web...');
 
-// Parámetros ultra-optimizados y estables para servidores de 512MB RAM
+// Parámetros ultra-optimizados de memoria para prevenir reinicios OOM en servidores Render de 512MB RAM
 const puppeteerOptions = {
     headless: true,
     bypassCSP: true,
@@ -173,7 +177,9 @@ const puppeteerOptions = {
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
         '--no-zygote',
-        '--renderer-process-limit=1', // Limita a 1 proceso de renderizado de forma estable en 512MB RAM
+        '--renderer-process-limit=1',
+        '--disable-site-isolation-trials', // Elimina el aislamiento multi-sitio ahorrando ~100MB RAM
+        '--js-flags=--max-old-space-size=128', // Limita la memoria V8 de Chromium a máximo 128MB
         '--disable-gpu',
         '--disable-software-rasterizer',
         '--disable-extensions',
