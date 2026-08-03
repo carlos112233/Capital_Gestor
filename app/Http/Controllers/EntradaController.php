@@ -103,14 +103,19 @@ class EntradaController extends Controller
             : Auth::id();
 
         // 3. Crear el registro
-        Entrada::create([
+        $data = [
             'articulo_id'    => $validated['articulo_id'],
             'user_id'        => Auth::id(),
-            'cliente_id'     => $clienteId,
             'precio_venta'   => $validated['precio_venta'],
             'descripcion'    => $validated['descripcion'] ?? null,
             'fecha_generado' => now(),
-        ]);
+        ];
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('entradas', 'cliente_id')) {
+            $data['cliente_id'] = $clienteId;
+        }
+
+        Entrada::create($data);
 
         // 4. Redireccionar
         return redirect()->route('admin.entradas.index')
@@ -147,13 +152,18 @@ class EntradaController extends Controller
             ? $validated['cliente_id']
             : ($entrada->cliente_id ?? Auth::id());
 
-        $entrada->update([
+        $data = [
             'articulo_id'    => $validated['articulo_id'],
-            'cliente_id'     => $clienteId,
             'precio_venta'   => $validated['precio_venta'],
             'descripcion'    => $validated['descripcion'] ?? null,
             'fecha_generado' => Carbon::now(),
-        ]);
+        ];
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('entradas', 'cliente_id')) {
+            $data['cliente_id'] = $clienteId;
+        }
+
+        $entrada->update($data);
 
         return redirect()->route('admin.entradas.index')->with('success', 'Entrada de capital actualizada correctamente.');
     }
