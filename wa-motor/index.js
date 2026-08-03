@@ -266,7 +266,7 @@ const client = new Client({
         dataPath: './.wwebjs_auth'
     }),
     authTimeoutMs: 300000,
-    qrMaxRetries: 10,
+    qrMaxRetries: 3,
     takeoverOnConflict: true,
     puppeteer: puppeteerOptions
 });
@@ -289,13 +289,12 @@ function limpiarQRArchivos() {
     }
 }
 
+let qrGeneratedCount = 0;
+
 // 3. EVENTOS DEL SISTEMA
 client.on('qr', async (qr) => {
-    console.log('\n=============================================');
-    console.log('--- NUEVO CÓDIGO QR DE WHATSAPP ---');
-    console.log('Escanea este código con tu celular (WhatsApp > Dispositivos vinculados):');
-    console.log('=============================================\n');
-    qrcode.generate(qr, { small: true });
+    qrGeneratedCount++;
+    console.log(`📸 Código QR #${qrGeneratedCount} generado correctamente.`);
 
     try {
         const qrPath = path.join(__dirname, 'qr.png');
@@ -314,8 +313,7 @@ client.on('qr', async (qr) => {
         fs.copyFileSync(qrPath, publicImgPath);
         fs.copyFileSync(qrPath, publicPath);
         
-        guardarEstado('qr_pendiente', 'Código QR generado correctamente. Esperando escaneo desde teléfono móvil.');
-        console.log('📸 Imagen del QR actualizada en public/img/qr.png');
+        guardarEstado('qr_pendiente', 'Código QR listo para escanear. Abre WhatsApp en tu celular > Dispositivos vinculados.');
     } catch (e) {
         console.error('Error guardando imagen QR:', e.message);
         guardarEstado('error', 'No se pudo guardar la imagen del código QR en el servidor.', {
