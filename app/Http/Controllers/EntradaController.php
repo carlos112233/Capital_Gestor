@@ -24,12 +24,13 @@ class EntradaController extends Controller
         $user = Auth::user();
         $unMesAtras = Carbon::now()->subMonth();
 
-        $entradasQuery = Entrada::with(['user', 'articulo', 'cliente'])
-            ->where(function ($q) use ($unMesAtras) {
-                $q->where('created_at', '>=', $unMesAtras)
-                  ->orWhere('fecha_generado', '>=', $unMesAtras);
-            })
-            ->latest();
+        $entradasQuery = Entrada::with([
+            'user:id,name',
+            'articulo:id,nombre,precio',
+            'cliente:id,name'
+        ])
+        ->where('created_at', '>=', $unMesAtras)
+        ->latest();
 
         if (!$user->hasRole('admin')) {
             $entradasQuery->where(function ($q) use ($user) {
@@ -52,7 +53,9 @@ class EntradaController extends Controller
             });
         }
 
-        $articulos = Articulo::orderBy('nombre', 'asc')->get();
+        $articulos = Articulo::select('id', 'nombre', 'precio')
+            ->orderBy('nombre', 'asc')
+            ->get();
         $users = User::select('id', 'name')
             ->orderBy('name')
             ->get();
