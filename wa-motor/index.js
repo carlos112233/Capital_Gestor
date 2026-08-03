@@ -129,7 +129,7 @@ if (!chromePath) {
 console.log(`🌐 Navegador detectado para WhatsApp: ${chromePath || 'Chromium nativo de Puppeteer'}`);
 guardarEstado('cargando', 'Iniciando navegador Chromium ultra-ligero y conectando a WhatsApp Web...');
 
-// Parámetros ultra-optimizados para servidores con 512MB RAM
+// Parámetros ultra-optimizados y estables para servidores de 512MB RAM
 const puppeteerOptions = {
     headless: true,
     bypassCSP: true,
@@ -141,7 +141,7 @@ const puppeteerOptions = {
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
         '--no-zygote',
-        '--single-process', // Ahorra hasta 70% de memoria RAM en servidores de 512MB
+        '--renderer-process-limit=1', // Limita a 1 proceso de renderizado de forma estable en 512MB RAM
         '--disable-gpu',
         '--disable-software-rasterizer',
         '--disable-extensions',
