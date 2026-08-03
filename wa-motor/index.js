@@ -10,8 +10,12 @@ const { execSync } = require('child_process');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-// 1. CONFIGURACIÓN DE LA BASE DE DATOS (Soporte Adaptativo para Render & PostgreSQL Local)
-function getPoolConfig(useSsl, fallbackCandidate = null) {
+// 1. CONFIGURACIÓN DE LA BASE DE DATOS DUAL (Soporte Nativo para MySQL en Local y PostgreSQL en Render/Cloud)
+let isMysql = (!process.env.DATABASE_URL && (process.env.DB_CONNECTION === 'mysql' || process.env.DB_USERNAME === 'root'));
+let mysqlPool = null;
+let pgPool = null;
+
+function getPgPoolConfig(useSsl, fallbackCandidate = null) {
     if (process.env.DATABASE_URL) {
         return {
             connectionString: process.env.DATABASE_URL,
@@ -30,27 +34,12 @@ function getPoolConfig(useSsl, fallbackCandidate = null) {
         };
     }
 
-    let user = process.env.DB_PG_USER || process.env.PGUSER;
-    let password = process.env.DB_PG_PASSWORD || process.env.PGPASSWORD;
+    let user = process.env.DB_PG_USER || process.env.PGUSER || process.env.DB_USERNAME || 'crm_admin';
+    let password = process.env.DB_PG_PASSWORD || process.env.PGPASSWORD || process.env.DB_PASSWORD || 'Carlosaraiza2810';
     let host = process.env.DB_HOST || '127.0.0.1';
     let db = process.env.DB_DATABASE || 'gestor_capital_db';
-
-    // Si .env principal está en MySQL, apuntar a PostgreSQL remoto de Render para que wa-motor funcione en local
-    if (process.env.DB_CONNECTION === 'mysql' || process.env.DB_USERNAME === 'root') {
-        user = 'admin';
-        password = 'on9URKhHQEpcZ1LCZucRtr7g3PVjAA2k';
-        host = 'dpg-d5skoje3jp1c738bn620-a.oregon-postgres.render.com';
-        db = 'gestor_capital_db';
-        useSsl = true;
-    } else {
-        user = user || process.env.DB_USERNAME || 'crm_admin';
-        password = password || process.env.DB_PASSWORD || 'Carlosaraiza2810';
-    }
-
     let port = parseInt(process.env.DB_PORT || '5432');
-    if (port === 3306) {
-        port = 5432;
-    }
+    if (port === 3306) port = 5432;
 
     return {
         user: user,
@@ -62,79 +51,82 @@ function getPoolConfig(useSsl, fallbackCandidate = null) {
     };
 }
 
-let fallbackCandidates = [
-    { user: 'admin', pass: 'on9URKhHQEpcZ1LCZucRtr7g3PVjAA2k', host: 'dpg-d5skoje3jp1c738bn620-a.oregon-postgres.render.com', db: 'gestor_capital_db', ssl: true },
-    { user: 'crm_admin', pass: 'Carlosaraiza2810', host: '127.0.0.1', db: 'capital_gestor_db', ssl: false },
-    { user: 'postgres', pass: 'Carlosaraiza2810', host: '127.0.0.1', db: 'capital_gestor_db', ssl: false },
-    { user: 'postgres', pass: 'Carlosaraiza_91', host: '127.0.0.1', db: 'capital_gestor_db', ssl: false }
-];
-let candidateIndex = 0;
-
 let currentSslSetting = !!(process.env.DATABASE_URL || (process.env.DB_HOST && !['127.0.0.1', 'localhost'].includes(process.env.DB_HOST)));
-let pool = new Pool(getPoolConfig(currentSslSetting));
+
+if (isMysql) {
+    const mysql = require('mysql2');
+    const mysqlHost = (process.env.DB_HOST === 'localhost' || !process.env.DB_HOST) ? '127.0.0.1' : process.env.DB_HOST;
+    mysqlPool = mysql.createPool({
+        host: mysqlHost,
+        port: parseInt(process.env.DB_PORT || '3306'),
+        user: process.env.DB_USERNAME || 'root',
+        password: process.env.DB_PASSWORD || '',
+        database: process.env.DB_DATABASE || 'gestor_capital_db',
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0
+    });
+    console.log(`🗄️ Inicializado pool MySQL para host "${mysqlHost}" en base de datos "${process.env.DB_DATABASE || 'gestor_capital_db'}"`);
+} else {
+    pgPool = new Pool(getPgPoolConfig(currentSslSetting));
+}
+
+// Función unificada de consulta asíncrona compatible con MySQL y PostgreSQL
+function queryDb(sql, params = []) {
+    return new Promise((resolve, reject) => {
+        if (isMysql && mysqlPool) {
+            // Reemplazar sintaxis $1, $2 por ? para MySQL
+            const mysqlSql = sql.replace(/\$\d+/g, '?');
+            mysqlPool.query(mysqlSql, params, (err, results) => {
+                if (err) return reject(err);
+                const rows = Array.isArray(results) ? results : [results];
+                resolve({ rows: rows });
+            });
+        } else if (pgPool) {
+            pgPool.query(sql, params, (err, res) => {
+                if (err) return reject(err);
+                resolve(res);
+            });
+        } else {
+            reject(new Error('No hay pool de Base de Datos inicializado.'));
+        }
+    });
+}
 
 let currentDbInfo = {
     database: process.env.DB_DATABASE || 'gestor_capital_db',
-    host: process.env.DATABASE_URL ? 'Render Cloud PostgreSQL' : (process.env.DB_HOST || '127.0.0.1'),
-    user: process.env.DB_USERNAME || process.env.DB_USER || 'admin',
+    host: isMysql ? (process.env.DB_HOST || '127.0.0.1') : (process.env.DATABASE_URL ? 'Render Cloud PostgreSQL' : (process.env.DB_HOST || '127.0.0.1')),
+    user: process.env.DB_USERNAME || process.env.DB_USER || 'root',
     connected: false
 };
 
-function probarConexionBaseDatos(retryWithAlternativeSsl = true) {
-    pool.query('SELECT current_database(), current_user', (err, res) => {
-        if (err) {
-            console.error('❌ Error de conexión a la base de datos PostgreSQL:', err.message);
-            
-            // 1. Si ocurrió un error de negociación SSL, intentar automáticamente con la configuración SSL contraria
-            if (retryWithAlternativeSsl && (err.message.includes('SSL') || err.message.includes('ssl') || err.message.includes('socket'))) {
-                console.log(`🔄 Reintentando conexión cambiando modo SSL a: ${!currentSslSetting}...`);
-                currentSslSetting = !currentSslSetting;
-                pool.end().catch(() => {});
-                pool = new Pool(getPoolConfig(currentSslSetting, fallbackCandidates[candidateIndex]));
-                probarConexionBaseDatos(false);
-                return;
-            }
-
-            // 2. Si falla la BD local o no existe gestor_capital_db en local, ciclo de fallback hacia Render PostgreSQL
-            if (!process.env.DATABASE_URL && (err.message.includes('password') || err.message.includes('autentificación') || err.message.includes('no existe la base de datos') || err.message.includes('does not exist'))) {
-                candidateIndex++;
-                if (candidateIndex < fallbackCandidates.length) {
-                    const next = fallbackCandidates[candidateIndex];
-                    console.log(`🔄 Conectando a respaldo de PostgreSQL [${next.host}]: usuario "${next.user}"...`);
-                    pool.end().catch(() => {});
-                    pool = new Pool(getPoolConfig(next.ssl, next));
-                    probarConexionBaseDatos(retryWithAlternativeSsl);
-                    return;
-                }
-            }
-
-            currentDbInfo.connected = false;
-            guardarEstado('error', 'Error de conexión a la Base de Datos PostgreSQL', {
-                error_type: 'Base de Datos',
-                detail: err.stack || err.message,
-                solution_hint: 'Verifica la variable DATABASE_URL en Render o las variables DB_USERNAME / DB_PASSWORD en el archivo .env.'
-            });
-        } else {
-            const dbName = res.rows[0].current_database;
-            const dbUser = res.rows[0].current_user;
-            const hostTarget = process.env.DATABASE_URL ? 'Render Cloud PostgreSQL' : (process.env.DB_HOST || '127.0.0.1');
+function probarConexionBaseDatos() {
+    const testQuery = isMysql ? 'SELECT DATABASE() as current_database, CURRENT_USER() as current_user' : 'SELECT current_database(), current_user';
+    queryDb(testQuery)
+        .then(res => {
+            const dbName = res.rows[0]?.current_database || res.rows[0]?.['DATABASE()'] || process.env.DB_DATABASE;
+            const dbUser = res.rows[0]?.current_user || res.rows[0]?.['CURRENT_USER()'] || process.env.DB_USERNAME;
+            const hostTarget = isMysql ? (process.env.DB_HOST || '127.0.0.1') : (process.env.DATABASE_URL ? 'Render Cloud PostgreSQL' : (process.env.DB_HOST || '127.0.0.1'));
             currentDbInfo = {
                 database: dbName,
                 host: hostTarget,
                 user: dbUser,
                 connected: true
             };
-            console.log(`🗄️ Conexión exitosa a la Base de Datos PostgreSQL: "${dbName}" en [${hostTarget}] como usuario "${dbUser}" (SSL: ${currentSslSetting})`);
-        }
-    });
+            console.log(`🗄️ Conexión exitosa a la Base de Datos (${isMysql ? 'MySQL' : 'PostgreSQL'}): "${dbName}" en [${hostTarget}] como usuario "${dbUser}"`);
+        })
+        .catch(err => {
+            console.error(`❌ Error de conexión a la base de datos (${isMysql ? 'MySQL' : 'PostgreSQL'}):`, err.message);
+            currentDbInfo.connected = false;
+            guardarEstado('error', `Error de conexión a la Base de Datos ${isMysql ? 'MySQL' : 'PostgreSQL'}`, {
+                error_type: 'Base de Datos',
+                detail: err.stack || err.message,
+                solution_hint: 'Verifica la variable DATABASE_URL en Render o las variables DB_USERNAME / DB_PASSWORD en el archivo .env.'
+            });
+        });
 }
 
-probarConexionBaseDatos(true);
-
-// Capturar errores en la piscina global de PostgreSQL
-pool.on('error', (err) => {
-    console.error('❌ Error en el cliente de base de datos PostgreSQL:', err.message);
-});
+probarConexionBaseDatos();
 
 // Función para registrar y guardar el estado actual de la sesión de WhatsApp con diagnóstico detallado
 function guardarEstado(estado, mensaje, opciones = {}) {
@@ -414,15 +406,15 @@ process.on('unhandledRejection', (reason, promise) => {
     }
 });
 
-// 4. BUCLE DE CONSULTA A POSTGRESQL CADA 10 SEGUNDOS
+// 4. BUCLE DE CONSULTA DUAL CADA 5 SEGUNDOS
 function iniciarBucleEnvio() {
     setInterval(async () => {
         try {
-            const res = await pool.query(
+            const res = await queryDb(
                 "SELECT * FROM whatsapp_pending_messages WHERE status = 'pendiente' ORDER BY created_at ASC LIMIT 5"
             );
 
-            if (res.rows.length > 0) {
+            if (res.rows && res.rows.length > 0) {
                 console.log(`\n📩 Procesando ${res.rows.length} mensajes pendientes...`);
 
                 for (const msg of res.rows) {
@@ -439,14 +431,14 @@ function iniciarBucleEnvio() {
                             // Si es válido, enviamos al ID real que nos devolvió WhatsApp
                             await client.sendMessage(contactId._serialized, msg.mensaje);
 
-                            await pool.query(
+                            await queryDb(
                                 "UPDATE whatsapp_pending_messages SET status = 'enviado', error_message = NULL, updated_at = NOW() WHERE id = $1",
                                 [msg.id]
                             );
                             console.log(`✅ Enviado con éxito a ${msg.numero} (${contactId._serialized})`);
                         } else {
                             // Si el número no está registrado en WhatsApp
-                            await pool.query(
+                            await queryDb(
                                 "UPDATE whatsapp_pending_messages SET status = 'fallido', error_message = 'Número no registrado en WA', updated_at = NOW() WHERE id = $1",
                                 [msg.id]
                             );
@@ -455,11 +447,10 @@ function iniciarBucleEnvio() {
 
                     } catch (err) {
                         console.error(`❌ Error procesando el mensaje #${msg.id} para ${msg.numero}:`, err.message);
-                        // Marcamos como fallido y guardamos el mensaje de error en la DB
-                        await pool.query(
+                        await queryDb(
                             "UPDATE whatsapp_pending_messages SET status = 'fallido', error_message = $1, updated_at = NOW() WHERE id = $2",
                             [err.message, msg.id]
-                        );
+                        ).catch(() => {});
                     }
 
                     // Espera de 3 segundos entre envíos para evitar bloqueos por spam
@@ -468,23 +459,8 @@ function iniciarBucleEnvio() {
             }
         } catch (err) {
             console.error('Error consultando la base de datos:', err.message);
-
-            // Si falló por SSL o Socket en el bucle, intentamos reconectar silenciosamente la piscina de PostgreSQL
-            if (err.message.includes('SSL') || err.message.includes('ssl') || err.message.includes('socket')) {
-                console.log(`🔄 Recreando piscina de conexión PostgreSQL cambiando modo SSL a: ${!currentSslSetting}...`);
-                currentSslSetting = !currentSslSetting;
-                try { pool.end().catch(() => {}); } catch (e) {}
-                pool = new Pool(getPoolConfig(currentSslSetting));
-                return;
-            }
-
-            guardarEstado('error', 'Error al consultar mensajes pendientes en PostgreSQL.', {
-                error_type: 'Base de Datos',
-                detail: err.message,
-                solution_hint: 'Verifica que la tabla whatsapp_pending_messages exista en la base de datos.'
-            });
         }
-    }, 10000);
+    }, 5000);
 }
 
 // 5. INICIALIZAR EL CLIENTE
