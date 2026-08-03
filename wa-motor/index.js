@@ -169,11 +169,13 @@ guardarEstado('cargando', 'Iniciando navegador Chromium y conectando a WhatsApp 
 const puppeteerOptions = {
     headless: true,
     bypassCSP: true,
+    timeout: 120000, // Extiende el tiempo límite a 120s para prevenir "Timed out after 30000 ms" en servidores con RAM restringida
     protocolTimeout: 300000,
     args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
+        '--no-zygote',
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
         '--disable-gpu',
@@ -296,12 +298,13 @@ process.on('uncaughtException', (err) => {
     console.error('❌ Excepción no capturada en el motor:', err);
     const detailStr = err.stack || err.message;
 
-    if (detailStr.includes('The browser is already running') || detailStr.includes('SingletonLock')) {
+    if (detailStr.includes('The browser is already running') || detailStr.includes('SingletonLock') || detailStr.includes('WS endpoint') || detailStr.includes('Timed out after')) {
         removerLockFiles(path.join(__dirname, '.wwebjs_auth'));
         removerLockFiles(path.join(__dirname, '..', '.wwebjs_auth'));
         removerLockFiles(path.join(__dirname, '..', 'public', '.wwebjs_auth'));
-        console.log('🔄 Reintento automático tras limpiar SingletonLock...');
-        setTimeout(() => client.initialize(), 2000);
+        console.log('🔄 Reintento automático tras timeout de Chromium...');
+        guardarEstado('cargando', 'Iniciando WhatsApp Web (Tiempo de carga extendido en servidor)...');
+        setTimeout(() => client.initialize().catch(e => console.error('Error al reinicializar cliente:', e)), 3000);
         return;
     }
 
@@ -316,12 +319,13 @@ process.on('unhandledRejection', (reason, promise) => {
     console.error('❌ Promesa rechazada no manejada:', reason);
     const detailStr = reason ? (reason.stack || reason.message || String(reason)) : 'Rechazo desconocido';
     
-    if (detailStr.includes('The browser is already running') || detailStr.includes('SingletonLock')) {
+    if (detailStr.includes('The browser is already running') || detailStr.includes('SingletonLock') || detailStr.includes('WS endpoint') || detailStr.includes('Timed out after')) {
         removerLockFiles(path.join(__dirname, '.wwebjs_auth'));
         removerLockFiles(path.join(__dirname, '..', '.wwebjs_auth'));
         removerLockFiles(path.join(__dirname, '..', 'public', '.wwebjs_auth'));
-        console.log('🔄 Reintento automático tras limpiar SingletonLock...');
-        setTimeout(() => client.initialize(), 2000);
+        console.log('🔄 Reintento automático tras timeout de Chromium...');
+        guardarEstado('cargando', 'Iniciando WhatsApp Web (Tiempo de carga extendido en servidor)...');
+        setTimeout(() => client.initialize().catch(e => console.error('Error al reinicializar cliente:', e)), 3000);
         return;
     }
 
