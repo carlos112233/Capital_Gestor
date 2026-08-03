@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\DB;
 
 class ConfiguracionController extends Controller
 {
@@ -40,28 +41,27 @@ class ConfiguracionController extends Controller
     }
 
     /**
-     * Obtener el estado detallado, información de la BD y diagnóstico del motor de WhatsApp en JSON
+     * Obtener el estado detallado, nombre dinámico de la BD y diagnóstico del motor de WhatsApp en JSON
      */
     public function getWaStatus()
     {
         $statusPath = public_path('wa-status.json');
         $qrExists = File::exists(public_path('img/qr.png')) || File::exists(public_path('qr.png'));
         
-        $fallbackDbInfo = [
-            'database' => config('database.connections.pgsql.database'),
-            'host' => env('DATABASE_URL') ? 'Render Cloud PostgreSQL' : config('database.connections.pgsql.host'),
-            'user' => config('database.connections.pgsql.username'),
-            'connected' => true,
-        ];
+        // Obtener el nombre real y dinámico de la Base de Datos conectada en PostgreSQL
+        try {
+            $realDbName = DB::connection()->getDatabaseName();
+        } catch (\Throwable $e) {
+            $realDbName = config('database.connections.pgsql.database');
+        }
 
         if (File::exists($statusPath)) {
             try {
                 $json = json_decode(File::get($statusPath), true);
                 if (is_array($json)) {
                     $json['qr_exists'] = $qrExists;
-                    if (empty($json['db_info'])) {
-                        $json['db_info'] = $fallbackDbInfo;
-                    }
+                    $json['db_name'] = $json['db_info']['database'] ?? $realDbName;
+
                     if (($json['status'] ?? '') === 'qr_pendiente' && !$qrExists) {
                         $json['status'] = 'cargando';
                         $json['message'] = 'Generando imagen del código QR en el servidor...';
@@ -78,7 +78,7 @@ class ConfiguracionController extends Controller
             'error_type' => null,
             'detail' => null,
             'solution_hint' => null,
-            'db_info' => $fallbackDbInfo,
+            'db_name' => $realDbName,
             'qr_exists' => $qrExists,
             'updated_at' => now()->toIso8601String()
         ]);

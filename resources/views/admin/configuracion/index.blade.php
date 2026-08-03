@@ -178,45 +178,17 @@
                 </div>
             </template>
 
-            <!-- TARJETA DE INFORMACIÓN DE CONEXIÓN A LA BASE DE DATOS POSTGRESQL -->
-            <div class="mt-6 pt-6 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/60 flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21 3.582 4 8 4s8-1.79 8-4" />
-                        </svg>
-                    </div>
-                    <div class="min-w-0">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Base de Datos</span>
-                        <span class="text-xs font-bold text-slate-800 truncate block" x-text="db_database || 'capital_gestor_db'"></span>
-                    </div>
-                </div>
-
-                <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/60 flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-                        </svg>
-                    </div>
-                    <div class="min-w-0">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Servidor / Host</span>
-                        <span class="text-xs font-bold text-slate-800 truncate block" x-text="db_host || '127.0.0.1 (Localhost)'"></span>
-                    </div>
-                </div>
-
-                <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/60 flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
-                    </div>
-                    <div class="min-w-0">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Usuario &amp; Estado</span>
-                        <span class="text-xs font-bold text-emerald-700 truncate flex items-center gap-1">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span x-text="(db_user || 'crm_admin') + ' (Conectado)'"></span>
-                        </span>
-                    </div>
+            <!-- DETECCIÓN DINÁMICA DE LA BASE DE DATOS ACTIVA -->
+            <div class="mt-6 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21 3.582 4 8 4s8-1.79 8-4" />
+                    </svg>
+                    <span class="text-xs font-semibold text-slate-500">Base de Datos PostgreSQL Activa:</span>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-extrabold text-xs border border-indigo-200/80 shadow-2xs">
+                        <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                        <span x-text="db_name"></span>
+                    </span>
                 </div>
             </div>
         </div>
@@ -284,10 +256,7 @@
                 error_type: null,
                 detail: null,
                 solution_hint: null,
-                db_database: '{{ config('database.connections.pgsql.database') }}',
-                db_host: '{{ env('DATABASE_URL') ? 'Render Cloud PostgreSQL' : config('database.connections.pgsql.host') }}',
-                db_user: '{{ config('database.connections.pgsql.username') }}',
-                db_connected: true,
+                db_name: '{{ DB::connection()->getDatabaseName() }}',
                 qr_exists: {{ file_exists(public_path('img/qr.png')) ? 'true' : 'false' }},
                 qrUrl: '{{ asset('img/qr.png') }}?v=' + new Date().getTime(),
                 qrError: false,
@@ -306,11 +275,10 @@
                             this.error_type = data.error_type || null;
                             this.detail = data.detail || null;
                             this.solution_hint = data.solution_hint || null;
-                            if (data.db_info) {
-                                this.db_database = data.db_info.database || this.db_database;
-                                this.db_host = data.db_info.host || this.db_host;
-                                this.db_user = data.db_info.user || this.db_user;
-                                this.db_connected = data.db_info.connected !== undefined ? data.db_info.connected : true;
+                            if (data.db_name) {
+                                this.db_name = data.db_name;
+                            } else if (data.db_info && data.db_info.database) {
+                                this.db_name = data.db_info.database;
                             }
                             this.qr_exists = data.qr_exists;
                             this.qrUrl = '{{ asset('img/qr.png') }}?v=' + new Date().getTime();
