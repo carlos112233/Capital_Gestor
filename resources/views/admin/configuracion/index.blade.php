@@ -47,8 +47,8 @@
                 </div>
             </div>
 
-            <!-- ESTADO 1: CARGANDO / INICIANDO MOTOR -->
-            <template x-if="status === 'cargando'">
+            <!-- ESTADO 1: CARGANDO / INICIANDO MOTOR (SOLO SI NO HAY QR GENERADO AÚN) -->
+            <template x-if="status === 'cargando' && !qr_exists">
                 <div class="flex flex-col md:flex-row items-center gap-6 bg-blue-50/70 p-6 sm:p-8 rounded-2xl border border-blue-200/80">
                     <div class="w-20 h-20 rounded-2xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-600/30">
                         <svg class="w-10 h-10 animate-spin text-white" fill="none" viewBox="0 0 24 24">
