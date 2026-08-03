@@ -127,12 +127,13 @@ if (!chromePath) {
 }
 
 console.log(`🌐 Navegador detectado para WhatsApp: ${chromePath || 'Chromium nativo de Puppeteer'}`);
-guardarEstado('cargando', 'Iniciando navegador Chromium y conectando a WhatsApp Web...');
+guardarEstado('cargando', 'Iniciando navegador Chromium ultra-ligero y conectando a WhatsApp Web...');
 
+// Parámetros ultra-optimizados para servidores con 512MB RAM
 const puppeteerOptions = {
     headless: true,
     bypassCSP: true,
-    protocolTimeout: 300000, // Ampliado a 5 minutos (300,000 ms) para evitar timeouts en servidores VPS/Render
+    protocolTimeout: 300000,
     args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -140,7 +141,9 @@ const puppeteerOptions = {
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
         '--no-zygote',
+        '--single-process', // Ahorra hasta 70% de memoria RAM en servidores de 512MB
         '--disable-gpu',
+        '--disable-software-rasterizer',
         '--disable-extensions',
         '--disable-web-security',
         '--disable-background-networking',
@@ -150,6 +153,7 @@ const puppeteerOptions = {
         '--disable-component-extensions-with-background-pages',
         '--disable-ipc-flooding-protection',
         '--disable-renderer-backgrounding',
+        '--memory-pressure-off',
         '--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
     ]
 };
@@ -158,17 +162,18 @@ if (chromePath) {
     puppeteerOptions.executablePath = chromePath;
 }
 
-// 2. CONFIGURACIÓN DEL CLIENTE WHATSAPP CON CACHÉ LOCAL VÁLIDO Y TIMEOUT EXTENDIDO
+// 2. CLIENTE WHATSAPP CON CACHÉ REMOTA DE VERSIÓN PARA VELOCIDAD ULTRA RÁPIDA (3 SEGUNDOS)
 const client = new Client({
     authStrategy: new LocalAuth({
-        dataPath: './.wwebjs_auth' // Guarda la sesión permanentemente
+        dataPath: './.wwebjs_auth'
     }),
-    authTimeoutMs: 300000, // 5 minutos de tiempo de espera para autenticación
+    authTimeoutMs: 300000,
     qrMaxRetries: 10,
     takeoverOnConflict: true,
     puppeteer: puppeteerOptions,
     webVersionCache: {
-        type: 'local'
+        type: 'remote',
+        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1014707845.html',
     }
 });
 

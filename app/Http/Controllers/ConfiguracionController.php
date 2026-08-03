@@ -109,11 +109,13 @@ class ConfiguracionController extends Controller
                 File::put(public_path('wa-status.json'), json_encode($statusPayload, JSON_PRETTY_PRINT));
             } catch (\Throwable $errWrite) {}
 
-            // Reiniciar el proceso node del motor en segundo plano sin bloquear la respuesta HTTP
+            // Asegurar que el motor esté corriendo sin matar Apache ni provocar OOM en 512MB RAM
             try {
                 if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
-                    exec('pkill -9 -f "wa-motor" 2>/dev/null || true');
-                    exec('nohup node ' . base_path('wa-motor/index.js') . ' > /dev/null 2>&1 < /dev/null &');
+                    $check = shell_exec('pgrep -f "wa-motor"');
+                    if (empty($check)) {
+                        exec('nohup node ' . base_path('wa-motor/index.js') . ' > /dev/null 2>&1 < /dev/null &');
+                    }
                 }
             } catch (\Throwable $e) {}
 
