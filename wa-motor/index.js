@@ -324,17 +324,28 @@ client.on('qr', async (qr) => {
     }
 });
 
+let bucleIniciado = false;
+
+function arrancarBucle() {
+    if (!bucleIniciado) {
+        bucleIniciado = true;
+        console.log('🚀 Bucle de procesamiento de mensajes de WhatsApp activado.');
+        iniciarBucleEnvio();
+    }
+}
+
 client.on('authenticated', () => {
     console.log('🔑 AUTENTICADO: Sesión validada por el dispositivo móvil.');
     guardarEstado('conectado', 'WhatsApp vinculado y activo en el sistema. Dispositivo autenticado.');
     limpiarQRArchivos();
+    arrancarBucle();
 });
 
 client.on('ready', () => {
-    console.log('🚀 MOTOR LISTO: WhatsApp está conectado y escuchando la base de datos PostgreSQL.');
+    console.log('🚀 MOTOR LISTO: WhatsApp está conectado y listo para enviar mensajes.');
     guardarEstado('conectado', 'WhatsApp vinculado y activo en el sistema. Dispositivo autenticado.');
     limpiarQRArchivos();
-    iniciarBucleEnvio();
+    arrancarBucle();
 });
 
 client.on('auth_failure', msg => {
@@ -348,6 +359,7 @@ client.on('auth_failure', msg => {
 
 client.on('disconnected', (reason) => {
     console.log('⚠️ Cliente desconectado:', reason);
+    bucleIniciado = false;
     guardarEstado('desconectado', 'La sesión fue desconectada del dispositivo móvil.', {
         error_type: 'Desconexión',
         detail: typeof reason === 'string' ? reason : JSON.stringify(reason),
@@ -422,26 +434,34 @@ function iniciarBucleEnvio() {
                         let cleanNum = rawNum.includes('@c.us') ? rawNum.replace('@c.us', '') : rawNum;
                         cleanNum = cleanNum.replace(/\D/g, ''); // Deja solo dígitos
 
-                        // 2. VERIFICACIÓN CRÍTICA: Preguntar si el ID es válido en WhatsApp
-                        const contactId = await client.getNumberId(cleanNum);
-
-                        if (contactId && contactId._serialized) {
-                            // Si es válido, enviamos al ID real que nos devolvió WhatsApp
-                            await client.sendMessage(contactId._serialized, msg.mensaje);
-
-                            await queryDb(
-                                "UPDATE whatsapp_pending_messages SET status = 'enviado', updated_at = NOW() WHERE id = $1",
-                                [msg.id]
-                            );
-                            console.log(`✅ Enviado con éxito a ${msg.numero} (${contactId._serialized})`);
-                        } else {
-                            // Si el número no está registrado en WhatsApp
+                        if (!cleanNum) {
+                            console.error(`⚠️ Número inválido en mensaje #${msg.id}`);
                             await queryDb(
                                 "UPDATE whatsapp_pending_messages SET status = 'fallido', updated_at = NOW() WHERE id = $1",
                                 [msg.id]
                             );
-                            console.error(`❌ El número ${msg.numero} no existe en WhatsApp.`);
+                            continue;
                         }
+
+                        // Formato estándar de chat ID de WhatsApp
+                        let targetId = `${cleanNum}@c.us`;
+                        try {
+                            const contactId = await client.getNumberId(cleanNum);
+                            if (contactId && contactId._serialized) {
+                                targetId = contactId._serialized;
+                            }
+                        } catch (eId) {
+                            console.log(`⚠️ No se pudo obtener ID verificado para ${cleanNum}, usando destino por defecto ${targetId}`);
+                        }
+
+                        console.log(`🚀 Enviando mensaje #${msg.id} a ${targetId}...`);
+                        await client.sendMessage(targetId, msg.mensaje);
+
+                        await queryDb(
+                            "UPDATE whatsapp_pending_messages SET status = 'enviado', updated_at = NOW() WHERE id = $1",
+                            [msg.id]
+                        );
+                        console.log(`✅ Mensaje #${msg.id} enviado con éxito a ${msg.numero} (${targetId})`);
 
                     } catch (err) {
                         console.error(`❌ Error procesando el mensaje #${msg.id} para ${msg.numero}:`, err.message);

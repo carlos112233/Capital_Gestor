@@ -100,22 +100,20 @@ class ConfiguracionController extends Controller
             try {
                 $json = json_decode(File::get($statusPath), true);
                 if (is_array($json)) {
-                    $json['qr_exists'] = $qrExists;
                     $json['db_driver'] = $dbDriverLabel;
                     $json['db_name'] = $json['db_info']['database'] ?? $realDbName;
                     $json['messages'] = $pendingMessages;
 
-                    if ($qrExists && ($json['status'] ?? '') !== 'conectado' && ($json['status'] ?? '') !== 'error') {
-                        $json['status'] = 'qr_pendiente';
-                    }
-
-                    if (($json['status'] ?? '') === 'qr_pendiente' && !$qrExists) {
-                        $json['status'] = 'conectado';
-                        $json['message'] = 'WhatsApp vinculado y activo en el sistema. Dispositivo autenticado.';
-                    }
-
+                    // Si el motor indica que ya está conectado, forzar limpieza de QR obsoletos
                     if (($json['status'] ?? '') === 'conectado') {
                         $json['qr_exists'] = false;
+                        @File::delete(public_path('img/qr.png'));
+                        @File::delete(public_path('qr.png'));
+                    } else {
+                        $json['qr_exists'] = File::exists(public_path('img/qr.png')) || File::exists(public_path('qr.png'));
+                        if ($json['qr_exists'] && ($json['status'] ?? '') !== 'error') {
+                            $json['status'] = 'qr_pendiente';
+                        }
                     }
 
                     $responsePayload = $json;
