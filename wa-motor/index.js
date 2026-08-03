@@ -108,6 +108,7 @@ guardarEstado('cargando', 'Iniciando navegador Chromium y conectando a WhatsApp 
 const puppeteerOptions = {
     headless: true,
     bypassCSP: true,
+    protocolTimeout: 300000, // Ampliado a 5 minutos (300,000 ms) para evitar timeouts en servidores VPS/Render
     args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -133,11 +134,14 @@ if (chromePath) {
     puppeteerOptions.executablePath = chromePath;
 }
 
-// 2. CONFIGURACIÓN DEL CLIENTE WHATSAPP CON CACHÉ LOCAL VÁLIDO
+// 2. CONFIGURACIÓN DEL CLIENTE WHATSAPP CON CACHÉ LOCAL VÁLIDO Y TIMEOUT EXTENDIDO
 const client = new Client({
     authStrategy: new LocalAuth({
         dataPath: './.wwebjs_auth' // Guarda la sesión permanentemente
     }),
+    authTimeoutMs: 300000, // 5 minutos de tiempo de espera para autenticación
+    qrMaxRetries: 10,
+    takeoverOnConflict: true,
     puppeteer: puppeteerOptions,
     webVersionCache: {
         type: 'local'
@@ -238,11 +242,18 @@ process.on('uncaughtException', (err) => {
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('❌ Promesa rechazada no manejada:', reason);
-    guardarEstado('error', 'Error en promesa asíncrona del motor de WhatsApp.', {
-        error_type: 'Promesa Asíncrona',
-        detail: reason ? (reason.stack || reason.message || String(reason)) : 'Rechazo desconocido',
-        solution_hint: 'Reinicia la sesión con el botón de "Cerrar Sesión & Nuevo QR".'
-    });
+    const detailStr = reason ? (reason.stack || reason.message || String(reason)) : 'Rechazo desconocido';
+    
+    // Si fue un tiempo de espera de Puppeteer al inyectar WhatsApp Web
+    if (detailStr.includes('timed out') || detailStr.includes('ProtocolError')) {
+        guardarEstado('cargando', 'El servidor está inyectando WhatsApp Web (Tiempo de carga extendido)...');
+    } else {
+        guardarEstado('error', 'Error en promesa asíncrona del motor de WhatsApp.', {
+            error_type: 'Promesa Asíncrona',
+            detail: detailStr,
+            solution_hint: 'Reinicia la sesión con el botón de "Cerrar Sesión & Nuevo QR".'
+        });
+    }
 });
 
 // 4. BUCLE DE CONSULTA A POSTGRESQL CADA 10 SEGUNDOS
