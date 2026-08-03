@@ -85,6 +85,38 @@
                 window.dispatchEvent(new CustomEvent('close-modal', { detail: name }));
             };
 
+            // --- PROTECCIÓN GLOBAL CONTRA DOBLE ENVÍO DE FORMULARIOS (ANTI DOUBLE-SUBMIT) ---
+            document.addEventListener('submit', function(e) {
+                const form = e.target;
+                if (!form || form.tagName !== 'FORM') return;
+
+                if (form.dataset.submitting === 'true') {
+                    e.preventDefault();
+                    return false;
+                }
+
+                form.dataset.submitting = 'true';
+                const submitBtns = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+                submitBtns.forEach(btn => {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-60', 'cursor-not-allowed', 'pointer-events-none');
+                });
+            }, true);
+
+            const originalSubmit = HTMLFormElement.prototype.submit;
+            HTMLFormElement.prototype.submit = function() {
+                if (this.dataset.submitting === 'true') {
+                    return false;
+                }
+                this.dataset.submitting = 'true';
+                const submitBtns = this.querySelectorAll('button[type="submit"], input[type="submit"]');
+                submitBtns.forEach(btn => {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-60', 'cursor-not-allowed', 'pointer-events-none');
+                });
+                return originalSubmit.apply(this, arguments);
+            };
+
             function confirmDelete(formOrId, itemName = 'este registro') {
                 Swal.fire({
                     title: '¿Estás seguro?',
