@@ -17,14 +17,8 @@ use Illuminate\Support\Facades\Http;
 Route::get('/', [AuthenticatedSessionController::class, 'create'])
     ->name('session');
 
-
 Route::middleware(['auth', 'role:admin'])->group(function () {
-    // Todas las rutas dentro de este grupo requerirán que el usuario esté autenticado
-    // Y que tenga el rol de 'admin'
     Route::get('dashboardAdmin', [DashboardController::class, 'indexAdmin'])
-        ->name('dashboardAdmin');
-
-        Route::get('dashboardAdmin', [DashboardController::class, 'indexAdmin'])
         ->name('dashboardAdmin');
 });
 
@@ -49,11 +43,14 @@ Route::middleware('auth')->group(function () {
         Route::resource('pedidos', PedidoController::class);
         Route::get('configuracion', [\App\Http\Controllers\ConfiguracionController::class, 'index'])->name('configuracion.index');
         Route::post('configuracion/logo', [\App\Http\Controllers\ConfiguracionController::class, 'updateLogo'])->name('configuracion.logo');
+        Route::get('configuracion/wa-status', [\App\Http\Controllers\ConfiguracionController::class, 'getWaStatus'])->name('configuracion.wa-status');
+        Route::post('configuracion/wa-reset', [\App\Http\Controllers\ConfiguracionController::class, 'resetWaSession'])->name('configuracion.wa-reset');
         Route::post('enviar-masivo', [DashboardController::class, 'enviarRecordatoriosMasivos'])->name('enviar.masivo');
     });
 });
 
 require __DIR__ . '/auth.php';
+
 Route::get('/descargar-log-secreto', function () {
     $path = storage_path('logs/laravel.log');
 
@@ -64,10 +61,7 @@ Route::get('/descargar-log-secreto', function () {
     return "El archivo de log aún no existe o está vacío.";
 });
 
-
-
 Route::get('/enviar-alerta', function () {
-    // Simulamos un usuario o usamos el sistema de notificaciones
     \Illuminate\Support\Facades\Notification::route('broadcast', 'canal-publico')
         ->notify(new GeneralNotification("Prueba Laravel 12", "¡Esto funciona!"));
 
@@ -75,10 +69,8 @@ Route::get('/enviar-alerta', function () {
 });
 
 Route::get('/test-notif', function () {
-    // 1. Elige un nombre de canal único (ej. "canal_marcos_123")
-    $topic |= "canal_marcos_123"; 
+    $topic = "canal_marcos_123"; 
 
-    // 2. Enviamos la petición a ntfy.sh
     $response = Http::withHeaders([
         'Title' => 'Prueba Local',
         'Priority' => 'high',

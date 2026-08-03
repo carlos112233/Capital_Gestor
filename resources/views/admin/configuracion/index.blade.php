@@ -9,9 +9,9 @@
         </h2>
     </x-slot>
 
-    <div class="py-6 max-w-4xl mx-auto space-y-6">
+    <div class="py-6 max-w-4xl mx-auto space-y-6" x-data="waStatusComponent()">
 
-        <!-- Módulo Principal: Vinculación de WhatsApp QR (Solo Admin) -->
+        <!-- Módulo Principal: Vinculación de WhatsApp QR & Estado en Tiempo Real -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80 p-6 sm:p-8">
             <div class="mb-6 pb-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
@@ -21,43 +21,80 @@
                         </svg>
                         Estado del Motor de WhatsApp
                     </h3>
-                    <p class="text-sm text-slate-500 mt-0.5">Gestión de conexión del motor automático para el envío de notificaciones.</p>
+                    <p class="text-sm text-slate-500 mt-0.5">Estado en tiempo real de la sesión de WhatsApp para envío de notificaciones.</p>
                 </div>
-                <button type="button" onclick="window.location.reload();"
-                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 font-bold text-xs transition-colors cursor-pointer self-start sm:self-auto shadow-xs">
-                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                    </svg>
-                    Comprobar Estado
-                </button>
+
+                <div class="flex items-center gap-3">
+                    <button type="button" @click="fetchStatus()"
+                        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer shadow-xs">
+                        <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Comprobar Estado
+                    </button>
+
+                    <!-- Botón para eliminar sesión y generar nuevo QR -->
+                    <form id="wa-reset-form" action="{{ route('admin.configuracion.wa-reset') }}" method="POST" class="inline">
+                        @csrf
+                        <button type="button" @click="confirmResetSession()"
+                            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs transition-colors cursor-pointer shadow-xs">
+                            <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                            Cerrar Sesión &amp; Nuevo QR
+                        </button>
+                    </form>
+                </div>
             </div>
 
-            @if(file_exists(public_path('img/qr.png')) || file_exists(public_path('qr.png')))
-                <!-- Estado: Pendiente de Escaneo QR -->
+            <!-- ESTADO 1: CARGANDO / INICIANDO MOTOR -->
+            <template x-if="status === 'cargando'">
+                <div class="flex flex-col md:flex-row items-center gap-6 bg-blue-50/70 p-6 sm:p-8 rounded-2xl border border-blue-200/80">
+                    <div class="w-20 h-20 rounded-2xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-600/30">
+                        <svg class="w-10 h-10 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                    <div class="space-y-2 text-center md:text-left">
+                        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100 text-blue-800 border border-blue-300 text-xs font-bold shadow-xs">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping"></span>
+                            Estado: Conectando a WhatsApp Web...
+                        </div>
+                        <h4 class="text-lg font-bold text-slate-800">Iniciando el motor en el servidor</h4>
+                        <p class="text-xs sm:text-sm text-slate-600 max-w-xl" x-text="message || 'Iniciando navegador Chromium y cargando la plataforma de WhatsApp Web...'"></p>
+                        <p class="text-xs text-blue-600 font-medium">⏳ Generando código QR... Esta pantalla se actualizará automáticamente en unos segundos.</p>
+                    </div>
+                </div>
+            </template>
+
+            <!-- ESTADO 2: CÓDIGO QR PENDIENTE DE ESCANEO -->
+            <template x-if="status === 'qr_pendiente' || (qr_exists && status !== 'conectado')">
                 <div class="flex flex-col md:flex-row items-center gap-8 bg-amber-50/60 p-6 rounded-2xl border border-amber-200/80">
                     <div class="w-64 h-64 bg-white p-3 rounded-2xl shadow-md border border-slate-200 flex items-center justify-center relative overflow-hidden flex-shrink-0">
-                        <img id="qr-img" src="{{ file_exists(public_path('img/qr.png')) ? asset('img/qr.png') : asset('qr.png') }}?v={{ time() }}" 
-                             alt="Código QR WhatsApp" class="max-w-full max-h-full object-contain rounded-lg">
+                        <img :src="qrUrl" alt="Código QR WhatsApp" class="max-w-full max-h-full object-contain rounded-lg">
                     </div>
                     <div class="space-y-4">
                         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold shadow-xs">
                             <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
                             Estado: Pendiente de Escaneo QR
                         </div>
-                        <h4 class="text-base font-bold text-slate-800">Pasos para vincular WhatsApp:</h4>
+                        <h4 class="text-base font-bold text-slate-800">Instrucciones para iniciar sesión en WhatsApp:</h4>
                         <ol class="space-y-2 text-xs font-medium text-slate-600 list-decimal list-inside">
-                            <li>Abre la aplicación de <strong>WhatsApp</strong> en tu teléfono.</li>
-                            <li>Entra al menú principal (3 puntos en Android o Ajustes en iPhone).</li>
-                            <li>Toca en <strong>Dispositivos vinculados</strong> &gt; <strong>Vincular un dispositivo</strong>.</li>
-                            <li>Escanea el código QR que ves a la izquierda.</li>
+                            <li>Abre la aplicación de <strong>WhatsApp</strong> en tu teléfono celular.</li>
+                            <li>Toca el menú (3 puntos arriba a la derecha en Android o Ajustes en iPhone).</li>
+                            <li>Selecciona <strong>Dispositivos vinculados</strong> &gt; <strong>Vincular un dispositivo</strong>.</li>
+                            <li>Apunta la cámara de tu teléfono hacia el código QR de la izquierda.</li>
                         </ol>
                         <p class="text-xs text-slate-500 bg-white p-3 rounded-xl border border-slate-200/80">
-                            💡 <strong>Nota:</strong> Una vez escaneado con éxito, la imagen QR desaparecerá automáticamente y el sistema mostrará la sesión como vinculada.
+                            💡 <strong>Nota:</strong> Al escanear con éxito, esta pantalla detectará la sesión automáticamente y ocultará el código QR.
                         </p>
                     </div>
                 </div>
-            @else
-                <!-- Estado: Dispositivo Vinculado & Activo -->
+            </template>
+
+            <!-- ESTADO 3: DISPOSITIVO VINCULADO & ACTIVO -->
+            <template x-if="status === 'conectado' && !qr_exists">
                 <div class="flex flex-col md:flex-row items-center gap-6 bg-emerald-50/70 p-6 sm:p-8 rounded-2xl border border-emerald-200/80">
                     <div class="w-20 h-20 rounded-2xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-600/30">
                         <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,15 +104,37 @@
                     <div class="space-y-2 text-center md:text-left">
                         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold shadow-xs">
                             <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            Estado: Dispositivo Vinculado & Conectado
+                            Estado: Dispositivo Vinculado &amp; Conectado
                         </div>
-                        <h4 class="text-lg font-bold text-slate-800">¡WhatsApp está sincronizado en tiempo real!</h4>
-                        <p class="text-xs sm:text-sm text-slate-600 max-w-xl">
-                            La sesión se encuentra activa en el servidor. El código QR ha sido retirado automáticamente. El motor está listo enviando notificaciones y recordatorios de saldo a tus clientes.
-                        </p>
+                        <h4 class="text-lg font-bold text-slate-800">¡WhatsApp está autenticado y en línea!</h4>
+                        <p class="text-xs sm:text-sm text-slate-600 max-w-xl" x-text="message || 'La sesión está activa en el servidor. El código QR ha sido retirado automáticamente.'"></p>
+                        <p class="text-xs text-emerald-700 font-medium">✅ Notificaciones masivas y alertas de saldo listas para enviarse.</p>
                     </div>
                 </div>
-            @endif
+            </template>
+
+            <!-- ESTADO 4: ERROR / DESCONECTADO -->
+            <template x-if="status === 'error' || status === 'desconectado'">
+                <div class="flex flex-col md:flex-row items-center gap-6 bg-rose-50/70 p-6 sm:p-8 rounded-2xl border border-rose-200/80">
+                    <div class="w-20 h-20 rounded-2xl bg-rose-600 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-rose-600/30">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div class="space-y-2 text-center md:text-left">
+                        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300 text-xs font-bold shadow-xs">
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                            Estado: Conexión Interrumpida
+                        </div>
+                        <h4 class="text-lg font-bold text-slate-800">Falló la conexión o la sesión fue cerrada</h4>
+                        <p class="text-xs sm:text-sm text-slate-600 max-w-xl" x-text="message || 'Se interrumpió la conexión con WhatsApp. Puedes solicitar un nuevo código QR para volver a vincular.'"></p>
+                        <button type="button" @click="confirmResetSession()"
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-colors cursor-pointer shadow-md mt-2">
+                            🔄 Solicitar Nuevo Código QR
+                        </button>
+                    </div>
+                </div>
+            </template>
         </div>
 
         <!-- Personalización de Logotipo -->
@@ -131,4 +190,61 @@
         </div>
 
     </div>
+
+    <!-- Script de Alpine.js para la consulta en tiempo real del estado de WhatsApp -->
+    <script>
+        function waStatusComponent() {
+            return {
+                status: '{{ file_exists(public_path('img/qr.png')) ? 'qr_pendiente' : 'conectado' }}',
+                message: 'Consultando estado...',
+                qr_exists: {{ file_exists(public_path('img/qr.png')) ? 'true' : 'false' }},
+                qrUrl: '{{ asset('img/qr.png') }}?v=' + new Date().getTime(),
+                timer: null,
+
+                init() {
+                    this.fetchStatus();
+                    this.timer = setInterval(() => {
+                        this.fetchStatus();
+                    }, 4000); // Polling cada 4 segundos
+                },
+
+                fetchStatus() {
+                    fetch('{{ route('admin.configuracion.wa-status') }}')
+                        .then(res => res.json())
+                        .then(data => {
+                            this.status = data.status || 'desconectado';
+                            this.message = data.message || '';
+                            this.qr_exists = data.qr_exists;
+                            this.qrUrl = '{{ asset('img/qr.png') }}?v=' + new Date().getTime();
+                        })
+                        .catch(err => {
+                            console.log('Error verificando estado de WhatsApp:', err);
+                        });
+                },
+
+                confirmResetSession() {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: '¿Cerrar sesión y generar nuevo QR?',
+                            text: 'Se eliminarán los datos de autenticación actuales y el servidor generará un nuevo código QR para escanear.',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#e11d48',
+                            cancelButtonColor: '#64748b',
+                            confirmButtonText: 'Sí, borrar sesión y generar QR',
+                            cancelButtonText: 'Cancelar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                document.getElementById('wa-reset-form').submit();
+                            }
+                        });
+                    } else {
+                        if (confirm('¿Deseas borrar la sesión de WhatsApp y generar un nuevo código QR?')) {
+                            document.getElementById('wa-reset-form').submit();
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </x-app-layout>

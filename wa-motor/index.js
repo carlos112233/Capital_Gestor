@@ -21,6 +21,24 @@ const poolConfig = process.env.DATABASE_URL
 
 const pool = new Pool(poolConfig);
 
+// Función para registrar y guardar el estado actual de la sesión de WhatsApp
+function guardarEstado(estado, mensaje) {
+    const payload = {
+        status: estado, // 'cargando', 'qr_pendiente', 'conectado', 'error', 'desconectado'
+        message: mensaje,
+        updated_at: new Date().toISOString()
+    };
+    try {
+        const publicStatusPath = path.join(__dirname, '..', 'public', 'wa-status.json');
+        const localStatusPath = path.join(__dirname, 'status.json');
+        fs.writeFileSync(publicStatusPath, JSON.stringify(payload, null, 2));
+        fs.writeFileSync(localStatusPath, JSON.stringify(payload, null, 2));
+        console.log(`📌 Estado de WhatsApp actualizado: [${estado}] - ${mensaje}`);
+    } catch (e) {
+        console.error('Error guardando estado de WhatsApp:', e.message);
+    }
+}
+
 // Detectar ejecutable de Chrome / Chromium en el servidor o entorno local
 function findChromePath() {
     const paths = [
@@ -62,7 +80,7 @@ if (!chromePath) {
 }
 
 console.log(`🌐 Navegador detectado para WhatsApp: ${chromePath || 'Chromium nativo de Puppeteer'}`);
-console.log('⌛ Iniciando Chromium y cargando WhatsApp Web... Por favor espera unos segundos.');
+guardarEstado('cargando', 'Iniciando navegador Chromium y cargando WhatsApp Web...');
 
 const puppeteerOptions = {
     headless: true,
@@ -145,6 +163,8 @@ client.on('qr', async (qr) => {
         if (fs.existsSync(brainPath)) fs.copyFileSync(qrPath, brainPath);
         fs.copyFileSync(qrPath, publicImgPath);
         fs.copyFileSync(qrPath, publicPath);
+        
+        guardarEstado('qr_pendiente', 'Código QR listo. Por favor escanea el código desde WhatsApp en tu celular.');
         console.log('📸 Imagen del QR actualizada en public/img/qr.png');
     } catch (e) {
         console.error('Error guardando imagen QR:', e.message);
@@ -153,16 +173,19 @@ client.on('qr', async (qr) => {
 
 client.on('ready', () => {
     console.log('🚀 MOTOR LISTO: WhatsApp está conectado y escuchando la base de datos PostgreSQL.');
+    guardarEstado('conectado', 'WhatsApp vinculado y activo en el sistema. Teléfono sincronizado.');
     limpiarQRArchivos();
     iniciarBucleEnvio();
 });
 
 client.on('auth_failure', msg => {
     console.error('❌ Error de autenticación en WhatsApp:', msg);
+    guardarEstado('error', `Error de autenticación: ${msg || 'Sesión no autorizada'}`);
 });
 
 client.on('disconnected', (reason) => {
     console.log('⚠️ Cliente desconectado:', reason);
+    guardarEstado('desconectado', `Sesión de WhatsApp desconectada: ${reason || 'Teléfono fuera de alcance'}`);
     console.log('Reiniciando cliente...');
     client.initialize();
 });
