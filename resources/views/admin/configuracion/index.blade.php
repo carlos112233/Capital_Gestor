@@ -21,7 +21,7 @@
                         </svg>
                         Estado del Motor de WhatsApp
                     </h3>
-                    <p class="text-sm text-slate-500 mt-0.5">Diagnóstico y estado en tiempo real del motor automático de notificaciones.</p>
+                    <p class="text-sm text-slate-500 mt-0.5">Diagnóstico y estado del motor automático de notificaciones.</p>
                 </div>
 
                 <div class="flex items-center gap-3">
@@ -63,7 +63,7 @@
                         </div>
                         <h4 class="text-lg font-bold text-slate-800">Iniciando el motor en el servidor</h4>
                         <p class="text-xs sm:text-sm text-slate-600 max-w-xl" x-text="message || 'Iniciando navegador Chromium y cargando la plataforma de WhatsApp Web...'"></p>
-                        <p class="text-xs text-blue-600 font-medium">⏳ Generando código QR... Esta pantalla se actualizará automáticamente en unos segundos.</p>
+                        <p class="text-xs text-blue-600 font-medium">⏳ Haz clic en "Comprobar Estado" cuando desees actualizar la información.</p>
                     </div>
                 </div>
             </template>
@@ -87,7 +87,7 @@
                             <li>Apunta la cámara de tu teléfono hacia el código QR de la izquierda.</li>
                         </ol>
                         <p class="text-xs text-slate-500 bg-white p-3 rounded-xl border border-slate-200/80">
-                            💡 <strong>Nota:</strong> Al escanear con éxito, esta pantalla detectará la sesión automáticamente y ocultará el código QR.
+                            💡 <strong>Nota:</strong> Haz clic en "Comprobar Estado" tras escanear para verificar la vinculación.
                         </p>
                     </div>
                 </div>
@@ -225,7 +225,7 @@
 
     </div>
 
-    <!-- Script de Alpine.js para la consulta en tiempo real del estado de WhatsApp -->
+    <!-- Script de Alpine.js para la consulta bajo demanda del estado de WhatsApp -->
     <script>
         function waStatusComponent() {
             return {
@@ -236,13 +236,10 @@
                 solution_hint: null,
                 qr_exists: {{ file_exists(public_path('img/qr.png')) ? 'true' : 'false' }},
                 qrUrl: '{{ asset('img/qr.png') }}?v=' + new Date().getTime(),
-                timer: null,
 
                 init() {
+                    // Carga única al abrir la página (Sin polling automático para ahorrar RAM en el servidor)
                     this.fetchStatus();
-                    this.timer = setInterval(() => {
-                        this.fetchStatus();
-                    }, 4000); // Polling cada 4 segundos
                 },
 
                 fetchStatus() {
