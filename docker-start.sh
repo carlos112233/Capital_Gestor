@@ -6,7 +6,10 @@ if [ -n "$PORT" ]; then
     sed -i "s/:80>/:$PORT>/g" /etc/apache2/sites-available/*.conf
 fi
 
-# Limpiar caché de vistas e intrucciones de Laravel
+# Garantizar permisos de escritura para www-data y node en carpetas clave
+chmod -R 777 /var/www/html/public /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/wa-motor 2>/dev/null || true
+
+# Limpiar caché de vistas e instrucciones de Laravel
 php artisan view:clear
 php artisan config:clear
 

@@ -47,9 +47,13 @@ class ConfiguracionController extends Controller
         $statusPath = public_path('wa-status.json');
         
         if (File::exists($statusPath)) {
-            $json = json_decode(File::get($statusPath), true);
-            $json['qr_exists'] = File::exists(public_path('img/qr.png')) || File::exists(public_path('qr.png'));
-            return response()->json($json);
+            try {
+                $json = json_decode(File::get($statusPath), true);
+                if (is_array($json)) {
+                    $json['qr_exists'] = File::exists(public_path('img/qr.png')) || File::exists(public_path('qr.png'));
+                    return response()->json($json);
+                }
+            } catch (\Throwable $e) {}
         }
 
         $qrExists = File::exists(public_path('img/qr.png')) || File::exists(public_path('qr.png'));
@@ -71,7 +75,7 @@ class ConfiguracionController extends Controller
     public function resetWaSession()
     {
         try {
-            // Eliminar carpetas de sesión local
+            // Eliminar carpetas de sesión local de forma segura
             $pathsToDelete = [
                 base_path('.wwebjs_auth'),
                 base_path('wa-motor/.wwebjs_auth'),
@@ -82,23 +86,27 @@ class ConfiguracionController extends Controller
             ];
 
             foreach ($pathsToDelete as $p) {
-                if (File::isDirectory($p)) {
-                    File::deleteDirectory($p);
-                } elseif (File::exists($p)) {
-                    File::delete($p);
-                }
+                try {
+                    if (File::isDirectory($p)) {
+                        File::deleteDirectory($p);
+                    } elseif (File::exists($p)) {
+                        File::delete($p);
+                    }
+                } catch (\Throwable $eFile) {}
             }
 
-            // Actualizar el archivo de estado
-            $statusPayload = [
-                'status' => 'cargando',
-                'message' => 'Sesión eliminada por el administrador. Generando nuevo código QR...',
-                'error_type' => null,
-                'detail' => null,
-                'solution_hint' => null,
-                'updated_at' => now()->toIso8601String()
-            ];
-            File::put(public_path('wa-status.json'), json_encode($statusPayload, JSON_PRETTY_PRINT));
+            // Actualizar el archivo de estado de forma segura sin bloquear si falla por permisos
+            try {
+                $statusPayload = [
+                    'status' => 'cargando',
+                    'message' => 'Sesión eliminada por el administrador. Generando nuevo código QR...',
+                    'error_type' => null,
+                    'detail' => null,
+                    'solution_hint' => null,
+                    'updated_at' => now()->toIso8601String()
+                ];
+                File::put(public_path('wa-status.json'), json_encode($statusPayload, JSON_PRETTY_PRINT));
+            } catch (\Throwable $errWrite) {}
 
             // Intentar reiniciar el proceso node del motor si está en Linux
             try {
