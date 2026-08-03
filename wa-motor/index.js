@@ -21,6 +21,23 @@ const poolConfig = process.env.DATABASE_URL
 
 const pool = new Pool(poolConfig);
 
+// Verificar la conexión activa a PostgreSQL e imprimir la BD y Usuario conectados al iniciar
+pool.query('SELECT current_database(), current_user', (err, res) => {
+    if (err) {
+        console.error('❌ Error de conexión a la base de datos PostgreSQL:', err.message);
+        guardarEstado('error', 'Error de conexión a la Base de Datos PostgreSQL', {
+            error_type: 'Base de Datos',
+            detail: err.stack || err.message,
+            solution_hint: 'Verifica la variable DATABASE_URL en Render o credenciales DB_HOST/DB_USER/DB_PASSWORD en el .env.'
+        });
+    } else {
+        const dbName = res.rows[0].current_database;
+        const dbUser = res.rows[0].current_user;
+        const hostTarget = process.env.DATABASE_URL ? 'Render Cloud PostgreSQL' : (process.env.DB_HOST || '127.0.0.1');
+        console.log(`🗄️ Conexión exitosa a la Base de Datos PostgreSQL: "${dbName}" en [${hostTarget}] como usuario "${dbUser}"`);
+    }
+});
+
 // Capturar errores globales en la piscina de la base de datos
 pool.on('error', (err) => {
     console.error('❌ Error en el cliente de base de datos PostgreSQL:', err.message);
