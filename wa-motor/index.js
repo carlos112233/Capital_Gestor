@@ -18,12 +18,18 @@ function getPoolConfig(useSsl) {
             ssl: useSsl ? { rejectUnauthorized: false } : false
         };
     }
+
+    let port = parseInt(process.env.DB_PORT || '5432');
+    if (port === 3306) {
+        port = 5432; // Previene intentar handshake de PostgreSQL contra el puerto 3306 de MySQL
+    }
+
     return {
         user: process.env.DB_USERNAME || process.env.DB_USER || 'crm_admin',
-        host: process.env.DB_HOST || '127.0.0.1',
+        host: (process.env.DB_HOST === 'localhost') ? '127.0.0.1' : (process.env.DB_HOST || '127.0.0.1'),
         database: process.env.DB_DATABASE || 'capital_gestor_db',
         password: process.env.DB_PASSWORD || 'Carlosaraiza2810',
-        port: parseInt(process.env.DB_PORT || '5432'),
+        port: port,
         ssl: useSsl ? { rejectUnauthorized: false } : false
     };
 }
@@ -416,6 +422,16 @@ function iniciarBucleEnvio() {
             }
         } catch (err) {
             console.error('Error consultando la base de datos:', err.message);
+
+            // Si falló por SSL o Socket en el bucle, intentamos reconectar silenciosamente la piscina de PostgreSQL
+            if (err.message.includes('SSL') || err.message.includes('ssl') || err.message.includes('socket')) {
+                console.log(`🔄 Recreando piscina de conexión PostgreSQL cambiando modo SSL a: ${!currentSslSetting}...`);
+                currentSslSetting = !currentSslSetting;
+                try { pool.end().catch(() => {}); } catch (e) {}
+                pool = new Pool(getPoolConfig(currentSslSetting));
+                return;
+            }
+
             guardarEstado('error', 'Error al consultar mensajes pendientes en PostgreSQL.', {
                 error_type: 'Base de Datos',
                 detail: err.message,
