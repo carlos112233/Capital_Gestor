@@ -342,20 +342,27 @@
                 qr_exists: {{ file_exists(public_path('img/qr.png')) ? 'true' : 'false' }},
                 qrUrl: '{{ asset('img/qr.png') }}?v=' + new Date().getTime(),
                 qrError: false,
+                isLoading: false,
 
                 init() {
                     this.fetchStatus();
                 },
 
                 fetchStatus() {
+                    if (this.isLoading) return;
+                    this.isLoading = true;
                     this.qrError = false;
+
                     fetch('{{ route('admin.configuracion.wa-status') }}?_t=' + new Date().getTime(), {
                         headers: {
                             'Cache-Control': 'no-cache',
                             'Pragma': 'no-cache'
                         }
                     })
-                        .then(res => res.json())
+                        .then(res => {
+                            if (!res.ok) throw new Error('HTTP ' + res.status);
+                            return res.json();
+                        })
                         .then(data => {
                             this.status = data.status || 'desconectado';
                             this.message = data.message || '';
@@ -375,6 +382,9 @@
                         })
                         .catch(err => {
                             console.log('Error verificando estado de WhatsApp:', err);
+                        })
+                        .finally(() => {
+                            this.isLoading = false;
                         });
                 },
 
