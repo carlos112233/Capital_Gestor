@@ -21,7 +21,7 @@
                         </svg>
                         Estado del Motor de WhatsApp
                     </h3>
-                    <p class="text-sm text-slate-500 mt-0.5">Estado en tiempo real de la sesión de WhatsApp para envío de notificaciones.</p>
+                    <p class="text-sm text-slate-500 mt-0.5">Diagnóstico y estado en tiempo real del motor automático de notificaciones.</p>
                 </div>
 
                 <div class="flex items-center gap-3">
@@ -69,7 +69,7 @@
             </template>
 
             <!-- ESTADO 2: CÓDIGO QR PENDIENTE DE ESCANEO -->
-            <template x-if="status === 'qr_pendiente' || (qr_exists && status !== 'conectado')">
+            <template x-if="status === 'qr_pendiente' || (qr_exists && status !== 'conectado' && status !== 'error')">
                 <div class="flex flex-col md:flex-row items-center gap-8 bg-amber-50/60 p-6 rounded-2xl border border-amber-200/80">
                     <div class="w-64 h-64 bg-white p-3 rounded-2xl shadow-md border border-slate-200 flex items-center justify-center relative overflow-hidden flex-shrink-0">
                         <img :src="qrUrl" alt="Código QR WhatsApp" class="max-w-full max-h-full object-contain rounded-lg">
@@ -113,26 +113,60 @@
                 </div>
             </template>
 
-            <!-- ESTADO 4: ERROR / DESCONECTADO -->
+            <!-- ESTADO 4: DIAGNÓSTICO DETALLADO DE ERRORES FUERA DE ALCANCE -->
             <template x-if="status === 'error' || status === 'desconectado'">
-                <div class="flex flex-col md:flex-row items-center gap-6 bg-rose-50/70 p-6 sm:p-8 rounded-2xl border border-rose-200/80">
-                    <div class="w-20 h-20 rounded-2xl bg-rose-600 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-rose-600/30">
-                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                    </div>
-                    <div class="space-y-2 text-center md:text-left">
-                        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300 text-xs font-bold shadow-xs">
-                            <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-                            Estado: Conexión Interrumpida
+                <div class="space-y-4 bg-rose-50/80 p-6 sm:p-8 rounded-2xl border border-rose-200/90 shadow-sm">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-rose-200/60">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-xl bg-rose-600 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-rose-600/20">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-200 text-rose-900 font-bold text-xs uppercase tracking-wider">
+                                    🔴 Error Detectado: <span x-text="error_type || 'General'"></span>
+                                </div>
+                                <h4 class="text-base font-bold text-slate-800 mt-1" x-text="message || 'Falló la conexión del motor de WhatsApp'"></h4>
+                            </div>
                         </div>
-                        <h4 class="text-lg font-bold text-slate-800">Falló la conexión o la sesión fue cerrada</h4>
-                        <p class="text-xs sm:text-sm text-slate-600 max-w-xl" x-text="message || 'Se interrumpió la conexión con WhatsApp. Puedes solicitar un nuevo código QR para volver a vincular.'"></p>
-                        <button type="button" @click="confirmResetSession()"
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-colors cursor-pointer shadow-md mt-2">
-                            🔄 Solicitar Nuevo Código QR
-                        </button>
+
+                        <div class="flex items-center gap-2">
+                            <button type="button" @click="copyDiagnostics()"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-200 transition-colors shadow-2xs">
+                                📋 Copiar Diagnóstico
+                            </button>
+                            <button type="button" @click="confirmResetSession()"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-colors shadow-md">
+                                🔄 Reiniciar Motor &amp; Nuevo QR
+                            </button>
+                        </div>
                     </div>
+
+                    <!-- Sugerencia de Solución -->
+                    <template x-if="solution_hint">
+                        <div class="p-4 rounded-xl bg-white border border-amber-200/80 shadow-2xs space-y-1">
+                            <h5 class="text-xs font-bold text-amber-800 flex items-center gap-1.5">
+                                💡 Solución Recomendada:
+                            </h5>
+                            <p class="text-xs font-medium text-slate-700" x-text="solution_hint"></p>
+                        </div>
+                    </template>
+
+                    <!-- Detalle Técnico / Stack Trace (Desplegable) -->
+                    <template x-if="detail">
+                        <div x-data="{ openDetail: false }" class="space-y-2">
+                            <button type="button" @click="openDetail = !openDetail"
+                                class="text-xs font-bold text-rose-700 hover:text-rose-900 underline flex items-center gap-1">
+                                <span x-text="openDetail ? '▼ Ocultar detalle técnico' : '▶ Ver detalle técnico del error (Logs)'"></span>
+                            </button>
+
+                            <div x-show="openDetail" x-transition
+                                class="p-3 rounded-xl bg-slate-900 text-rose-300 text-xs font-mono overflow-x-auto max-h-48 whitespace-pre-wrap border border-slate-800 shadow-inner">
+                                <span x-text="detail"></span>
+                            </div>
+                        </div>
+                    </template>
                 </div>
             </template>
         </div>
@@ -197,6 +231,9 @@
             return {
                 status: '{{ file_exists(public_path('img/qr.png')) ? 'qr_pendiente' : 'conectado' }}',
                 message: 'Consultando estado...',
+                error_type: null,
+                detail: null,
+                solution_hint: null,
                 qr_exists: {{ file_exists(public_path('img/qr.png')) ? 'true' : 'false' }},
                 qrUrl: '{{ asset('img/qr.png') }}?v=' + new Date().getTime(),
                 timer: null,
@@ -214,12 +251,32 @@
                         .then(data => {
                             this.status = data.status || 'desconectado';
                             this.message = data.message || '';
+                            this.error_type = data.error_type || null;
+                            this.detail = data.detail || null;
+                            this.solution_hint = data.solution_hint || null;
                             this.qr_exists = data.qr_exists;
                             this.qrUrl = '{{ asset('img/qr.png') }}?v=' + new Date().getTime();
                         })
                         .catch(err => {
                             console.log('Error verificando estado de WhatsApp:', err);
                         });
+                },
+
+                copyDiagnostics() {
+                    const textToCopy = `[DIAGNÓSTICO WHATSAPP]\nTipo: ${this.error_type || 'Desconocido'}\nMensaje: ${this.message}\nSolución: ${this.solution_hint || 'N/A'}\n\n[DETALLE TÉCNICO]\n${this.detail || 'Sin log disponible'}`;
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Diagnóstico copiado',
+                                text: 'El informe de error ha sido copiado al portapapeles.',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            alert('Diagnóstico copiado al portapapeles.');
+                        }
+                    });
                 },
 
                 confirmResetSession() {

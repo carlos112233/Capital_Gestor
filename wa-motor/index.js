@@ -21,11 +21,24 @@ const poolConfig = process.env.DATABASE_URL
 
 const pool = new Pool(poolConfig);
 
-// Función para registrar y guardar el estado actual de la sesión de WhatsApp
-function guardarEstado(estado, mensaje) {
+// Capturar errores globales en la piscina de la base de datos
+pool.on('error', (err) => {
+    console.error('❌ Error en el cliente de base de datos PostgreSQL:', err.message);
+    guardarEstado('error', 'Error de conexión a la Base de Datos PostgreSQL', {
+        error_type: 'Base de Datos',
+        detail: err.stack || err.message,
+        solution_hint: 'Verifica la variable DATABASE_URL o credenciales DB_HOST/DB_USER/DB_PASSWORD en el servidor.'
+    });
+});
+
+// Función para registrar y guardar el estado actual de la sesión de WhatsApp con diagnóstico detallado
+function guardarEstado(estado, mensaje, opciones = {}) {
     const payload = {
         status: estado, // 'cargando', 'qr_pendiente', 'conectado', 'error', 'desconectado'
         message: mensaje,
+        error_type: opciones.error_type || null,
+        detail: opciones.detail || null,
+        solution_hint: opciones.solution_hint || null,
         updated_at: new Date().toISOString()
     };
     try {
@@ -33,7 +46,7 @@ function guardarEstado(estado, mensaje) {
         const localStatusPath = path.join(__dirname, 'status.json');
         fs.writeFileSync(publicStatusPath, JSON.stringify(payload, null, 2));
         fs.writeFileSync(localStatusPath, JSON.stringify(payload, null, 2));
-        console.log(`📌 Estado de WhatsApp actualizado: [${estado}] - ${mensaje}`);
+        console.log(`📌 Estado de WhatsApp [${estado}]: ${mensaje}`);
     } catch (e) {
         console.error('Error guardando estado de WhatsApp:', e.message);
     }
@@ -71,16 +84,26 @@ let chromePath = findChromePath();
 
 if (!chromePath) {
     console.log('⏳ No se detectó navegador en el sistema. Descargando Chromium automáticamente...');
+    guardarEstado('cargando', 'Navegador no encontrado en el sistema. Intentando instalación automática de Chromium...', {
+        error_type: 'Navegador',
+        solution_hint: 'Si la descarga falla, instala Chromium manualmente en tu servidor Linux (apt install -y chromium).'
+    });
+
     try {
         execSync('npx puppeteer browsers install chrome', { cwd: __dirname, stdio: 'inherit' });
         chromePath = findChromePath();
     } catch (e) {
         console.error('Error al descargar navegador automáticamente:', e.message);
+        guardarEstado('error', 'No se pudo iniciar el navegador Chromium en el servidor.', {
+            error_type: 'Navegador',
+            detail: e.message,
+            solution_hint: 'Ejecuta en la consola de tu servidor Linux: apt update && apt install -y chromium'
+        });
     }
 }
 
 console.log(`🌐 Navegador detectado para WhatsApp: ${chromePath || 'Chromium nativo de Puppeteer'}`);
-guardarEstado('cargando', 'Iniciando navegador Chromium y cargando WhatsApp Web...');
+guardarEstado('cargando', 'Iniciando navegador Chromium y conectando a WhatsApp Web...');
 
 const puppeteerOptions = {
     headless: true,
@@ -164,30 +187,62 @@ client.on('qr', async (qr) => {
         fs.copyFileSync(qrPath, publicImgPath);
         fs.copyFileSync(qrPath, publicPath);
         
-        guardarEstado('qr_pendiente', 'Código QR listo. Por favor escanea el código desde WhatsApp en tu celular.');
+        guardarEstado('qr_pendiente', 'Código QR generado correctamente. Esperando escaneo desde teléfono móvil.');
         console.log('📸 Imagen del QR actualizada en public/img/qr.png');
     } catch (e) {
         console.error('Error guardando imagen QR:', e.message);
+        guardarEstado('error', 'No se pudo guardar la imagen del código QR en el servidor.', {
+            error_type: 'Generación de QR',
+            detail: e.message,
+            solution_hint: 'Verifica que el servidor tenga permisos de escritura en la carpeta public/img.'
+        });
     }
 });
 
 client.on('ready', () => {
     console.log('🚀 MOTOR LISTO: WhatsApp está conectado y escuchando la base de datos PostgreSQL.');
-    guardarEstado('conectado', 'WhatsApp vinculado y activo en el sistema. Teléfono sincronizado.');
+    guardarEstado('conectado', 'WhatsApp vinculado y activo en el sistema. Dispositivo autenticado.');
     limpiarQRArchivos();
     iniciarBucleEnvio();
 });
 
 client.on('auth_failure', msg => {
     console.error('❌ Error de autenticación en WhatsApp:', msg);
-    guardarEstado('error', `Error de autenticación: ${msg || 'Sesión no autorizada'}`);
+    guardarEstado('error', 'Falló la autenticación con WhatsApp. La sesión expiró o fue revocada.', {
+        error_type: 'Autenticación',
+        detail: typeof msg === 'string' ? msg : JSON.stringify(msg),
+        solution_hint: 'Haz clic en "Cerrar Sesión & Nuevo QR" para borrar la sesión anterior e intentar de nuevo.'
+    });
 });
 
 client.on('disconnected', (reason) => {
     console.log('⚠️ Cliente desconectado:', reason);
-    guardarEstado('desconectado', `Sesión de WhatsApp desconectada: ${reason || 'Teléfono fuera de alcance'}`);
+    guardarEstado('desconectado', 'La sesión fue desconectada del dispositivo móvil.', {
+        error_type: 'Desconexión',
+        detail: typeof reason === 'string' ? reason : JSON.stringify(reason),
+        solution_hint: 'Comprueba que tu celular tenga conexión a internet y vuelve a vincular el dispositivo.'
+    });
     console.log('Reiniciando cliente...');
     client.initialize();
+});
+
+// Captura de excepciones globales para evitar bloqueos silenciosos
+process.on('uncaughtException', (err) => {
+    console.error('❌ Excepción no capturada en el motor:', err);
+    guardarEstado('error', 'Ocurrió una excepción no controlada en el motor de WhatsApp.', {
+        error_type: 'Excepción del Sistema',
+        detail: err.stack || err.message,
+        solution_hint: 'Haz clic en "Cerrar Sesión & Nuevo QR" para reiniciar el motor de notificaciones.'
+    });
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Promesa rechazada no manejada:', reason);
+    guardarEstado('error', 'Error en promesa asíncrona del motor de WhatsApp.', {
+        error_type: 'Promesa Asíncrona',
+        detail: reason ? (reason.stack || reason.message || String(reason)) : 'Rechazo desconocido',
+        solution_hint: 'Reinicia la sesión con el botón de "Cerrar Sesión & Nuevo QR".'
+    });
 });
 
 // 4. BUCLE DE CONSULTA A POSTGRESQL CADA 10 SEGUNDOS
@@ -224,6 +279,11 @@ function iniciarBucleEnvio() {
             }
         } catch (err) {
             console.error('Error consultando la base de datos:', err.message);
+            guardarEstado('error', 'Error al consultar mensajes pendientes en PostgreSQL.', {
+                error_type: 'Base de Datos',
+                detail: err.message,
+                solution_hint: 'Verifica que la tabla whatsapp_pending_messages exista en la base de datos.'
+            });
         }
     }, 10000);
 }

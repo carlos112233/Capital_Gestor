@@ -40,7 +40,7 @@ class ConfiguracionController extends Controller
     }
 
     /**
-     * Obtener el estado detallado del motor de WhatsApp en JSON
+     * Obtener el estado detallado y diagnóstico de errores del motor de WhatsApp en JSON
      */
     public function getWaStatus()
     {
@@ -57,6 +57,9 @@ class ConfiguracionController extends Controller
         return response()->json([
             'status' => $qrExists ? 'qr_pendiente' : 'conectado',
             'message' => $qrExists ? 'Código QR listo para escanear' : 'WhatsApp vinculado y activo en el sistema.',
+            'error_type' => null,
+            'detail' => null,
+            'solution_hint' => null,
             'qr_exists' => $qrExists,
             'updated_at' => now()->toIso8601String()
         ]);
@@ -90,6 +93,9 @@ class ConfiguracionController extends Controller
             $statusPayload = [
                 'status' => 'cargando',
                 'message' => 'Sesión eliminada por el administrador. Generando nuevo código QR...',
+                'error_type' => null,
+                'detail' => null,
+                'solution_hint' => null,
                 'updated_at' => now()->toIso8601String()
             ];
             File::put(public_path('wa-status.json'), json_encode($statusPayload, JSON_PRETTY_PRINT));
