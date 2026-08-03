@@ -95,6 +95,10 @@ class ConfiguracionController extends Controller
                         $json['message'] = 'WhatsApp vinculado y activo en el sistema. Dispositivo autenticado.';
                     }
 
+                    if (($json['status'] ?? '') === 'conectado') {
+                        $json['qr_exists'] = false;
+                    }
+
                     $responsePayload = $json;
                 }
             } catch (\Throwable $e) {}
@@ -109,7 +113,15 @@ class ConfiguracionController extends Controller
     public function resetWaSession()
     {
         try {
-            // Eliminar carpetas de sesión local y cerrojos huérfanos
+            // 1. Matar inmediatamente cualquier proceso previo de wa-motor para liberar el cerrojo de Chromium
+            try {
+                if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
+                    shell_exec('pkill -9 -f "wa-motor" 2>/dev/null || pkill -9 -f "node.*index.js" 2>/dev/null');
+                    sleep(1);
+                }
+            } catch (\Throwable $eKill) {}
+
+            // 2. Eliminar carpetas de sesión local y cerrojos huérfanos
             $pathsToDelete = [
                 base_path('.wwebjs_auth'),
                 base_path('wa-motor/.wwebjs_auth'),
@@ -130,7 +142,7 @@ class ConfiguracionController extends Controller
                 } catch (\Throwable $eFile) {}
             }
 
-            // Actualizar el archivo de estado de forma segura
+            // 3. Actualizar el archivo de estado
             try {
                 $statusPayload = [
                     'status' => 'cargando',
@@ -143,13 +155,10 @@ class ConfiguracionController extends Controller
                 File::put(public_path('wa-status.json'), json_encode($statusPayload, JSON_PRETTY_PRINT));
             } catch (\Throwable $errWrite) {}
 
-            // Asegurar que el motor esté corriendo sin matar Apache ni provocar OOM en 512MB RAM
+            // 4. Iniciar limpiamente el motor Node en segundo plano
             try {
                 if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
-                    $check = shell_exec('pgrep -f "wa-motor"');
-                    if (empty($check)) {
-                        exec('nohup node ' . base_path('wa-motor/index.js') . ' > /dev/null 2>&1 < /dev/null &');
-                    }
+                    exec('nohup node ' . base_path('wa-motor/index.js') . ' > /dev/null 2>&1 < /dev/null &');
                 }
             } catch (\Throwable $e) {}
 
