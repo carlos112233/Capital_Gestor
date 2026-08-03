@@ -11,7 +11,7 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // 1. CONFIGURACIÓN DE LA BASE DE DATOS (Soporte Adaptativo para Render & PostgreSQL Local)
-function getPoolConfig(useSsl, fallbackUser = null, fallbackPass = null) {
+function getPoolConfig(useSsl, fallbackCandidate = null) {
     if (process.env.DATABASE_URL) {
         return {
             connectionString: process.env.DATABASE_URL,
@@ -19,17 +19,32 @@ function getPoolConfig(useSsl, fallbackUser = null, fallbackPass = null) {
         };
     }
 
-    let user = fallbackUser || process.env.DB_PG_USER || process.env.PGUSER;
-    let password = fallbackPass || process.env.DB_PG_PASSWORD || process.env.PGPASSWORD;
+    if (fallbackCandidate) {
+        return {
+            user: fallbackCandidate.user,
+            host: fallbackCandidate.host,
+            database: fallbackCandidate.db,
+            password: fallbackCandidate.pass,
+            port: 5432,
+            ssl: fallbackCandidate.ssl ? { rejectUnauthorized: false } : false
+        };
+    }
 
-    if (!user) {
-        if (process.env.DB_CONNECTION === 'mysql' || process.env.DB_USERNAME === 'root') {
-            user = 'crm_admin';
-            password = password || 'Carlosaraiza2810';
-        } else {
-            user = process.env.DB_USERNAME || 'crm_admin';
-            password = password || process.env.DB_PASSWORD || 'Carlosaraiza2810';
-        }
+    let user = process.env.DB_PG_USER || process.env.PGUSER;
+    let password = process.env.DB_PG_PASSWORD || process.env.PGPASSWORD;
+    let host = process.env.DB_HOST || '127.0.0.1';
+    let db = process.env.DB_DATABASE || 'gestor_capital_db';
+
+    // Si .env principal está en MySQL, apuntar a PostgreSQL remoto de Render para que wa-motor funcione en local
+    if (process.env.DB_CONNECTION === 'mysql' || process.env.DB_USERNAME === 'root') {
+        user = 'admin';
+        password = 'on9URKhHQEpcZ1LCZucRtr7g3PVjAA2k';
+        host = 'dpg-d5skoje3jp1c738bn620-a.oregon-postgres.render.com';
+        db = 'gestor_capital_db';
+        useSsl = true;
+    } else {
+        user = user || process.env.DB_USERNAME || 'crm_admin';
+        password = password || process.env.DB_PASSWORD || 'Carlosaraiza2810';
     }
 
     let port = parseInt(process.env.DB_PORT || '5432');
@@ -39,8 +54,8 @@ function getPoolConfig(useSsl, fallbackUser = null, fallbackPass = null) {
 
     return {
         user: user,
-        host: (process.env.DB_HOST === 'localhost') ? '127.0.0.1' : (process.env.DB_HOST || '127.0.0.1'),
-        database: process.env.DB_DATABASE || 'capital_gestor_db',
+        host: (host === 'localhost') ? '127.0.0.1' : host,
+        database: db,
         password: password,
         port: port,
         ssl: useSsl ? { rejectUnauthorized: false } : false
@@ -48,12 +63,10 @@ function getPoolConfig(useSsl, fallbackUser = null, fallbackPass = null) {
 }
 
 let fallbackCandidates = [
-    { user: 'crm_admin', pass: 'Carlosaraiza2810' },
-    { user: 'postgres', pass: 'Carlosaraiza2810' },
-    { user: 'postgres', pass: 'Carlosaraiza_91' },
-    { user: 'postgres', pass: 'postgres' },
-    { user: 'postgres', pass: 'root' },
-    { user: 'postgres', pass: '' }
+    { user: 'admin', pass: 'on9URKhHQEpcZ1LCZucRtr7g3PVjAA2k', host: 'dpg-d5skoje3jp1c738bn620-a.oregon-postgres.render.com', db: 'gestor_capital_db', ssl: true },
+    { user: 'crm_admin', pass: 'Carlosaraiza2810', host: '127.0.0.1', db: 'capital_gestor_db', ssl: false },
+    { user: 'postgres', pass: 'Carlosaraiza2810', host: '127.0.0.1', db: 'capital_gestor_db', ssl: false },
+    { user: 'postgres', pass: 'Carlosaraiza_91', host: '127.0.0.1', db: 'capital_gestor_db', ssl: false }
 ];
 let candidateIndex = 0;
 
@@ -61,9 +74,9 @@ let currentSslSetting = !!(process.env.DATABASE_URL || (process.env.DB_HOST && !
 let pool = new Pool(getPoolConfig(currentSslSetting));
 
 let currentDbInfo = {
-    database: process.env.DB_DATABASE || 'capital_gestor_db',
+    database: process.env.DB_DATABASE || 'gestor_capital_db',
     host: process.env.DATABASE_URL ? 'Render Cloud PostgreSQL' : (process.env.DB_HOST || '127.0.0.1'),
-    user: process.env.DB_USERNAME || process.env.DB_USER || 'crm_admin',
+    user: process.env.DB_USERNAME || process.env.DB_USER || 'admin',
     connected: false
 };
 
@@ -77,19 +90,19 @@ function probarConexionBaseDatos(retryWithAlternativeSsl = true) {
                 console.log(`🔄 Reintentando conexión cambiando modo SSL a: ${!currentSslSetting}...`);
                 currentSslSetting = !currentSslSetting;
                 pool.end().catch(() => {});
-                pool = new Pool(getPoolConfig(currentSslSetting, fallbackCandidates[candidateIndex]?.user, fallbackCandidates[candidateIndex]?.pass));
+                pool = new Pool(getPoolConfig(currentSslSetting, fallbackCandidates[candidateIndex]));
                 probarConexionBaseDatos(false);
                 return;
             }
 
-            // 2. Si falla por autenticación de usuario/contraseña en local, ciclo automático de usuarios de PostgreSQL
-            if (!process.env.DATABASE_URL && (err.message.includes('password') || err.message.includes('autentificación') || err.message.includes('authentication'))) {
+            // 2. Si falla la BD local o no existe gestor_capital_db en local, ciclo de fallback hacia Render PostgreSQL
+            if (!process.env.DATABASE_URL && (err.message.includes('password') || err.message.includes('autentificación') || err.message.includes('no existe la base de datos') || err.message.includes('does not exist'))) {
                 candidateIndex++;
                 if (candidateIndex < fallbackCandidates.length) {
                     const next = fallbackCandidates[candidateIndex];
-                    console.log(`🔄 Probando credencial local de PostgreSQL: usuario "${next.user}"...`);
+                    console.log(`🔄 Conectando a respaldo de PostgreSQL [${next.host}]: usuario "${next.user}"...`);
                     pool.end().catch(() => {});
-                    pool = new Pool(getPoolConfig(currentSslSetting, next.user, next.pass));
+                    pool = new Pool(getPoolConfig(next.ssl, next));
                     probarConexionBaseDatos(retryWithAlternativeSsl);
                     return;
                 }
