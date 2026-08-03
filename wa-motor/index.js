@@ -7,16 +7,21 @@ const path = require('path');
 const { execSync } = require('child_process');
 require('dotenv').config();
 
-// 1. CONFIGURACIÓN DE LA BASE DE DATOS (PostgreSQL Local / Server)
-const pool = new Pool({
-    user: process.env.DB_USER || 'crm_admin',
-    host: process.env.DB_HOST || '127.0.0.1',
-    database: process.env.DB_DATABASE || 'capital_gestor_db',
-    password: process.env.DB_PASSWORD || 'Carlosaraiza2810',
-    port: parseInt(process.env.DB_PORT || '5432'),
-});
+// 1. CONFIGURACIÓN DE LA BASE DE DATOS (Soporte para Render & PostgreSQL Local)
+const poolConfig = process.env.DATABASE_URL
+    ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
+    : {
+        user: process.env.DB_USER || 'crm_admin',
+        host: process.env.DB_HOST || '127.0.0.1',
+        database: process.env.DB_DATABASE || 'capital_gestor_db',
+        password: process.env.DB_PASSWORD || 'Carlosaraiza2810',
+        port: parseInt(process.env.DB_PORT || '5432'),
+        ssl: (process.env.DB_HOST && process.env.DB_HOST !== '127.0.0.1') ? { rejectUnauthorized: false } : false
+    };
 
-// Detectar ejecutable de Chrome / Chromium en el servidor
+const pool = new Pool(poolConfig);
+
+// Detectar ejecutable de Chrome / Chromium en el servidor o entorno local
 function findChromePath() {
     const paths = [
         '/usr/bin/google-chrome-stable',
@@ -127,9 +132,15 @@ client.on('qr', async (qr) => {
     try {
         const qrPath = path.join(__dirname, 'qr.png');
         await QRCodeImage.toFile(qrPath, qr, { width: 400 });
-        const brainPath = '/home/araiza/.gemini/antigravity-ide/brain/20e4ef77-10df-4090-9fac-89a163a822e6/qr.png';
-        const publicImgPath = path.join(__dirname, '..', 'public', 'img', 'qr.png');
+        
+        const publicImgDir = path.join(__dirname, '..', 'public', 'img');
+        if (!fs.existsSync(publicImgDir)) {
+            fs.mkdirSync(publicImgDir, { recursive: true });
+        }
+
+        const publicImgPath = path.join(publicImgDir, 'qr.png');
         const publicPath = path.join(__dirname, '..', 'public', 'qr.png');
+        const brainPath = '/home/araiza/.gemini/antigravity-ide/brain/20e4ef77-10df-4090-9fac-89a163a822e6/qr.png';
         
         if (fs.existsSync(brainPath)) fs.copyFileSync(qrPath, brainPath);
         fs.copyFileSync(qrPath, publicImgPath);
