@@ -40,20 +40,28 @@ class ConfiguracionController extends Controller
     }
 
     /**
-     * Obtener el estado detallado y diagnóstico de errores del motor de WhatsApp en JSON
+     * Obtener el estado detallado, información de la BD y diagnóstico del motor de WhatsApp en JSON
      */
     public function getWaStatus()
     {
         $statusPath = public_path('wa-status.json');
         $qrExists = File::exists(public_path('img/qr.png')) || File::exists(public_path('qr.png'));
         
+        $fallbackDbInfo = [
+            'database' => config('database.connections.pgsql.database'),
+            'host' => env('DATABASE_URL') ? 'Render Cloud PostgreSQL' : config('database.connections.pgsql.host'),
+            'user' => config('database.connections.pgsql.username'),
+            'connected' => true,
+        ];
+
         if (File::exists($statusPath)) {
             try {
                 $json = json_decode(File::get($statusPath), true);
                 if (is_array($json)) {
                     $json['qr_exists'] = $qrExists;
-                    
-                    // Si el estado reporta qr_pendiente pero el archivo físico no existe aún, marcar como cargando
+                    if (empty($json['db_info'])) {
+                        $json['db_info'] = $fallbackDbInfo;
+                    }
                     if (($json['status'] ?? '') === 'qr_pendiente' && !$qrExists) {
                         $json['status'] = 'cargando';
                         $json['message'] = 'Generando imagen del código QR en el servidor...';
@@ -70,6 +78,7 @@ class ConfiguracionController extends Controller
             'error_type' => null,
             'detail' => null,
             'solution_hint' => null,
+            'db_info' => $fallbackDbInfo,
             'qr_exists' => $qrExists,
             'updated_at' => now()->toIso8601String()
         ]);

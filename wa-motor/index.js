@@ -20,11 +20,18 @@ const poolConfig = process.env.DATABASE_URL
     };
 
 const pool = new Pool(poolConfig);
+let currentDbInfo = {
+    database: process.env.DB_DATABASE || 'capital_gestor_db',
+    host: process.env.DATABASE_URL ? 'Render Cloud PostgreSQL' : (process.env.DB_HOST || '127.0.0.1'),
+    user: process.env.DB_USER || 'crm_admin',
+    connected: false
+};
 
 // Verificar la conexión activa a PostgreSQL e imprimir la BD y Usuario conectados al iniciar
 pool.query('SELECT current_database(), current_user', (err, res) => {
     if (err) {
         console.error('❌ Error de conexión a la base de datos PostgreSQL:', err.message);
+        currentDbInfo.connected = false;
         guardarEstado('error', 'Error de conexión a la Base de Datos PostgreSQL', {
             error_type: 'Base de Datos',
             detail: err.stack || err.message,
@@ -34,6 +41,12 @@ pool.query('SELECT current_database(), current_user', (err, res) => {
         const dbName = res.rows[0].current_database;
         const dbUser = res.rows[0].current_user;
         const hostTarget = process.env.DATABASE_URL ? 'Render Cloud PostgreSQL' : (process.env.DB_HOST || '127.0.0.1');
+        currentDbInfo = {
+            database: dbName,
+            host: hostTarget,
+            user: dbUser,
+            connected: true
+        };
         console.log(`🗄️ Conexión exitosa a la Base de Datos PostgreSQL: "${dbName}" en [${hostTarget}] como usuario "${dbUser}"`);
     }
 });
@@ -41,6 +54,7 @@ pool.query('SELECT current_database(), current_user', (err, res) => {
 // Capturar errores globales en la piscina de la base de datos
 pool.on('error', (err) => {
     console.error('❌ Error en el cliente de base de datos PostgreSQL:', err.message);
+    currentDbInfo.connected = false;
     guardarEstado('error', 'Error de conexión a la Base de Datos PostgreSQL', {
         error_type: 'Base de Datos',
         detail: err.stack || err.message,
@@ -56,6 +70,7 @@ function guardarEstado(estado, mensaje, opciones = {}) {
         error_type: opciones.error_type || null,
         detail: opciones.detail || null,
         solution_hint: opciones.solution_hint || null,
+        db_info: currentDbInfo,
         updated_at: new Date().toISOString()
     };
     try {
