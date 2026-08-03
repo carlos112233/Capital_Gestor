@@ -11,7 +11,12 @@ class ConfiguracionController extends Controller
 {
     public function index()
     {
-        return view('admin.configuracion.index');
+        $pendingMessages = DB::table('whatsapp_pending_messages')
+            ->orderBy('created_at', 'desc')
+            ->take(20)
+            ->get();
+
+        return view('admin.configuracion.index', compact('pendingMessages'));
     }
 
     public function updateLogo(Request $request)
@@ -41,7 +46,7 @@ class ConfiguracionController extends Controller
     }
 
     /**
-     * Obtener el estado detallado, nombre dinámico de la BD y diagnóstico del motor de WhatsApp en JSON
+     * Obtener el estado detallado, nombre dinámico de la BD y lista de mensajes pendientes de WhatsApp
      */
     public function getWaStatus()
     {
@@ -55,6 +60,16 @@ class ConfiguracionController extends Controller
             $realDbName = config('database.connections.pgsql.database');
         }
 
+        // Obtener la lista reciente de mensajes desde la tabla whatsapp_pending_messages
+        try {
+            $pendingMessages = DB::table('whatsapp_pending_messages')
+                ->orderBy('created_at', 'desc')
+                ->take(20)
+                ->get();
+        } catch (\Throwable $eMsgs) {
+            $pendingMessages = [];
+        }
+
         $responsePayload = [
             'status' => $qrExists ? 'qr_pendiente' : 'conectado',
             'message' => $qrExists ? 'Código QR listo para escanear' : 'WhatsApp vinculado y activo en el sistema.',
@@ -63,6 +78,7 @@ class ConfiguracionController extends Controller
             'solution_hint' => null,
             'db_name' => $realDbName,
             'qr_exists' => $qrExists,
+            'messages' => $pendingMessages,
             'updated_at' => now()->toIso8601String()
         ];
 
@@ -72,6 +88,7 @@ class ConfiguracionController extends Controller
                 if (is_array($json)) {
                     $json['qr_exists'] = $qrExists;
                     $json['db_name'] = $json['db_info']['database'] ?? $realDbName;
+                    $json['messages'] = $pendingMessages;
 
                     if (($json['status'] ?? '') === 'qr_pendiente' && !$qrExists) {
                         $json['status'] = 'cargando';

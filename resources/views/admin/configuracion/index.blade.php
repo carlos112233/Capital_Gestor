@@ -193,6 +193,87 @@
             </div>
         </div>
 
+        <!-- TABLA DE MENSAJES PENDIENTES & COLA DE ENVÍO DE WHATSAPP -->
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80 p-6 sm:p-8 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-100">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg>
+                        Cola de Mensajes de WhatsApp
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Mensajes registrados en la tabla <code class="bg-slate-100 px-1.5 py-0.5 rounded text-indigo-600 font-mono text-[11px]">whatsapp_pending_messages</code>.</p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 font-bold text-xs">
+                        📊 Total: <span class="text-indigo-600" x-text="messages.length"></span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- TABLA REACTIVA EN TIEMPO REAL -->
+            <div class="overflow-x-auto rounded-xl border border-slate-200/80 shadow-2xs">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/80">
+                            <th class="py-3 px-4"># ID</th>
+                            <th class="py-3 px-4">Número Destino</th>
+                            <th class="py-3 px-4">Contenido del Mensaje</th>
+                            <th class="py-3 px-4">Estado</th>
+                            <th class="py-3 px-4">Fecha y Hora</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-xs">
+                        <template x-if="messages.length === 0">
+                            <tr>
+                                <td colspan="5" class="py-8 text-center text-slate-400">
+                                    <div class="flex flex-col items-center justify-center space-y-1">
+                                        <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                        </svg>
+                                        <span>No hay mensajes registrados en la cola actualmente.</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+
+                        <template x-for="msg in messages" :key="msg.id">
+                            <tr class="hover:bg-slate-50/60 transition-colors">
+                                <td class="py-3 px-4 font-mono font-bold text-slate-700" x-text="'#' + msg.id"></td>
+                                <td class="py-3 px-4 font-bold text-slate-800" x-text="msg.numero"></td>
+                                <td class="py-3 px-4 max-w-xs text-slate-600">
+                                    <p class="truncate" x-text="msg.mensaje" :title="msg.mensaje"></p>
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    <template x-if="msg.status === 'pendiente'">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[11px]">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                            Pendiente
+                                        </span>
+                                    </template>
+                                    <template x-if="msg.status === 'enviado'">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px]">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                            Enviado
+                                        </span>
+                                    </template>
+                                    <template x-if="msg.status === 'fallido'">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[11px]" :title="msg.error_message || ''">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                            Fallido
+                                        </span>
+                                    </template>
+                                </td>
+                                <td class="py-3 px-4 text-slate-500 font-mono text-[11px]" x-text="msg.created_at ? msg.created_at.replace('T', ' ').substring(0, 19) : ''"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Personalización de Logotipo -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80 p-6 sm:p-8">
             <div class="mb-6 pb-6 border-b border-slate-100">
@@ -257,6 +338,7 @@
                 detail: null,
                 solution_hint: null,
                 db_name: '{{ DB::connection()->getDatabaseName() }}',
+                messages: @json($pendingMessages ?? []),
                 qr_exists: {{ file_exists(public_path('img/qr.png')) ? 'true' : 'false' }},
                 qrUrl: '{{ asset('img/qr.png') }}?v=' + new Date().getTime(),
                 qrError: false,
@@ -284,6 +366,9 @@
                                 this.db_name = data.db_name;
                             } else if (data.db_info && data.db_info.database) {
                                 this.db_name = data.db_info.database;
+                            }
+                            if (data.messages && Array.isArray(data.messages)) {
+                                this.messages = data.messages;
                             }
                             this.qr_exists = data.qr_exists;
                             this.qrUrl = '{{ asset('img/qr.png') }}?v=' + new Date().getTime();
