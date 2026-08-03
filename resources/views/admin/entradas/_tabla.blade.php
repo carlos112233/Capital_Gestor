@@ -23,18 +23,18 @@
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                                         {{ $entrada->id }}</td>
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
-                                        {{ $entrada->user->name }}</td>
+                                        {{ $entrada->user->name ?? 'Usuario no disponible' }}</td>
                                     <td
                                         class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-gray-900">
-                                        {{ $entrada->articulo->nombre }}</td>
+                                        {{ $entrada->articulo->nombre ?? 'Artículo no disponible' }}</td>
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
-                                        {{ $entrada->user->name }}</td>
+                                        {{ $entrada->cliente->name ?? $entrada->user->name ?? 'N/A' }}</td>
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
-                                        ${{ number_format($entrada->precio_venta, 2) }}</td>
+                                        ${{ number_format($entrada->precio_venta ?? 0, 2) }}</td>
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
-                                        {{ $entrada->descripcion }}</td>
+                                        {{ $entrada->descripcion ?? '-' }}</td>
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
-                                        {{ \Carbon\Carbon::parse($entrada->fecha_generado)->translatedFormat('l d/m/Y') }}
+                                        {{ $entrada->fecha_generado ? \Carbon\Carbon::parse($entrada->fecha_generado)->translatedFormat('l d/m/Y') : ($entrada->created_at ? $entrada->created_at->translatedFormat('l d/m/Y') : 'N/A') }}
                                     </td>
                                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                                         {{-- Botón Editar Modal --}}

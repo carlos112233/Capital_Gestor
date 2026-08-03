@@ -22,25 +22,28 @@ class EntradaController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $entradasQuery = Entrada::with('user')->latest();
+        $entradasQuery = Entrada::with(['user', 'articulo', 'cliente'])->latest();
 
-        if ($user->hasRole('admin')) {
-            // El admin ve todas las entradas
-            $entradas = $entradasQuery->paginate(15);
-        } else {
-            // El usuario normal solo ve sus propias entradas
-            $entradas = $entradasQuery->where('user_id', $user->id)->paginate(10);
-        }
-
-        // Filtro por nombre de usuario
-        if ($request->filled('q')) {
-            $search = $request->input('q');
-            $entradasQuery->whereHas('user', function ($query) use ($search) {
-                $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
+        if (!$user->hasRole('admin')) {
+            $entradasQuery->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhere('cliente_id', $user->id);
             });
         }
 
-
+        // Filtro de búsqueda global (usuario, cliente, artículo o descripción)
+        if ($request->filled('q')) {
+            $search = '%' . strtolower($request->input('q')) . '%';
+            $entradasQuery->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($query) use ($search) {
+                    $query->whereRaw('LOWER(name) LIKE ?', [$search]);
+                })->orWhereHas('cliente', function ($query) use ($search) {
+                    $query->whereRaw('LOWER(name) LIKE ?', [$search]);
+                })->orWhereHas('articulo', function ($query) use ($search) {
+                    $query->whereRaw('LOWER(nombre) LIKE ?', [$search]);
+                })->orWhereRaw('LOWER(descripcion) LIKE ?', [$search]);
+            });
+        }
 
         $articulos = Articulo::orderBy('nombre', 'asc')->get();
         $users = User::select('id', 'name')
@@ -48,10 +51,11 @@ class EntradaController extends Controller
             ->get();
 
         if ($request->ajax()) {
-            $entradas = $entradasQuery->orderBy('created_at', 'desc')->get();
+            $entradas = $entradasQuery->get();
             return view('admin.entradas._tabla', compact('entradas', 'articulos', 'users'))->render();
         }
-        $entradas = $entradasQuery->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+
+        $entradas = $entradasQuery->paginate(15)->withQueryString();
         return view('admin.entradas.index', compact('entradas', 'articulos', 'users'));
     }
 
@@ -72,12 +76,12 @@ class EntradaController extends Controller
                 ->get();
         }
 
-    // Solo traemos ID y nombre de los usuarios.
-    $users = User::select('id', 'name')
-        ->orderBy('name')
-        ->get();
+        // Solo traemos ID y nombre de los usuarios.
+        $users = User::select('id', 'name')
+            ->orderBy('name')
+            ->get();
 
-    return view('admin.entradas.create', compact('articulos', 'users'));
+        return view('admin.entradas.create', compact('articulos', 'users'));
     }
 
     /**
@@ -93,16 +97,16 @@ class EntradaController extends Controller
             'descripcion'  => 'nullable|string|max:1000',
         ]);
 
-        // 2. Determinar el user_id de forma segura
-        $userId = (Auth::user()->hasRole('admin') && $request->filled('cliente_id'))
+        // 2. Determinar el cliente_id y user_id de forma segura
+        $clienteId = (Auth::user()->hasRole('admin') && $request->filled('cliente_id'))
             ? $validated['cliente_id']
             : Auth::id();
 
         // 3. Crear el registro
         Entrada::create([
             'articulo_id'    => $validated['articulo_id'],
-            'user_id'        => $userId,
-            'cliente_id'     => $validated['cliente_id'] ?? $userId,
+            'user_id'        => Auth::id(),
+            'cliente_id'     => $clienteId,
             'precio_venta'   => $validated['precio_venta'],
             'descripcion'    => $validated['descripcion'] ?? null,
             'fecha_generado' => now(),
@@ -125,32 +129,31 @@ class EntradaController extends Controller
         if ($articulos->isEmpty()) {
             $articulos = Articulo::all();
         }
-        $entrada->load(['user',  'articulo']);
+        $entrada->load(['user', 'cliente', 'articulo']);
 
         return view('admin.entradas.edit', compact('users', 'articulos', 'entrada'));
     }
 
     public function update(Request $request, Entrada $entrada)
     {
-
-        $request->validate([
-            'articulo_id' => 'required|exists:articulos,id',
-            'cliente_id' => 'nullable|exists:users,id',
+        $validated = $request->validate([
+            'articulo_id'  => 'required|exists:articulos,id',
+            'cliente_id'   => 'nullable|exists:users,id',
             'precio_venta' => 'required|numeric',
-            'descripcion' => 'nullable|string',
+            'descripcion'  => 'nullable|string|max:1000',
         ]);
 
-        $fecha = Carbon::now();
-        $userId = (Auth::user()->hasRole('admin') && $request->filled('cliente_id'))
-            ? $request['cliente_id']
-            : Auth::id();
+        $clienteId = (Auth::user()->hasRole('admin') && $request->filled('cliente_id'))
+            ? $validated['cliente_id']
+            : ($entrada->cliente_id ?? Auth::id());
 
-        $request->merge([
-            'fecha_generado' => $fecha,
-            'user_id'        => $userId,
-            'cliente_id'     => $request->input('cliente_id') ?: $userId,
+        $entrada->update([
+            'articulo_id'    => $validated['articulo_id'],
+            'cliente_id'     => $clienteId,
+            'precio_venta'   => $validated['precio_venta'],
+            'descripcion'    => $validated['descripcion'] ?? null,
+            'fecha_generado' => Carbon::now(),
         ]);
-        $entrada->update($request->all());
 
         return redirect()->route('admin.entradas.index')->with('success', 'Entrada de capital actualizada correctamente.');
     }

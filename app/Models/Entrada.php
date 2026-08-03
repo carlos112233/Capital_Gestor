@@ -24,9 +24,9 @@ class Entrada extends Model
         return $this->belongsTo(User::class);
     }
 
-     public function cliente()
+    public function cliente(): BelongsTo
     {
-        return $this->belongsTo(Cliente::class);
+        return $this->belongsTo(User::class, 'cliente_id');
     }
 
      public function articulo(): BelongsTo
