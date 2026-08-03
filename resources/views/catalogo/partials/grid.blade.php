@@ -23,16 +23,10 @@
                         <span class="text-sm text-gray-500">Stock: {{ $articulo->stock }}</span>
                     </div>
 
-                    <form method="POST" action="{{ route('catalogo.vender') }}" class="flex items-center space-x-2">
-                        @csrf
-                        <input type="hidden" name="articulo_id" value="{{ $articulo->id }}">
-
-                        <!-- Campo de Cantidad -->
-                        <x-text-input type="number" name="cantidad" class="w-20 text-center" value="1"
-                            min="1" max="{{ $articulo->stock }}" required />
-
-                        <a href="{{ route('ventas.create', ['articulo_id' => $articulo->id]) }}"
-                            class="flex-grow inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-indigo-500/35 transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none cursor-pointer">
+                    <div class="flex items-center space-x-2">
+                        <button type="button"
+                            onclick="openVentaModal({{ $articulo->id }}, '{{ addslashes($articulo->nombre) }}', {{ $articulo->precio }}, {{ $articulo->stock }})"
+                            class="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-indigo-500/35 transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none cursor-pointer">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
                             </svg>
@@ -41,9 +35,8 @@
                             @else
                                 {{ __('Comprar') }}
                             @endif
-                        </a>
-
-                    </form>
+                        </button>
+                    </div>
                 </div>
             </div>
         @endif

@@ -24,14 +24,15 @@ class CatalogoController extends Controller
         }
 
         $articulos = $query->get();
+        $clientes = \App\Models\User::select('id', 'name')->orderBy('name', 'asc')->get();
 
         // Si la petición es AJAX, devolvemos solo el partial (HTML) del grid
         if ($request->ajax() || $request->boolean('ajax')) {
-            return view('catalogo.partials.grid', compact('articulos'));
+            return view('catalogo.partials.grid', compact('articulos', 'clientes'));
         }
 
         // Carga normal
-        return view('catalogo.index', compact('articulos'));
+        return view('catalogo.index', compact('articulos', 'clientes'));
     }
 
     /**

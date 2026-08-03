@@ -172,10 +172,11 @@
                                                     class="cliente-checkbox  rounded border-gray-300 text-indigo-600 shadow-sm"
                                                     data-id="{{ $r->id }}" data-url="{{ $urlWa }}"></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-center">
-                                                <a href="{{ route('admin.entradas.create', ['cliente_id' => $r['id'], 'saldo' => $r['saldo'], 'saldar' => 1]) }}"
-                                                    class="btn-whatsapp text-indigo-600 hover:text-indigo-900">
+                                                <button type="button"
+                                                    onclick="openPagoSaldadoModal({{ $r->id }}, '{{ addslashes($r->name) }}', {{ $r->saldo }})"
+                                                    class="btn-whatsapp text-indigo-600 hover:text-indigo-900 font-semibold cursor-pointer">
                                                     Pago saldado
-                                                </a>
+                                                </button>
                                             </td>
                                         </tr>
                                     @elseif($r->saldo < 0)
@@ -191,10 +192,11 @@
 
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-center">
-                                                <a href="{{ route('admin.entradas.create', ['cliente_id' => $r['id'], 'saldo' => $r['saldo'], 'saldar' => 1]) }}"
-                                                    class="btn-whatsapp text-indigo-600 hover:text-indigo-900">
+                                                <button type="button"
+                                                    onclick="openPagoSaldadoModal({{ $r->id }}, '{{ addslashes($r->name) }}', {{ $r->saldo }})"
+                                                    class="btn-whatsapp text-indigo-600 hover:text-indigo-900 font-semibold cursor-pointer">
                                                     Pago saldado
-                                                </a>
+                                                </button>
                                             </td>
                                         </tr>
                                     @endif
@@ -224,10 +226,72 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    {{-- Modal para Registrar Pago Saldado en DashboardAdmin --}}
+    <x-modal name="pago-saldado-modal">
+        <div class="p-6 text-left">
+            <div class="flex justify-between items-center pb-3 border-b mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Registrar Pago Saldado</h3>
+                <button type="button" onclick="closeModal('pago-saldado-modal')" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+            </div>
+            <form method="POST" action="{{ route('admin.entradas.store') }}">
+                @csrf
+                <input type="hidden" name="tipo_pago" value="2">
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold mb-2">Cliente</label>
+                    <select name="cliente_id" id="modal_pago_cliente_id" class="w-full border-gray-300 rounded-lg shadow-sm" required>
+                        @foreach($users as $cliente)
+                            <option value="{{ $cliente->id }}">{{ $cliente->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold mb-2">Artículo</label>
+                    <select name="articulo_id" id="modal_pago_articulo_id" class="w-full border-gray-300 rounded-lg shadow-sm" required>
+                        @foreach($articulos as $art)
+                            @php $esPagoSaldado = strtolower($art->nombre) === 'pago saldado'; @endphp
+                            <option value="{{ $art->id }}" {{ $esPagoSaldado ? 'selected' : '' }}>
+                                {{ $art->nombre }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold mb-2">Monto / Precio de Venta ($)</label>
+                    <input type="number" step="0.01" name="precio_venta" id="modal_pago_precio_venta" class="w-full border-gray-300 rounded-lg shadow-sm" required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold mb-2">Descripción</label>
+                    <textarea name="descripcion" id="modal_pago_descripcion" class="block w-full border-gray-300 rounded-md shadow-sm">Saldar adeudo pendiente</textarea>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-4 border-t pt-4">
+                    <button type="button" onclick="closeModal('pago-saldado-modal')" class="px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm cursor-pointer">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md cursor-pointer">
+                        Guardar Pago
+                    </button>
+                </div>
+            </form>
+        </div>
+    </x-modal>
 </x-app-layout>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script>
+    function openPagoSaldadoModal(clienteId, clienteName, saldo) {
+        const clienteSelect = document.getElementById('modal_pago_cliente_id');
+        const precioInput = document.getElementById('modal_pago_precio_venta');
+        if (clienteSelect) clienteSelect.value = clienteId;
+        if (precioInput) precioInput.value = parseFloat(saldo).toFixed(2);
+        openModal('pago-saldado-modal');
+    }
     // --- 1. EXPORTACIÓN A EXCEL ---
     function exportarExcel() {
         const tabla = document.getElementById('tabla-resumen');

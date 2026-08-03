@@ -44,8 +44,12 @@ class DashboardController extends Controller
             return $User->saldo;
         });
         $resumen = $resumen->sortBy('name')->values();
+
+        $articulos = \App\Models\Articulo::select('id', 'nombre', 'precio')->orderBy('nombre', 'asc')->get();
+        $users = User::select('id', 'name')->orderBy('name', 'asc')->get();
+
         if (Auth::user()->hasRole('admin')) {
-            return view('dashboardAdmin', compact('resumen', 'totalSaldo'));
+            return view('dashboardAdmin', compact('resumen', 'totalSaldo', 'articulos', 'users'));
         } else {
             return redirect()->intended(route('dashboard'));
         }

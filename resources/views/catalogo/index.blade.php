@@ -45,8 +45,82 @@
         </div>
     </div>
 
+    <!-- Modal Vender / Comprar Artículo -->
+    <x-modal name="vender-modal">
+        <div class="p-6 text-left">
+            <div class="flex justify-between items-center pb-3 border-b mb-4">
+                <h3 class="text-lg font-bold text-gray-900" id="modal_vender_title">
+                    @if (Auth::user()->hasRole('admin')) Registrar Venta @else Realizar Compra @endif
+                </h3>
+                <button type="button" onclick="closeModal('vender-modal')" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+            </div>
+            <form method="POST" action="{{ route('ventas.store') }}">
+                @csrf
+                <input type="hidden" name="articulo_id" id="modal_vender_articulo_id">
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold mb-2">Artículo</label>
+                    <input type="text" id="modal_vender_articulo_nombre" class="w-full border-gray-300 rounded-lg shadow-sm bg-gray-100 font-semibold" readonly>
+                </div>
+
+                @if (Auth::user()->hasRole('admin'))
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-bold mb-2">Cliente</label>
+                        <select name="cliente_id" id="modal_vender_cliente_id" class="w-full border-gray-300 rounded-lg shadow-sm" required>
+                            <option value="" disabled selected>Seleccione un cliente</option>
+                            @foreach($clientes as $cliente)
+                                <option value="{{ $cliente->id }}">{{ $cliente->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-2">Cantidad</label>
+                        <input type="number" name="cantidad" id="modal_vender_cantidad" class="w-full border-gray-300 rounded-lg shadow-sm" value="1" min="1" required>
+                        <span class="text-xs text-gray-500 mt-1 block" id="modal_vender_stock_info"></span>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-2">Precio Unitario ($)</label>
+                        <input type="number" step="0.01" name="precio_venta" id="modal_vender_precio" class="w-full border-gray-300 rounded-lg shadow-sm" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold mb-2">Descripción / Notas</label>
+                    <textarea name="descripcion" id="modal_vender_descripcion" class="block w-full border-gray-300 rounded-md shadow-sm" rows="2" placeholder="Notas adicionales de la venta..."></textarea>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-4 border-t pt-4">
+                    <button type="button" onclick="closeModal('vender-modal')" class="px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm cursor-pointer">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md cursor-pointer">
+                        Confirmar Venta
+                    </button>
+                </div>
+            </form>
+        </div>
+    </x-modal>
+
     <!-- Búsqueda en vivo (vanilla JS + debounce) -->
     <script>
+        function openVentaModal(articuloId, articuloNombre, precio, stock) {
+            document.getElementById('modal_vender_articulo_id').value = articuloId;
+            document.getElementById('modal_vender_articulo_nombre').value = articuloNombre;
+            document.getElementById('modal_vender_precio').value = parseFloat(precio).toFixed(2);
+            
+            const cantInput = document.getElementById('modal_vender_cantidad');
+            cantInput.value = 1;
+            cantInput.max = stock;
+            
+            const stockInfo = document.getElementById('modal_vender_stock_info');
+            if (stockInfo) stockInfo.innerText = `Disponible: ${stock} pza(s)`;
+
+            openModal('vender-modal');
+        }
         (function () {
             const input = document.getElementById('q');
             const container = document.getElementById('catalogo-content');
