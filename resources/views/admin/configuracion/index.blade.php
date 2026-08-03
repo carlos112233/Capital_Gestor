@@ -47,7 +47,7 @@
                 </div>
             </div>
 
-            <!-- ESTADO 1: CARGANDO / INICIANDO MOTOR (SOLO SI NO HAY QR GENERADO AÚN) -->
+            <!-- ESTADO 1: CARGANDO / INICIANDO MOTOR -->
             <template x-if="status === 'cargando' && !qr_exists">
                 <div class="flex flex-col md:flex-row items-center gap-6 bg-blue-50/70 p-6 sm:p-8 rounded-2xl border border-blue-200/80">
                     <div class="w-20 h-20 rounded-2xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-600/30">
@@ -72,7 +72,15 @@
             <template x-if="status === 'qr_pendiente' || (qr_exists && status !== 'conectado' && status !== 'error')">
                 <div class="flex flex-col md:flex-row items-center gap-8 bg-amber-50/60 p-6 rounded-2xl border border-amber-200/80">
                     <div class="w-64 h-64 bg-white p-3 rounded-2xl shadow-md border border-slate-200 flex items-center justify-center relative overflow-hidden flex-shrink-0">
-                        <img :src="qrUrl" alt="Código QR WhatsApp" class="max-w-full max-h-full object-contain rounded-lg">
+                        <img :src="qrUrl" @error="qrError = true" @load="qrError = false" x-show="!qrError" alt="Código QR WhatsApp" class="max-w-full max-h-full object-contain rounded-lg">
+                        <div x-show="qrError" class="flex flex-col items-center justify-center text-center p-4 space-y-2">
+                            <svg class="w-8 h-8 text-amber-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="text-xs font-semibold text-slate-600">Generando imagen QR...</span>
+                            <button type="button" @click="fetchStatus()" class="text-[11px] text-indigo-600 font-bold underline cursor-pointer">Actualizar</button>
+                        </div>
                     </div>
                     <div class="space-y-4">
                         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold shadow-xs">
@@ -236,13 +244,14 @@
                 solution_hint: null,
                 qr_exists: {{ file_exists(public_path('img/qr.png')) ? 'true' : 'false' }},
                 qrUrl: '{{ asset('img/qr.png') }}?v=' + new Date().getTime(),
+                qrError: false,
 
                 init() {
-                    // Carga única al abrir la página (Sin polling automático para ahorrar RAM en el servidor)
                     this.fetchStatus();
                 },
 
                 fetchStatus() {
+                    this.qrError = false;
                     fetch('{{ route('admin.configuracion.wa-status') }}')
                         .then(res => res.json())
                         .then(data => {

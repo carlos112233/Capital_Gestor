@@ -45,18 +45,24 @@ class ConfiguracionController extends Controller
     public function getWaStatus()
     {
         $statusPath = public_path('wa-status.json');
+        $qrExists = File::exists(public_path('img/qr.png')) || File::exists(public_path('qr.png'));
         
         if (File::exists($statusPath)) {
             try {
                 $json = json_decode(File::get($statusPath), true);
                 if (is_array($json)) {
-                    $json['qr_exists'] = File::exists(public_path('img/qr.png')) || File::exists(public_path('qr.png'));
+                    $json['qr_exists'] = $qrExists;
+                    
+                    // Si el estado reporta qr_pendiente pero el archivo físico no existe aún, marcar como cargando
+                    if (($json['status'] ?? '') === 'qr_pendiente' && !$qrExists) {
+                        $json['status'] = 'cargando';
+                        $json['message'] = 'Generando imagen del código QR en el servidor...';
+                    }
+
                     return response()->json($json);
                 }
             } catch (\Throwable $e) {}
         }
-
-        $qrExists = File::exists(public_path('img/qr.png')) || File::exists(public_path('qr.png'));
         
         return response()->json([
             'status' => $qrExists ? 'qr_pendiente' : 'conectado',
