@@ -266,6 +266,12 @@ client.on('qr', async (qr) => {
     }
 });
 
+client.on('authenticated', () => {
+    console.log('🔑 AUTENTICADO: Sesión validada por el dispositivo móvil.');
+    guardarEstado('conectado', 'WhatsApp vinculado y activo en el sistema. Dispositivo autenticado.');
+    limpiarQRArchivos();
+});
+
 client.on('ready', () => {
     console.log('🚀 MOTOR LISTO: WhatsApp está conectado y escuchando la base de datos PostgreSQL.');
     guardarEstado('conectado', 'WhatsApp vinculado y activo en el sistema. Dispositivo autenticado.');
