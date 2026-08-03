@@ -43,7 +43,9 @@ class CobroController extends Controller
         });
 
         // 2. Obtener Entradas de Capital (Pagos/Abonos recibidos)
-        $entradasQuery = Entrada::with(['user', 'articulo'])->latest();
+        $entradasQuery = Entrada::with(['user', 'articulo'])
+            ->where('created_at', '>=', \Carbon\Carbon::now()->subMonth())
+            ->latest();
         if ($search) {
             $searchLower = '%' . strtolower($search) . '%';
             $entradasQuery->where(function($q) use ($searchLower) {

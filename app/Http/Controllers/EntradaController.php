@@ -22,7 +22,14 @@ class EntradaController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $entradasQuery = Entrada::with(['user', 'articulo', 'cliente'])->latest();
+        $unMesAtras = Carbon::now()->subMonth();
+
+        $entradasQuery = Entrada::with(['user', 'articulo', 'cliente'])
+            ->where(function ($q) use ($unMesAtras) {
+                $q->where('created_at', '>=', $unMesAtras)
+                  ->orWhere('fecha_generado', '>=', $unMesAtras);
+            })
+            ->latest();
 
         if (!$user->hasRole('admin')) {
             $entradasQuery->where(function ($q) use ($user) {
