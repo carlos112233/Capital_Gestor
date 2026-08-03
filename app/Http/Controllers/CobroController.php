@@ -43,14 +43,12 @@ class CobroController extends Controller
         });
 
         // 2. Obtener Entradas de Capital (Pagos/Abonos recibidos)
-        $entradasQuery = Entrada::with(['user', 'articulo', 'cliente'])->latest();
+        $entradasQuery = Entrada::with(['user', 'articulo'])->latest();
         if ($search) {
             $searchLower = '%' . strtolower($search) . '%';
             $entradasQuery->where(function($q) use ($searchLower) {
                 $q->whereHas('user', function($u) use ($searchLower) {
                     $u->whereRaw('LOWER(name) LIKE ?', [$searchLower]);
-                })->orWhereHas('cliente', function($c) use ($searchLower) {
-                    $c->whereRaw('LOWER(name) LIKE ?', [$searchLower]);
                 })->orWhereHas('articulo', function($a) use ($searchLower) {
                     $a->whereRaw('LOWER(nombre) LIKE ?', [$searchLower]);
                 })->orWhereRaw('LOWER(descripcion) LIKE ?', [$searchLower]);
@@ -60,8 +58,8 @@ class CobroController extends Controller
             return [
                 'id' => 'E-' . $e->id,
                 'fecha' => $e->created_at,
-                'usuario' => $e->cliente->name ?? $e->user->name ?? 'Cliente',
-                'email' => $e->cliente->email ?? $e->user->email ?? 'N/A',
+                'usuario' => $e->user->name ?? 'Cliente',
+                'email' => $e->user->email ?? 'N/A',
                 'concepto' => $e->articulo->nombre ?? ($e->descripcion ?: 'Entrada de Capital'),
                 'tipo' => 'Abono / Capital',
                 'monto' => (float) $e->precio_venta,
