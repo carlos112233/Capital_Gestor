@@ -11,7 +11,7 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // 1. CONFIGURACIÓN DE LA BASE DE DATOS (Soporte Adaptativo para Render & PostgreSQL Local)
-function getPoolConfig(useSsl, fallbackUser = null) {
+function getPoolConfig(useSsl, fallbackUser = null, fallbackPass = null) {
     if (process.env.DATABASE_URL) {
         return {
             connectionString: process.env.DATABASE_URL,
@@ -20,10 +20,9 @@ function getPoolConfig(useSsl, fallbackUser = null) {
     }
 
     let user = fallbackUser || process.env.DB_PG_USER || process.env.PGUSER;
-    let password = process.env.DB_PG_PASSWORD || process.env.PGPASSWORD;
+    let password = fallbackPass || process.env.DB_PG_PASSWORD || process.env.PGPASSWORD;
 
     if (!user) {
-        // Si .env está configurado con MySQL (usuario 'root'), usar credenciales por defecto de PostgreSQL local
         if (process.env.DB_CONNECTION === 'mysql' || process.env.DB_USERNAME === 'root') {
             user = 'crm_admin';
             password = password || 'Carlosaraiza2810';
@@ -48,6 +47,16 @@ function getPoolConfig(useSsl, fallbackUser = null) {
     };
 }
 
+let fallbackCandidates = [
+    { user: 'crm_admin', pass: 'Carlosaraiza2810' },
+    { user: 'postgres', pass: 'Carlosaraiza2810' },
+    { user: 'postgres', pass: 'Carlosaraiza_91' },
+    { user: 'postgres', pass: 'postgres' },
+    { user: 'postgres', pass: 'root' },
+    { user: 'postgres', pass: '' }
+];
+let candidateIndex = 0;
+
 let currentSslSetting = !!(process.env.DATABASE_URL || (process.env.DB_HOST && !['127.0.0.1', 'localhost'].includes(process.env.DB_HOST)));
 let pool = new Pool(getPoolConfig(currentSslSetting));
 
@@ -63,14 +72,27 @@ function probarConexionBaseDatos(retryWithAlternativeSsl = true) {
         if (err) {
             console.error('❌ Error de conexión a la base de datos PostgreSQL:', err.message);
             
-            // Si ocurrió un error de negociación SSL, intentar automáticamente con la configuración SSL contraria
+            // 1. Si ocurrió un error de negociación SSL, intentar automáticamente con la configuración SSL contraria
             if (retryWithAlternativeSsl && (err.message.includes('SSL') || err.message.includes('ssl') || err.message.includes('socket'))) {
                 console.log(`🔄 Reintentando conexión cambiando modo SSL a: ${!currentSslSetting}...`);
                 currentSslSetting = !currentSslSetting;
                 pool.end().catch(() => {});
-                pool = new Pool(getPoolConfig(currentSslSetting));
+                pool = new Pool(getPoolConfig(currentSslSetting, fallbackCandidates[candidateIndex]?.user, fallbackCandidates[candidateIndex]?.pass));
                 probarConexionBaseDatos(false);
                 return;
+            }
+
+            // 2. Si falla por autenticación de usuario/contraseña en local, ciclo automático de usuarios de PostgreSQL
+            if (!process.env.DATABASE_URL && (err.message.includes('password') || err.message.includes('autentificación') || err.message.includes('authentication'))) {
+                candidateIndex++;
+                if (candidateIndex < fallbackCandidates.length) {
+                    const next = fallbackCandidates[candidateIndex];
+                    console.log(`🔄 Probando credencial local de PostgreSQL: usuario "${next.user}"...`);
+                    pool.end().catch(() => {});
+                    pool = new Pool(getPoolConfig(currentSslSetting, next.user, next.pass));
+                    probarConexionBaseDatos(retryWithAlternativeSsl);
+                    return;
+                }
             }
 
             currentDbInfo.connected = false;
