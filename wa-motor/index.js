@@ -198,14 +198,14 @@ function findChromePath() {
     }
 
     try {
-        const found = execSync('which chromium || which chromium-browser || which google-chrome || which google-chrome-stable 2>/dev/null', { encoding: 'utf8' }).trim();
-        if (found && fs.existsSync(found)) return found;
-    } catch (e) {}
-
-    try {
         const puppeteer = require('puppeteer');
         const pPath = puppeteer.executablePath();
         if (pPath && fs.existsSync(pPath)) return pPath;
+    } catch (e) {}
+
+    try {
+        const found = execSync('which chromium || which chromium-browser || which google-chrome || which google-chrome-stable 2>/dev/null', { encoding: 'utf8' }).trim();
+        if (found && fs.existsSync(found)) return found;
     } catch (e) {}
 
     return undefined;
@@ -276,10 +276,7 @@ const client = new Client({
     authTimeoutMs: 300000,
     qrMaxRetries: 10,
     takeoverOnConflict: true,
-    puppeteer: puppeteerOptions,
-    webVersionCache: {
-        type: 'local'
-    }
+    puppeteer: puppeteerOptions
 });
 
 // Función para limpiar imágenes QR cuando la sesión esté conectada
