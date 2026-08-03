@@ -64,7 +64,7 @@ class User extends Authenticatable
       // --- AÑADE ESTA NUEVA FUNCIÓN ---
     public function entradas(): HasMany
     {
-        return $this->hasMany(Entrada::class);
+        return $this->hasMany(Entrada::class, 'cliente_id');
     }
 
     public function ventas(): HasMany

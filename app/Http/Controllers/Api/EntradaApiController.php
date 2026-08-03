@@ -27,27 +27,34 @@ class EntradaApiController extends Controller
         $entradasQuery = Entrada::query()
             ->with([
                 'user:id,name',
-                'articulo:id,nombre,precio' // Solo trae lo que vas a mostrar
+                'cliente:id,name',
+                'articulo:id,nombre,precio'
             ]);
 
         // 2. Filtro de seguridad
         if (!$user->hasRole('admin')) {
-            $entradasQuery->where('user_id', $user->id);
+            $entradasQuery->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhere('cliente_id', $user->id);
+            });
         }
 
         // 3. Búsqueda optimizada para POSTGRESQL
         if ($request->filled('q')) {
             $search = $request->input('q');
 
-            // En Postgres, existe 'ILIKE', que es mucho más rápido que LOWER()
-            // porque permite a la DB usar índices si están bien configurados.
-            $entradasQuery->whereHas('user', function ($query) use ($search) {
-                $query->where('name', 'ILIKE', "%$search%");
+            $entradasQuery->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($query) use ($search) {
+                    $query->where('name', 'ILIKE', "%$search%");
+                })->orWhereHas('cliente', function ($query) use ($search) {
+                    $query->where('name', 'ILIKE', "%$search%");
+                })->orWhereHas('articulo', function ($query) use ($search) {
+                    $query->where('nombre', 'ILIKE', "%$search%");
+                })->orWhere('descripcion', 'ILIKE', "%$search%");
             });
         }
 
         // 4. Ordenar y limitar
-        // latest() en Postgres es rápido si tienes índice en created_at
         $entradas = $entradasQuery->latest()->limit(40)->get();
 
         return $this->success($entradas);
@@ -63,39 +70,41 @@ class EntradaApiController extends Controller
             $validated = $request->validate([
                 'articulo_id'  => 'required|exists:articulos,id',
                 'cliente_id'   => 'nullable|exists:users,id',
-                'precio_venta' => 'required|integer',
+                'precio_venta' => 'required|numeric',
                 'descripcion'  => 'nullable|string|max:1000',
             ]);
 
             // 2. Transacción y Creación
             $entrada = DB::transaction(function () use ($validated, $request) {
-
-                // Determinar el ID del usuario: 
-                // Si es admin y envió cliente_id, usamos ese. Si no, el del usuario autenticado.
-                $userId = (Auth::user()->hasRole('admin') && $request->filled('cliente_id'))
+                $clienteId = (Auth::user()->hasRole('admin') && $request->filled('cliente_id'))
                     ? $validated['cliente_id']
                     : Auth::id();
 
-                return Entrada::create([
+                $data = [
                     'articulo_id'    => $validated['articulo_id'],
-                    'user_id'        => $userId,
+                    'user_id'        => Auth::id(),
                     'precio_venta'   => $validated['precio_venta'],
                     'descripcion'    => $validated['descripcion'] ?? null,
                     'fecha_generado' => Carbon::now(),
-                ]);
+                ];
+
+                if (\Illuminate\Support\Facades\Schema::hasColumn('entradas', 'cliente_id')) {
+                    $data['cliente_id'] = $clienteId;
+                }
+
+                return Entrada::create($data);
             });
 
             // 3. Respuesta Exitosa
             return $this->success(
-                $entrada->load(['user', 'articulo']),
+                $entrada->load(['user', 'cliente', 'articulo']),
                 'Entrada de capital registrada con éxito.',
                 201
             );
         } catch (\Illuminate\Validation\ValidationException $e) {
             return $this->error('Error de validación', 422, $e->errors());
         } catch (\Exception $e) {
-            // Loguear el error es buena práctica para debuguear
-            \Log::error("Error en EntradaController@store: " . $e->getMessage());
+            \Log::error("Error en EntradaApiController@store: " . $e->getMessage());
 
             return $this->error('Error al registrar la entrada: ' . $e->getMessage(), 500);
         }
@@ -109,11 +118,11 @@ class EntradaApiController extends Controller
         $user = Auth::user();
 
         // Verificar que el usuario tenga permiso para ver esta entrada
-        if (!$user->hasRole('admin') && $entrada->user_id !== $user->id) {
+        if (!$user->hasRole('admin') && $entrada->user_id !== $user->id && $entrada->cliente_id !== $user->id) {
             return $this->error('No autorizado para ver esta entrada', 403);
         }
 
-        return $this->success($entrada->load(['user', 'articulo']));
+        return $this->success($entrada->load(['user', 'cliente', 'articulo']));
     }
 
     /**
@@ -125,23 +134,30 @@ class EntradaApiController extends Controller
             $validated = $request->validate([
                 'articulo_id'  => 'required|exists:articulos,id',
                 'cliente_id'   => 'nullable|exists:users,id',
-                'precio_venta' => 'required|integer',
+                'precio_venta' => 'required|numeric',
                 'descripcion'  => 'nullable|string',
             ]);
 
             DB::transaction(function () use ($validated, $entrada) {
-                $userId = Auth::user()->hasRole('admin')
-                    ? ($validated['cliente_id'] ?? $entrada->user_id)
-                    : Auth::id();
+                $clienteId = Auth::user()->hasRole('admin')
+                    ? ($validated['cliente_id'] ?? $entrada->cliente_id ?? Auth::id())
+                    : ($entrada->cliente_id ?? Auth::id());
 
-                $entrada->update([
+                $data = [
                     'articulo_id'    => $validated['articulo_id'],
-                    'user_id'        => $userId,
                     'precio_venta'   => $validated['precio_venta'],
                     'descripcion'    => $validated['descripcion'],
-                    'fecha_generado' => Carbon::now(), // O mantener la original si prefieres
-                ]);
+                    'fecha_generado' => Carbon::now(),
+                ];
+
+                if (\Illuminate\Support\Facades\Schema::hasColumn('entradas', 'cliente_id')) {
+                    $data['cliente_id'] = $clienteId;
+                }
+
+                $entrada->update($data);
             });
+
+            return $this->success($entrada->fresh(['user', 'cliente', 'articulo']), 'Entrada actualizada correctamente.');
 
             return $this->success($entrada->fresh(['user', 'articulo']), 'Entrada actualizada correctamente.');
         } catch (\Illuminate\Validation\ValidationException $e) {
