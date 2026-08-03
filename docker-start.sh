@@ -1,26 +1,22 @@
 #!/bin/bash
 
-# Configurar puerto dinámico de Apache si Render asigna la variable $PORT
+# 1. Configurar puerto dinámico de Apache si Render asigna la variable $PORT
 if [ -n "$PORT" ]; then
+    echo "Configurando Apache en puerto $PORT..."
     sed -i "s/Listen 80/Listen $PORT/g" /etc/apache2/ports.conf
     sed -i "s/:80>/:$PORT>/g" /etc/apache2/sites-available/*.conf
 fi
 
-# Garantizar permisos de escritura para www-data y node en carpetas clave
+# 2. Garantizar permisos de escritura para www-data y node en carpetas clave
 chmod -R 777 /var/www/html/public /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/wa-motor 2>/dev/null || true
 
-# Limpiar caché de vistas e instrucciones de Laravel
-php artisan view:clear
-php artisan config:clear
+# 3. Limpieza de cachés de Laravel
+php artisan config:clear || true
+php artisan view:clear || true
 
-# Ejecutar migraciones de forma segura
-php artisan migrate --force || true
+# 4. Iniciar migraciones y motor en segundo plano para no bloquear el puerto web
+(php artisan migrate --force) &
+(node /var/www/html/wa-motor/index.js) &
 
-# Iniciar motor de WhatsApp en segundo plano
-node /var/www/html/wa-motor/index.js &
-
-# Iniciar Reverb websockets en segundo plano
-php artisan reverb:start --host=0.0.0.0 --port=8080 &
-
-# Iniciar Apache en primer plano para servir tráfico web
-apache2-foreground
+# 5. Iniciar Apache inmediatamente con exec en primer plano para responder al Health Check de Render en < 1s
+exec apache2-foreground
