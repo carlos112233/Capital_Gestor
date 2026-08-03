@@ -10,19 +10,27 @@ const { execSync } = require('child_process');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-// 1. CONFIGURACIÓN DE LA BASE DE DATOS (Soporte para Render & PostgreSQL Local)
-const poolConfig = process.env.DATABASE_URL
-    ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
-    : {
+// 1. CONFIGURACIÓN DE LA BASE DE DATOS (Soporte Adaptativo para Render & PostgreSQL Local)
+function getPoolConfig(useSsl) {
+    if (process.env.DATABASE_URL) {
+        return {
+            connectionString: process.env.DATABASE_URL,
+            ssl: useSsl ? { rejectUnauthorized: false } : false
+        };
+    }
+    return {
         user: process.env.DB_USERNAME || process.env.DB_USER || 'crm_admin',
         host: process.env.DB_HOST || '127.0.0.1',
         database: process.env.DB_DATABASE || 'capital_gestor_db',
         password: process.env.DB_PASSWORD || 'Carlosaraiza2810',
         port: parseInt(process.env.DB_PORT || '5432'),
-        ssl: (process.env.DB_HOST && process.env.DB_HOST !== '127.0.0.1') ? { rejectUnauthorized: false } : false
+        ssl: useSsl ? { rejectUnauthorized: false } : false
     };
+}
 
-const pool = new Pool(poolConfig);
+let currentSslSetting = !!(process.env.DATABASE_URL || (process.env.DB_HOST && !['127.0.0.1', 'localhost'].includes(process.env.DB_HOST)));
+let pool = new Pool(getPoolConfig(currentSslSetting));
+
 let currentDbInfo = {
     database: process.env.DB_DATABASE || 'capital_gestor_db',
     host: process.env.DATABASE_URL ? 'Render Cloud PostgreSQL' : (process.env.DB_HOST || '127.0.0.1'),
@@ -30,39 +38,47 @@ let currentDbInfo = {
     connected: false
 };
 
-// Verificar la conexión activa a PostgreSQL e imprimir la BD y Usuario conectados al iniciar
-pool.query('SELECT current_database(), current_user', (err, res) => {
-    if (err) {
-        console.error('❌ Error de conexión a la base de datos PostgreSQL:', err.message);
-        currentDbInfo.connected = false;
-        guardarEstado('error', 'Error de conexión a la Base de Datos PostgreSQL', {
-            error_type: 'Base de Datos',
-            detail: err.stack || err.message,
-            solution_hint: 'Verifica la variable DATABASE_URL en Render o las variables DB_USERNAME / DB_PASSWORD en el archivo .env.'
-        });
-    } else {
-        const dbName = res.rows[0].current_database;
-        const dbUser = res.rows[0].current_user;
-        const hostTarget = process.env.DATABASE_URL ? 'Render Cloud PostgreSQL' : (process.env.DB_HOST || '127.0.0.1');
-        currentDbInfo = {
-            database: dbName,
-            host: hostTarget,
-            user: dbUser,
-            connected: true
-        };
-        console.log(`🗄️ Conexión exitosa a la Base de Datos PostgreSQL: "${dbName}" en [${hostTarget}] como usuario "${dbUser}"`);
-    }
-});
+function probarConexionBaseDatos(retryWithAlternativeSsl = true) {
+    pool.query('SELECT current_database(), current_user', (err, res) => {
+        if (err) {
+            console.error('❌ Error de conexión a la base de datos PostgreSQL:', err.message);
+            
+            // Si ocurrió un error de negociación SSL, intentar automáticamente con la configuración SSL contraria
+            if (retryWithAlternativeSsl && (err.message.includes('SSL') || err.message.includes('ssl') || err.message.includes('socket'))) {
+                console.log(`🔄 Reintentando conexión cambiando modo SSL a: ${!currentSslSetting}...`);
+                currentSslSetting = !currentSslSetting;
+                pool.end().catch(() => {});
+                pool = new Pool(getPoolConfig(currentSslSetting));
+                probarConexionBaseDatos(false);
+                return;
+            }
 
-// Capturar errores globales en la piscina de la base de datos
+            currentDbInfo.connected = false;
+            guardarEstado('error', 'Error de conexión a la Base de Datos PostgreSQL', {
+                error_type: 'Base de Datos',
+                detail: err.stack || err.message,
+                solution_hint: 'Verifica la variable DATABASE_URL en Render o las variables DB_USERNAME / DB_PASSWORD en el archivo .env.'
+            });
+        } else {
+            const dbName = res.rows[0].current_database;
+            const dbUser = res.rows[0].current_user;
+            const hostTarget = process.env.DATABASE_URL ? 'Render Cloud PostgreSQL' : (process.env.DB_HOST || '127.0.0.1');
+            currentDbInfo = {
+                database: dbName,
+                host: hostTarget,
+                user: dbUser,
+                connected: true
+            };
+            console.log(`🗄️ Conexión exitosa a la Base de Datos PostgreSQL: "${dbName}" en [${hostTarget}] como usuario "${dbUser}" (SSL: ${currentSslSetting})`);
+        }
+    });
+}
+
+probarConexionBaseDatos(true);
+
+// Capturar errores en la piscina global de PostgreSQL
 pool.on('error', (err) => {
     console.error('❌ Error en el cliente de base de datos PostgreSQL:', err.message);
-    currentDbInfo.connected = false;
-    guardarEstado('error', 'Error de conexión a la Base de Datos PostgreSQL', {
-        error_type: 'Base de Datos',
-        detail: err.stack || err.message,
-        solution_hint: 'Verifica la variable DATABASE_URL o credenciales DB_HOST/DB_USERNAME/DB_PASSWORD en el servidor.'
-    });
 });
 
 // Función para registrar y guardar el estado actual de la sesión de WhatsApp con diagnóstico detallado
