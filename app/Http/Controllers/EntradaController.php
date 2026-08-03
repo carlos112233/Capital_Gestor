@@ -105,7 +105,7 @@ class EntradaController extends Controller
         // 3. Crear el registro
         $data = [
             'articulo_id'    => $validated['articulo_id'],
-            'user_id'        => Auth::id(),
+            'user_id'        => $clienteId,
             'precio_venta'   => $validated['precio_venta'],
             'descripcion'    => $validated['descripcion'] ?? null,
             'fecha_generado' => now(),
@@ -150,10 +150,11 @@ class EntradaController extends Controller
 
         $clienteId = (Auth::user()->hasRole('admin') && $request->filled('cliente_id'))
             ? $validated['cliente_id']
-            : ($entrada->cliente_id ?? Auth::id());
+            : ($entrada->cliente_id ?? $entrada->user_id ?? Auth::id());
 
         $data = [
             'articulo_id'    => $validated['articulo_id'],
+            'user_id'        => $clienteId,
             'precio_venta'   => $validated['precio_venta'],
             'descripcion'    => $validated['descripcion'] ?? null,
             'fecha_generado' => Carbon::now(),
