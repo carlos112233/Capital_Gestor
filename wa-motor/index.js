@@ -358,23 +358,43 @@ function iniciarBucleEnvio() {
                 console.log(`\n📩 Procesando ${res.rows.length} mensajes pendientes...`);
 
                 for (const msg of res.rows) {
-                    const chatId = `${msg.numero}@c.us`;
-
                     try {
-                        await client.sendMessage(chatId, msg.mensaje);
-                        await pool.query(
-                            "UPDATE whatsapp_pending_messages SET status = 'enviado', updated_at = NOW() WHERE id = $1",
-                            [msg.id]
-                        );
-                        console.log(`✅ Mensaje enviado con éxito a: ${msg.numero}`);
+                        // 1. Limpiamos el número y le damos formato
+                        let rawNum = (msg.numero || '').toString().trim();
+                        let cleanNum = rawNum.includes('@c.us') ? rawNum.replace('@c.us', '') : rawNum;
+                        cleanNum = cleanNum.replace(/\D/g, ''); // Deja solo dígitos
+
+                        // 2. VERIFICACIÓN CRÍTICA: Preguntar si el ID es válido en WhatsApp
+                        const contactId = await client.getNumberId(cleanNum);
+
+                        if (contactId && contactId._serialized) {
+                            // Si es válido, enviamos al ID real que nos devolvió WhatsApp
+                            await client.sendMessage(contactId._serialized, msg.mensaje);
+
+                            await pool.query(
+                                "UPDATE whatsapp_pending_messages SET status = 'enviado', error_message = NULL, updated_at = NOW() WHERE id = $1",
+                                [msg.id]
+                            );
+                            console.log(`✅ Enviado con éxito a ${msg.numero} (${contactId._serialized})`);
+                        } else {
+                            // Si el número no está registrado en WhatsApp
+                            await pool.query(
+                                "UPDATE whatsapp_pending_messages SET status = 'fallido', error_message = 'Número no registrado en WA', updated_at = NOW() WHERE id = $1",
+                                [msg.id]
+                            );
+                            console.error(`❌ El número ${msg.numero} no existe en WhatsApp.`);
+                        }
+
                     } catch (err) {
-                        console.error(`❌ Error enviando a ${msg.numero}:`, err.message);
+                        console.error(`❌ Error procesando el mensaje #${msg.id} para ${msg.numero}:`, err.message);
+                        // Marcamos como fallido y guardamos el mensaje de error en la DB
                         await pool.query(
-                            "UPDATE whatsapp_pending_messages SET status = 'fallido', updated_at = NOW() WHERE id = $1",
-                            [msg.id]
+                            "UPDATE whatsapp_pending_messages SET status = 'fallido', error_message = $1, updated_at = NOW() WHERE id = $2",
+                            [err.message, msg.id]
                         );
                     }
-                    // Espera de 3 segundos entre envíos para evitar bloqueos
+
+                    // Espera de 3 segundos entre envíos para evitar bloqueos por spam
                     await new Promise(resolve => setTimeout(resolve, 3000));
                 }
             }
