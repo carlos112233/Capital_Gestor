@@ -165,7 +165,7 @@ if (!chromePath) {
 console.log(`🌐 Navegador detectado para WhatsApp: ${chromePath || 'Chromium nativo de Puppeteer'}`);
 guardarEstado('cargando', 'Iniciando navegador Chromium ultra-ligero y conectando a WhatsApp Web...');
 
-// Parámetros optimizados con 256MB RAM V8 heap para completar la autenticación cifrada de WhatsApp Web sin bloqueos
+// Parámetros optimizados con User-Agent moderno de Windows Chrome 131 para handshake QR instantáneo
 const puppeteerOptions = {
     headless: true,
     bypassCSP: true,
@@ -178,7 +178,8 @@ const puppeteerOptions = {
         '--no-first-run',
         '--no-zygote',
         '--renderer-process-limit=1',
-        '--js-flags=--max-old-space-size=256', // Permite 256MB V8 heap para que los workers de cifrado de WhatsApp completen el escaneo
+        '--disable-site-isolation-trials',
+        '--js-flags=--max-old-space-size=256',
         '--disable-gpu',
         '--disable-software-rasterizer',
         '--disable-extensions',
@@ -191,7 +192,7 @@ const puppeteerOptions = {
         '--disable-ipc-flooding-protection',
         '--disable-renderer-backgrounding',
         '--memory-pressure-off',
-        '--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
+        '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
     ]
 };
 
@@ -199,7 +200,7 @@ if (chromePath) {
     puppeteerOptions.executablePath = chromePath;
 }
 
-// 2. CLIENTE WHATSAPP CON CACHÉ REMOTA DE VERSIÓN PARA VELOCIDAD ULTRA RÁPIDA (3 SEGUNDOS)
+// 2. CLIENTE WHATSAPP CON CACHÉ DE VERSIÓN ACTUALIZADA Y PROTOCOLO MODERNO
 const client = new Client({
     authStrategy: new LocalAuth({
         dataPath: './.wwebjs_auth'
@@ -210,7 +211,7 @@ const client = new Client({
     puppeteer: puppeteerOptions,
     webVersionCache: {
         type: 'remote',
-        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1014707845.html',
+        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1014759643.html',
     }
 });
 
