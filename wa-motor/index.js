@@ -432,14 +432,14 @@ function iniciarBucleEnvio() {
                             await client.sendMessage(contactId._serialized, msg.mensaje);
 
                             await queryDb(
-                                "UPDATE whatsapp_pending_messages SET status = 'enviado', error_message = NULL, updated_at = NOW() WHERE id = $1",
+                                "UPDATE whatsapp_pending_messages SET status = 'enviado', updated_at = NOW() WHERE id = $1",
                                 [msg.id]
                             );
                             console.log(`✅ Enviado con éxito a ${msg.numero} (${contactId._serialized})`);
                         } else {
                             // Si el número no está registrado en WhatsApp
                             await queryDb(
-                                "UPDATE whatsapp_pending_messages SET status = 'fallido', error_message = 'Número no registrado en WA', updated_at = NOW() WHERE id = $1",
+                                "UPDATE whatsapp_pending_messages SET status = 'fallido', updated_at = NOW() WHERE id = $1",
                                 [msg.id]
                             );
                             console.error(`❌ El número ${msg.numero} no existe en WhatsApp.`);
@@ -448,8 +448,8 @@ function iniciarBucleEnvio() {
                     } catch (err) {
                         console.error(`❌ Error procesando el mensaje #${msg.id} para ${msg.numero}:`, err.message);
                         await queryDb(
-                            "UPDATE whatsapp_pending_messages SET status = 'fallido', error_message = $1, updated_at = NOW() WHERE id = $2",
-                            [err.message, msg.id]
+                            "UPDATE whatsapp_pending_messages SET status = 'fallido', updated_at = NOW() WHERE id = $1",
+                            [msg.id]
                         ).catch(() => {});
                     }
 
