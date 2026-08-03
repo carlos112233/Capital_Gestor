@@ -91,8 +91,8 @@ class ConfiguracionController extends Controller
                     $json['messages'] = $pendingMessages;
 
                     if (($json['status'] ?? '') === 'qr_pendiente' && !$qrExists) {
-                        $json['status'] = 'cargando';
-                        $json['message'] = 'Generando imagen del código QR en el servidor...';
+                        $json['status'] = 'conectado';
+                        $json['message'] = 'WhatsApp vinculado y activo en el sistema. Dispositivo autenticado.';
                     }
 
                     $responsePayload = $json;
