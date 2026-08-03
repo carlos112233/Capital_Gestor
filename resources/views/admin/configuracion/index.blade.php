@@ -48,7 +48,7 @@
             </div>
 
             <!-- ESTADO 1: CARGANDO / INICIANDO MOTOR -->
-            <template x-if="status === 'cargando' && !qr_exists">
+            <template x-if="status === 'cargando'">
                 <div class="flex flex-col md:flex-row items-center gap-6 bg-blue-50/70 p-6 sm:p-8 rounded-2xl border border-blue-200/80">
                     <div class="w-20 h-20 rounded-2xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-600/30">
                         <svg class="w-10 h-10 animate-spin text-white" fill="none" viewBox="0 0 24 24">
@@ -69,7 +69,7 @@
             </template>
 
             <!-- ESTADO 2: CÓDIGO QR PENDIENTE DE ESCANEO -->
-            <template x-if="status === 'qr_pendiente' || (qr_exists && status !== 'conectado' && status !== 'error' && status !== 'cargando')">
+            <template x-if="status === 'qr_pendiente'">
                 <div class="flex flex-col md:flex-row items-center gap-8 bg-amber-50/60 p-6 rounded-2xl border border-amber-200/80">
                     <div class="w-64 h-64 bg-white p-3 rounded-2xl shadow-md border border-slate-200 flex items-center justify-center relative overflow-hidden flex-shrink-0">
                         <img :src="qrUrl" x-on:error="qrError = true" x-on:load="qrError = false" x-show="!qrError" alt="Código QR WhatsApp" class="max-w-full max-h-full object-contain rounded-lg">

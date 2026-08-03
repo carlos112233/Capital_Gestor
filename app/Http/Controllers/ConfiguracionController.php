@@ -82,6 +82,16 @@ class ConfiguracionController extends Controller
             'updated_at' => now()->toIso8601String()
         ];
 
+        // Auto-verificar que el motor Node.js esté activo en segundo plano
+        try {
+            if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
+                $check = shell_exec('pgrep -f "wa-motor"');
+                if (empty($check)) {
+                    exec('nohup node ' . base_path('wa-motor/index.js') . ' > /dev/null 2>&1 < /dev/null &');
+                }
+            }
+        } catch (\Throwable $e) {}
+
         if (File::exists($statusPath)) {
             try {
                 $json = json_decode(File::get($statusPath), true);
@@ -89,6 +99,10 @@ class ConfiguracionController extends Controller
                     $json['qr_exists'] = $qrExists;
                     $json['db_name'] = $json['db_info']['database'] ?? $realDbName;
                     $json['messages'] = $pendingMessages;
+
+                    if ($qrExists && ($json['status'] ?? '') !== 'conectado' && ($json['status'] ?? '') !== 'error') {
+                        $json['status'] = 'qr_pendiente';
+                    }
 
                     if (($json['status'] ?? '') === 'qr_pendiente' && !$qrExists) {
                         $json['status'] = 'conectado';
