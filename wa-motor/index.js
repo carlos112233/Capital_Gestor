@@ -163,9 +163,9 @@ if (!chromePath) {
 }
 
 console.log(`🌐 Navegador detectado para WhatsApp: ${chromePath || 'Chromium nativo de Puppeteer'}`);
-guardarEstado('cargando', 'Iniciando navegador Chromium ultra-ligero y conectando a WhatsApp Web...');
+guardarEstado('cargando', 'Iniciando navegador Chromium y conectando a WhatsApp Web...');
 
-// Parámetros optimizados con User-Agent moderno de Windows Chrome 131 para handshake QR instantáneo
+// Parámetros sin cuellos de botella de renderizado para procesamiento multi-hilo en tiempo real de los Web Workers
 const puppeteerOptions = {
     headless: true,
     bypassCSP: true,
@@ -176,10 +176,6 @@ const puppeteerOptions = {
         '--disable-dev-shm-usage',
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
-        '--no-zygote',
-        '--renderer-process-limit=1',
-        '--disable-site-isolation-trials',
-        '--js-flags=--max-old-space-size=256',
         '--disable-gpu',
         '--disable-software-rasterizer',
         '--disable-extensions',
@@ -191,7 +187,6 @@ const puppeteerOptions = {
         '--disable-component-extensions-with-background-pages',
         '--disable-ipc-flooding-protection',
         '--disable-renderer-backgrounding',
-        '--memory-pressure-off',
         '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
     ]
 };
@@ -200,7 +195,7 @@ if (chromePath) {
     puppeteerOptions.executablePath = chromePath;
 }
 
-// 2. CLIENTE WHATSAPP CON CACHÉ DE VERSIÓN ACTUALIZADA Y PROTOCOLO MODERNO
+// 2. CLIENTE WHATSAPP CON CACHÉ LOCAL Y HANDSHAKE INSTANTÁNEO
 const client = new Client({
     authStrategy: new LocalAuth({
         dataPath: './.wwebjs_auth'
@@ -210,8 +205,7 @@ const client = new Client({
     takeoverOnConflict: true,
     puppeteer: puppeteerOptions,
     webVersionCache: {
-        type: 'remote',
-        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1014759643.html',
+        type: 'local'
     }
 });
 
