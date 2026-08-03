@@ -24,7 +24,8 @@ class VentaApiController extends Controller
             ->with([
                 'user:id,name',
                 'articulo:id,nombre,precio'
-            ]);
+            ])
+            ->where('created_at', '>=', \Carbon\Carbon::now()->subMonth());
 
         // 2. Filtro de seguridad
         if (!$user->hasRole('admin')) {

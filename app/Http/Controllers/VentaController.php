@@ -21,8 +21,12 @@ class VentaController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+        $unMesAtras = \Carbon\Carbon::now()->subMonth();
+
         // PostgreSQL es sensible a mayúsculas en búsquedas (LIKE vs ILIKE)
-        $ventasQuery = Venta::with(['user', 'articulo'])->latest();
+        $ventasQuery = Venta::with(['user', 'articulo'])
+            ->where('created_at', '>=', $unMesAtras)
+            ->latest();
 
         if (!$user->hasRole('admin')) {
             $ventasQuery->where('user_id', $user->id);
