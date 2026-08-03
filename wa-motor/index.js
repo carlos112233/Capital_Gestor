@@ -52,6 +52,30 @@ function guardarEstado(estado, mensaje, opciones = {}) {
     }
 }
 
+// Eliminar automáticamente archivos de bloqueo de Chromium (SingletonLock) que impiden el inicio
+function removerLockFiles(dirPath) {
+    try {
+        if (!fs.existsSync(dirPath)) return;
+        const items = fs.readdirSync(dirPath, { withFileTypes: true });
+        for (const item of items) {
+            const fullPath = path.join(dirPath, item.name);
+            if (item.isDirectory()) {
+                removerLockFiles(fullPath);
+            } else if (item.name.includes('Singleton') || item.name === 'DevToolsActivePort') {
+                try {
+                    fs.unlinkSync(fullPath);
+                    console.log(`🧹 Lockfile de Chromium eliminado automáticamente: ${item.name}`);
+                } catch (e) {}
+            }
+        }
+    } catch (e) {}
+}
+
+// Limpiar cerrojos antes de iniciar Chromium
+removerLockFiles(path.join(__dirname, '.wwebjs_auth'));
+removerLockFiles(path.join(__dirname, '..', '.wwebjs_auth'));
+removerLockFiles(path.join(__dirname, '..', 'public', '.wwebjs_auth'));
+
 // Detectar ejecutable de Chrome / Chromium en el servidor o entorno local
 function findChromePath() {
     const paths = [
@@ -233,9 +257,20 @@ client.on('disconnected', (reason) => {
 // Captura de excepciones globales para evitar bloqueos silenciosos
 process.on('uncaughtException', (err) => {
     console.error('❌ Excepción no capturada en el motor:', err);
+    const detailStr = err.stack || err.message;
+
+    if (detailStr.includes('The browser is already running') || detailStr.includes('SingletonLock')) {
+        removerLockFiles(path.join(__dirname, '.wwebjs_auth'));
+        removerLockFiles(path.join(__dirname, '..', '.wwebjs_auth'));
+        removerLockFiles(path.join(__dirname, '..', 'public', '.wwebjs_auth'));
+        console.log('🔄 Reintento automático tras limpiar SingletonLock...');
+        setTimeout(() => client.initialize(), 2000);
+        return;
+    }
+
     guardarEstado('error', 'Ocurrió una excepción no controlada en el motor de WhatsApp.', {
         error_type: 'Excepción del Sistema',
-        detail: err.stack || err.message,
+        detail: detailStr,
         solution_hint: 'Haz clic en "Cerrar Sesión & Nuevo QR" para reiniciar el motor de notificaciones.'
     });
 });
@@ -244,7 +279,15 @@ process.on('unhandledRejection', (reason, promise) => {
     console.error('❌ Promesa rechazada no manejada:', reason);
     const detailStr = reason ? (reason.stack || reason.message || String(reason)) : 'Rechazo desconocido';
     
-    // Si fue un tiempo de espera de Puppeteer al inyectar WhatsApp Web
+    if (detailStr.includes('The browser is already running') || detailStr.includes('SingletonLock')) {
+        removerLockFiles(path.join(__dirname, '.wwebjs_auth'));
+        removerLockFiles(path.join(__dirname, '..', '.wwebjs_auth'));
+        removerLockFiles(path.join(__dirname, '..', 'public', '.wwebjs_auth'));
+        console.log('🔄 Reintento automático tras limpiar SingletonLock...');
+        setTimeout(() => client.initialize(), 2000);
+        return;
+    }
+
     if (detailStr.includes('timed out') || detailStr.includes('ProtocolError')) {
         guardarEstado('cargando', 'El servidor está inyectando WhatsApp Web (Tiempo de carga extendido)...');
     } else {

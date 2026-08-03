@@ -75,10 +75,11 @@ class ConfiguracionController extends Controller
     public function resetWaSession()
     {
         try {
-            // Eliminar carpetas de sesión local de forma segura
+            // Eliminar carpetas de sesión local y cerrojos huérfanos
             $pathsToDelete = [
                 base_path('.wwebjs_auth'),
                 base_path('wa-motor/.wwebjs_auth'),
+                public_path('.wwebjs_auth'),
                 public_path('img/qr.png'),
                 public_path('qr.png'),
                 base_path('wa-motor/qr.png'),
@@ -95,7 +96,7 @@ class ConfiguracionController extends Controller
                 } catch (\Throwable $eFile) {}
             }
 
-            // Actualizar el archivo de estado de forma segura sin bloquear si falla por permisos
+            // Actualizar el archivo de estado de forma segura
             try {
                 $statusPayload = [
                     'status' => 'cargando',
