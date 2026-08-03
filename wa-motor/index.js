@@ -11,7 +11,7 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // 1. CONFIGURACIÓN DE LA BASE DE DATOS (Soporte Adaptativo para Render & PostgreSQL Local)
-function getPoolConfig(useSsl) {
+function getPoolConfig(useSsl, fallbackUser = null) {
     if (process.env.DATABASE_URL) {
         return {
             connectionString: process.env.DATABASE_URL,
@@ -19,16 +19,30 @@ function getPoolConfig(useSsl) {
         };
     }
 
+    let user = fallbackUser || process.env.DB_PG_USER || process.env.PGUSER;
+    let password = process.env.DB_PG_PASSWORD || process.env.PGPASSWORD;
+
+    if (!user) {
+        // Si .env está configurado con MySQL (usuario 'root'), usar credenciales por defecto de PostgreSQL local
+        if (process.env.DB_CONNECTION === 'mysql' || process.env.DB_USERNAME === 'root') {
+            user = 'crm_admin';
+            password = password || 'Carlosaraiza2810';
+        } else {
+            user = process.env.DB_USERNAME || 'crm_admin';
+            password = password || process.env.DB_PASSWORD || 'Carlosaraiza2810';
+        }
+    }
+
     let port = parseInt(process.env.DB_PORT || '5432');
     if (port === 3306) {
-        port = 5432; // Previene intentar handshake de PostgreSQL contra el puerto 3306 de MySQL
+        port = 5432;
     }
 
     return {
-        user: process.env.DB_USERNAME || process.env.DB_USER || 'crm_admin',
+        user: user,
         host: (process.env.DB_HOST === 'localhost') ? '127.0.0.1' : (process.env.DB_HOST || '127.0.0.1'),
         database: process.env.DB_DATABASE || 'capital_gestor_db',
-        password: process.env.DB_PASSWORD || 'Carlosaraiza2810',
+        password: password,
         port: port,
         ssl: useSsl ? { rejectUnauthorized: false } : false
     };
