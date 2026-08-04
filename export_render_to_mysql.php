@@ -50,16 +50,17 @@ foreach ($tables as $table) {
             continue;
         }
 
-        echo "Exportando tabla '$table' (" . count($rows) . " registros)...\n";
-
-        $columns = array_keys($rows[0]);
-        $escapedColumns = array_map(fn($col) => "`$col`", $columns);
-        $colList = implode(', ', $escapedColumns);
-
         fwrite($handle, "-- Registros de la tabla `$table` --\n");
         fwrite($handle, "DELETE FROM `$table`;\n");
 
         foreach ($rows as $row) {
+            if ($table === 'ventas') {
+                unset($row['cliente_id']);
+            }
+            $columns = array_keys($row);
+            $escapedColumns = array_map(fn($col) => "`$col`", $columns);
+            $colList = implode(', ', $escapedColumns);
+
             $values = [];
             foreach ($row as $val) {
                 if ($val === null) {
