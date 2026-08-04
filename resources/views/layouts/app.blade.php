@@ -90,6 +90,11 @@
                 const form = e.target;
                 if (!form || form.tagName !== 'FORM') return;
 
+                // Si el formulario requiere confirmación de borrado, dejar que confirmDelete maneje el envío
+                if (form.getAttribute('onsubmit') && form.getAttribute('onsubmit').includes('return confirmDelete')) {
+                    return;
+                }
+
                 if (form.dataset.submitting === 'true') {
                     e.preventDefault();
                     return false;
@@ -118,6 +123,8 @@
             };
 
             function confirmDelete(formOrId, itemName = 'este registro') {
+                const form = typeof formOrId === 'string' ? document.getElementById(formOrId) : formOrId;
+
                 Swal.fire({
                     title: '¿Estás seguro?',
                     text: `Se eliminará ${itemName}. ¡Esta acción no se puede deshacer!`,
@@ -128,11 +135,17 @@
                     confirmButtonText: 'Sí, eliminar',
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {
-                    if (result.isConfirmed) {
-                        if (typeof formOrId === 'string') {
-                            document.getElementById(formOrId).submit();
-                        } else if (formOrId instanceof HTMLElement) {
-                            formOrId.submit();
+                    if (result.isConfirmed && form) {
+                        delete form.dataset.submitting;
+                        const submitBtns = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+                        submitBtns.forEach(btn => {
+                            btn.disabled = false;
+                            btn.classList.remove('opacity-60', 'cursor-not-allowed', 'pointer-events-none');
+                        });
+                        if (typeof originalSubmit === 'function') {
+                            originalSubmit.call(form);
+                        } else {
+                            form.submit();
                         }
                     }
                 });

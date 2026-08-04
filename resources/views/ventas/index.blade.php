@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Gestión de clientes') }}
+                {{ __('Gestión de Ventas') }}
             </h2>
             <button type="button" onclick="openModal('create-venta')"
                 class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-indigo-500/35 transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none cursor-pointer">
@@ -42,39 +42,78 @@
     </div>
 
     <!-- Modal Nueva Venta -->
-    <x-modal name="create-venta" :show="$errors->any()">
+    <x-modal name="create-venta" :show="$errors->any() && !old('_method')">
         <div class="p-6">
             <div class="flex justify-between items-center pb-3 border-b mb-4">
                 <h3 class="text-lg font-bold text-gray-900">Registrar Nueva Venta</h3>
                 <button type="button" onclick="closeModal('create-venta')" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
             </div>
-            <form method="POST" action="{{ route('ventas.store') }}">
+            <form id="form-create-venta" method="POST" action="{{ route('ventas.store') }}">
                 @csrf
                 @include('ventas._form', ['venta' => new \App\Models\Venta()])
             </form>
         </div>
     </x-modal>
 
+    <!-- Modal Editar Venta Unificado -->
+    <x-modal name="edit-venta" :show="$errors->any() && old('_method') === 'PUT'">
+        <div class="p-6 text-left">
+            <div class="flex justify-between items-center pb-3 border-b mb-4">
+                <h3 id="edit-modal-title-venta" class="text-lg font-bold text-gray-900">Editar Venta</h3>
+                <button type="button" onclick="closeModal('edit-venta')" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+            </div>
+            <form id="form-edit-venta" method="POST" action="">
+                @csrf
+                @method('PUT')
+                @include('ventas._form', ['venta' => new \App\Models\Venta()])
+            </form>
+        </div>
+    </x-modal>
+
 </x-app-layout>
+
 <script>
+    function openEditVentaModal(venta) {
+        const form = document.getElementById('form-edit-venta');
+        const title = document.getElementById('edit-modal-title-venta');
+        if (form && venta) {
+            form.action = "{{ url('ventas') }}/" + venta.id;
+            if (title) title.textContent = "Editar Venta #" + venta.id;
+
+            const articuloSelect = form.querySelector('[name="articulo_id"]');
+            const precioInput = form.querySelector('[name="precio_venta"]');
+            const cantidadInput = form.querySelector('[name="cantidad"]');
+            const clienteSelect = form.querySelector('[name="cliente_id"]');
+            const descripcionInput = form.querySelector('[name="descripcion"]');
+
+            if (articuloSelect) articuloSelect.value = venta.articulo_id || '';
+            if (precioInput) precioInput.value = parseFloat(venta.precio_venta || 0).toFixed(2);
+            if (cantidadInput) cantidadInput.value = venta.cantidad || 1;
+            if (clienteSelect) clienteSelect.value = venta.user_id || '';
+            if (descripcionInput) descripcionInput.value = venta.descripcion || '';
+        }
+        openModal('edit-venta');
+    }
+
     const buscador = document.getElementById('q');
     let timeout = null;
 
-    buscador.addEventListener('keyup', function() {
-        clearTimeout(timeout); // Limpiar búsqueda anterior
-        const query = this.value;
+    if (buscador) {
+        buscador.addEventListener('keyup', function() {
+            clearTimeout(timeout);
+            const query = this.value;
 
-        // Esperar 300ms después de dejar de escribir
-        timeout = setTimeout(() => {
-            fetch("{{ route('ventas.index') }}?q=" + encodeURIComponent(query), {
-                    headers: {
-                        "X-Requested-With": "XMLHttpRequest"
-                    }
-                })
-                .then(res => res.text())
-                .then(html => {
-                    document.getElementById('contenedor-tabla').innerHTML = html;
-                });
-        }, 300);
-    });
+            timeout = setTimeout(() => {
+                fetch("{{ route('ventas.index') }}?q=" + encodeURIComponent(query), {
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        }
+                    })
+                    .then(res => res.text())
+                    .then(html => {
+                        document.getElementById('contenedor-tabla').innerHTML = html;
+                    });
+            }, 300);
+        });
+    }
 </script>

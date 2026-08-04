@@ -4,11 +4,11 @@
 @endphp
 
 <div class="mb-4">
-    <label for="articulo_id" class="block text-gray-700 font-bold mb-2">Artículo</label>
-    <select name="articulo_id" id="articulo_id" class="w-full border-gray-300 rounded-lg shadow-sm" required>
+    <label class="block text-gray-700 font-bold mb-2">Artículo</label>
+    <select name="articulo_id" class="w-full border-gray-300 rounded-lg shadow-sm" required>
         <option value="">Seleccione un artículo</option>
         @foreach ($articulos as $articulo)
-            @if($articulo->nombre !="Pago saldado")
+            @if($articulo->nombre != "Pago saldado")
             <option value="{{ $articulo->id }}"
                 {{ old('articulo_id', $venta->articulo_id ?? $articuloId ?? '') == $articulo->id ? 'selected' : '' }}>
                 {{ $articulo->nombre }}
@@ -22,8 +22,8 @@
 </div>
 
 <div class="mb-4">
-    <label for="precio_venta" class="block text-gray-700 font-bold mb-2">Precio de Venta</label>
-    <input type="number" step="0.01" name="precio_venta" id="precio_venta"
+    <label class="block text-gray-700 font-bold mb-2">Precio de Venta</label>
+    <input type="number" step="0.01" name="precio_venta"
         class="w-full border-gray-300 rounded-lg shadow-sm"
         value="{{ old('precio_venta', $venta->precio_venta ?? ($articuloId ? $articulos->find($articuloId)->precio : '')) }}" required>
     @error('precio_venta')
@@ -32,34 +32,35 @@
 </div>
 
 <div class="mb-4">
-    <label for="cantidad" class="block text-gray-700 font-bold mb-2">Cantidad</label>
-    <input type="number" name="cantidad" id="cantidad" class="w-full border-gray-300 rounded-lg shadow-sm"
+    <label class="block text-gray-700 font-bold mb-2">Cantidad</label>
+    <input type="number" name="cantidad" class="w-full border-gray-300 rounded-lg shadow-sm"
         value="{{ old('cantidad', $venta->cantidad ?? 1) }}" required step="1">
     @error('cantidad')
         <span class="text-red-600 text-sm">{{ $message }}</span>
     @enderror
 </div>
- @if (Auth::user()->hasRole('admin'))
-        <div class="mb-4">
-            <label for="cliente_id" class="block text-gray-700 font-bold mb-2">Cliente</label>
-            <select name="cliente_id" id="cliente_id" class="w-full border-gray-300 rounded-lg shadow-sm" required>
-                <option value="">Seleccione un cliente</option>
-                @foreach ($clientes as $cliente)
-                
-                    <option value="{{ $cliente->id }}" 
-                        {{ (old('cliente_id', $venta->user_id ?? '') == $cliente->id) ? 'selected' : '' }}>
-                         {{ $cliente->name }}
-                    </option>
-                @endforeach
-            </select>
-            @error('cliente_id')
-                <span class="text-red-600 text-sm">{{ $message }}</span>
-            @enderror
-        </div>
-   @endif
+
+@if (Auth::user()->hasRole('admin'))
+    <div class="mb-4">
+        <label class="block text-gray-700 font-bold mb-2">Cliente</label>
+        <select name="cliente_id" class="w-full border-gray-300 rounded-lg shadow-sm" required>
+            <option value="">Seleccione un cliente</option>
+            @foreach ($clientes as $cliente)
+                <option value="{{ $cliente->id }}" 
+                    {{ (old('cliente_id', $venta->user_id ?? '') == $cliente->id) ? 'selected' : '' }}>
+                    {{ $cliente->name }}
+                </option>
+            @endforeach
+        </select>
+        @error('cliente_id')
+            <span class="text-red-600 text-sm">{{ $message }}</span>
+        @enderror
+    </div>
+@endif
+
 <div class="mb-4">
-    <label for="descripcion" class="block text-gray-700 font-bold mb-2">Descripción del pedido</label>
-    <textarea id="descripcion" name="descripcion"
+    <label class="block text-gray-700 font-bold mb-2">Descripción del pedido</label>
+    <textarea name="descripcion"
         class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ old('descripcion', $venta->descripcion ?? '') }}</textarea>
     @error('descripcion')
         <span class="text-red-600 text-sm">{{ $message }}</span>
@@ -67,7 +68,7 @@
 </div>
 
 <div class="flex justify-end gap-3 mt-4 border-t border-slate-100 pt-4">
-    <button type="button" x-data x-on:click="$dispatch('close-modal', 'create-venta'); $dispatch('close-modal', 'edit-venta-{{ $venta->id ?? 0 }}')"
+    <button type="button" x-data x-on:click="$dispatch('close-modal', 'create-venta'); $dispatch('close-modal', 'edit-venta')"
         class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm shadow-sm transition-all duration-200 hover:border-slate-400 focus:outline-none cursor-pointer">
         Cancelar
     </button>
@@ -77,7 +78,6 @@
     </button>
 </div>
 
-{{-- Script para autocompletar el precio según el artículo seleccionado --}}
 <script>
 (function() {
     const precios = {
@@ -97,15 +97,9 @@
         articuloSelect.addEventListener('change', function() {
             const selectedId = this.value;
             if (precios[selectedId]) {
-                precioInput.value = precios[selectedId];
-            } else {
-                precioInput.value = '';
+                precioInput.value = parseFloat(precios[selectedId]).toFixed(2);
             }
         });
-
-        if (articuloSelect.value && precios[articuloSelect.value]) {
-            precioInput.value = precios[articuloSelect.value];
-        }
     }
 })();
 </script>
