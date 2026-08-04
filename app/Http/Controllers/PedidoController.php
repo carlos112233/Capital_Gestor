@@ -90,10 +90,45 @@ class PedidoController extends Controller
             try {
                 Notification::route('mail', 'gestorcapital.0925@gmail.com')
                     ->notify(new \App\Notifications\NuevoPedidoNotification($pedido));
-                \Illuminate\Support\Facades\Log::info("Correo enviado exitosamente para el pedido #" . $pedido->id . " a gestorcapital.0925@gmail.com");
+                \Illuminate\Support\Facades\Log::info("Correo enviado exitosamente para el pedido #" . $pedido->id . " a gestorcapital.0925@gmail.com via SMTP");
             } catch (\Exception $e) {
-                // Si falla el correo, lo ignoramos para que la app siga funcionando pero logueamos detalle completo
-                \Illuminate\Support\Facades\Log::error("Error enviando correo del pedido #" . $pedido->id . ": " . $e->getMessage() . "\n" . $e->getTraceAsString());
+                // Si falla SMTP (p. ej. por bloqueo de puertos de DigitalOcean), intentamos envío por API HTTPS (puerto 443) con FormSubmit
+                \Illuminate\Support\Facades\Log::warning("SMTP falló para el pedido #" . $pedido->id . " (" . $e->getMessage() . "). Intentando envío alternativo por API HTTPS...");
+
+                try {
+                    $articuloNombre = $pedido->articulo->nombre ?? 'N/A';
+                    $clienteNombre  = $pedido->user->name ?? 'Cliente';
+                    $totalFormatted = number_format($pedido->costo ?? 0, 2);
+                    $cuerpoCorreo   = "Nuevo Pedido #{$pedido->id} creado en El rico bajon.\n\n" .
+                                      "• Cliente: {$clienteNombre}\n" .
+                                      "• Artículo: {$articuloNombre}\n" .
+                                      "• Cantidad: {$pedido->cantidad}\n" .
+                                      "• Total: \${$totalFormatted}\n" .
+                                      "• Descripción/Notas: {$pedido->descripcion}\n\n" .
+                                      "Enviado desde el sistema CRM El rico bajon.";
+
+                    $response = \Illuminate\Support\Facades\Http::withHeaders([
+                        'Accept'       => 'application/json',
+                        'Content-Type' => 'application/json',
+                        'User-Agent'   => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                        'Origin'       => 'https://elbajon.duckdns.org',
+                        'Referer'      => 'https://elbajon.duckdns.org/pedidos',
+                    ])->post('https://formsubmit.co/ajax/gestorcapital.0925@gmail.com', [
+                        '_subject' => "Nuevo Pedido #{$pedido->id} - El rico bajon",
+                        'mensaje'  => $cuerpoCorreo,
+                        'pedido_id'=> $pedido->id,
+                        'cliente'  => $clienteNombre,
+                        'total'    => "$" . $totalFormatted,
+                    ]);
+
+                    if ($response->successful()) {
+                        \Illuminate\Support\Facades\Log::info("Correo alternativo HTTPS (FormSubmit) enviado exitosamente para pedido #" . $pedido->id);
+                    } else {
+                        \Illuminate\Support\Facades\Log::error("Fallo envío alternativo HTTPS (FormSubmit) para pedido #" . $pedido->id . ": " . $response->body());
+                    }
+                } catch (\Exception $exHttp) {
+                    \Illuminate\Support\Facades\Log::error("Error general enviando correo alternativo HTTPS del pedido #" . $pedido->id . ": " . $exHttp->getMessage());
+                }
             }
         }
 
