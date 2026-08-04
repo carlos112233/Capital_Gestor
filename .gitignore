@@ -34,5 +34,14 @@ Thumbs.db
 **/.wwebjs_auth/
 wa-motor/.wwebjs_auth/
 wa-motor/qr.png
+wa-motor/node_modules/
+wa-motor/status.json
 public/img/qr.png
 public/qr.png
+public/wa-status.json
+public/.wwebjs_cache/
+
+# Dumps & Backups
+storage/backups/
+*.sql
+
