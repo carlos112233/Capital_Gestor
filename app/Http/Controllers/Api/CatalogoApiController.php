@@ -68,13 +68,15 @@ class CatalogoApiController extends Controller
                 $articulo->decrement('stock', $cantidadVenta);
 
                 // Registrar venta
-                $articulo->ventas()->create([
+                $venta = $articulo->ventas()->create([
                     'user_id'      => Auth::id(),
                     'cantidad'     => $cantidadVenta,
                     'precio_venta' => $validated['precio_venta'],
                     'total_venta'  => $validated['precio_venta'] * $cantidadVenta,
                     'descripcion'  => $validated['descripcion'] ?? null,
                 ]);
+
+                \App\Models\Venta::notificarAdminWhatsApp($venta);
             });
         } catch (ValidationException $e) {
             return $this->error(

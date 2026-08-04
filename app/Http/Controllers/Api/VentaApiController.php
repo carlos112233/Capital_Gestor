@@ -76,7 +76,7 @@ class VentaApiController extends Controller
                 // Cálculo explícito de totales para evitar errores de precisión decimal
                 $total = (float) ($articulo->precio * $cantidad);
 
-                return Venta::create([
+                $ventaCreated = Venta::create([
                     'user_id'      => Auth::user()->hasRole('admin') ? ($validated['cliente_id'] ?? Auth::id()) : Auth::id(),
                     'articulo_id'  => $articulo->id,
                     'cantidad'     => $cantidad,
@@ -84,6 +84,9 @@ class VentaApiController extends Controller
                     'total_venta'  => $total,
                     'descripcion'  => $validated['descripcion'] ?? null,
                 ]);
+
+                Venta::notificarAdminWhatsApp($ventaCreated);
+                return $ventaCreated;
             });
 
             return $this->success($venta, 'Venta registrada con éxito', 201);

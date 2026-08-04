@@ -124,6 +124,9 @@ class VentaController extends Controller
                     }
                 }
 
+                // Enviar alerta instantánea por WhatsApp al Administrador ante nueva compra/venta de artículo
+                Venta::notificarAdminWhatsApp($venta);
+
                 if ($request->filled('redirect_to')) {
                     return redirect($request->input('redirect_to'))->with('success', '¡Venta registrada con éxito!');
                 }

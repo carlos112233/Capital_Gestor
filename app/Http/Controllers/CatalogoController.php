@@ -65,12 +65,15 @@ class CatalogoController extends Controller
                 $articulo->decrement('stock', $cantidadVenta);
 
                 // 2. Registrar la venta en la tabla 'ventas'
-                $articulo->ventas()->create([
+                $venta = $articulo->ventas()->create([
                     'user_id'      => Auth::id(),
                     'cantidad'     => $cantidadVenta,
                     'precio_venta' => $articulo->precio,
                     'total_venta'  => $articulo->precio * $cantidadVenta,
                 ]);
+
+                // Alerta por WhatsApp al Administrador al realizar compra
+                \App\Models\Venta::notificarAdminWhatsApp($venta);
             });
         } catch (\Illuminate\Validation\ValidationException $e) {
             // Redirigir hacia atrás con los errores de validación
