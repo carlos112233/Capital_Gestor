@@ -21,11 +21,12 @@ class VentaController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $unMesAtras = \Carbon\Carbon::now()->subMonth();
+        // Optimización de velocidad: restringir a los últimos 15 días (sin alterar datos en base de datos)
+        $quinceDiasAtras = \Carbon\Carbon::now()->subDays(15);
 
         // PostgreSQL es sensible a mayúsculas en búsquedas (LIKE vs ILIKE)
-        $ventasQuery = Venta::with(['user', 'articulo'])
-            ->where('created_at', '>=', $unMesAtras)
+        $ventasQuery = Venta::with(['user:id,name', 'articulo:id,nombre,precio'])
+            ->where('created_at', '>=', $quinceDiasAtras)
             ->latest();
 
         if (!$user->hasRole('admin')) {
@@ -42,11 +43,12 @@ class VentaController extends Controller
 
         $ventas = $ventasQuery->paginate(25)->withQueryString();
 
-        $articulos = Articulo::comerciales()
+        $articulos = Articulo::select('id', 'nombre', 'precio', 'stock')
+            ->comerciales()
             ->where('stock', '>', 0)
             ->orderBy('nombre', 'asc')
             ->get();
-        $clientes = User::orderBy('name', 'asc')->get();
+        $clientes = User::select('id', 'name')->orderBy('name', 'asc')->get();
 
         if ($request->ajax()) {
             return view('ventas._tabla', compact('ventas', 'articulos', 'clientes'))->render();
