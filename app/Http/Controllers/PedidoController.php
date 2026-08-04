@@ -90,9 +90,10 @@ class PedidoController extends Controller
             try {
                 Notification::route('mail', 'gestorcapital.0925@gmail.com')
                     ->notify(new \App\Notifications\NuevoPedidoNotification($pedido));
+                \Illuminate\Support\Facades\Log::info("Correo enviado exitosamente para el pedido #" . $pedido->id . " a gestorcapital.0925@gmail.com");
             } catch (\Exception $e) {
-                // Si falla el correo, lo ignoramos para que la app siga funcionando
-                \Illuminate\Support\Facades\Log::error("Error enviando correo: " . $e->getMessage());
+                // Si falla el correo, lo ignoramos para que la app siga funcionando pero logueamos detalle completo
+                \Illuminate\Support\Facades\Log::error("Error enviando correo del pedido #" . $pedido->id . ": " . $e->getMessage() . "\n" . $e->getTraceAsString());
             }
         }
 

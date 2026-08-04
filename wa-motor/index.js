@@ -443,9 +443,10 @@ function iniciarBucleEnvio() {
 
                         if (!cleanNum) {
                             console.error(`⚠️ Número inválido en mensaje #${msg.id}`);
+                            const mxNow = new Date().toLocaleString("sv-SE", { timeZone: "America/Mexico_City" });
                             await queryDb(
-                                "UPDATE whatsapp_pending_messages SET status = 'fallido', updated_at = NOW() WHERE id = $1",
-                                [msg.id]
+                                "UPDATE whatsapp_pending_messages SET status = 'fallido', updated_at = $2 WHERE id = $1",
+                                [msg.id, mxNow]
                             );
                             continue;
                         }
@@ -464,17 +465,19 @@ function iniciarBucleEnvio() {
                         console.log(`🚀 Enviando mensaje #${msg.id} a ${targetId}...`);
                         await client.sendMessage(targetId, msg.mensaje);
 
+                        const mxNowSuccess = new Date().toLocaleString("sv-SE", { timeZone: "America/Mexico_City" });
                         await queryDb(
-                            "UPDATE whatsapp_pending_messages SET status = 'enviado', updated_at = NOW() WHERE id = $1",
-                            [msg.id]
+                            "UPDATE whatsapp_pending_messages SET status = 'enviado', updated_at = $2 WHERE id = $1",
+                            [msg.id, mxNowSuccess]
                         );
                         console.log(`✅ Mensaje #${msg.id} enviado con éxito a ${msg.numero} (${targetId})`);
 
                     } catch (err) {
                         console.error(`❌ Error procesando el mensaje #${msg.id} para ${msg.numero}:`, err.message);
+                        const mxNowErr = new Date().toLocaleString("sv-SE", { timeZone: "America/Mexico_City" });
                         await queryDb(
-                            "UPDATE whatsapp_pending_messages SET status = 'fallido', updated_at = NOW() WHERE id = $1",
-                            [msg.id]
+                            "UPDATE whatsapp_pending_messages SET status = 'fallido', updated_at = $2 WHERE id = $1",
+                            [msg.id, mxNowErr]
                         ).catch(() => {});
                     }
 

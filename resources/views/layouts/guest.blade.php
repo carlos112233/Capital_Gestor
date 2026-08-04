@@ -5,8 +5,15 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Capital Gestor') }}</title>
+        <title>{{ config('app.name', 'El rico bajon') }}</title>
+        <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
         <link rel="icon" type="image/png" href="{{ asset('img/Logo.png') }}">
+        <link rel="manifest" href="{{ asset('manifest.json') }}">
+        <meta name="theme-color" content="#4f46e5">
+        <link rel="apple-touch-icon" href="{{ asset('img/icon-192.png') }}">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="apple-mobile-web-app-title" content="El rico bajon">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -36,8 +43,17 @@
             </div>
 
             <div class="mt-6 text-center text-xs text-slate-400 relative z-10 font-medium">
-                &copy; {{ date('Y') }} Capital Gestor &bull; Todos los derechos reservados
+                &copy; {{ date('Y') }} El rico bajon &bull; Todos los derechos reservados
             </div>
         </div>
+        <script>
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then(reg => console.log('SW registrado con éxito:', reg.scope))
+                        .catch(err => console.log('Error registrando SW:', err));
+                });
+            }
+        </script>
     </body>
 </html>

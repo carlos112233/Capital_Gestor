@@ -3,10 +3,19 @@
         $waPendientes = \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->where('status', 'pendiente')->count();
         $waEnviados = \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->where('status', 'enviado')->count();
         $ultimoWa = \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->orderBy('updated_at', 'desc')->first();
+        $tiempoTextoWa = 'Hoy';
+        if ($ultimoWa && $ultimoWa->updated_at) {
+            $fecha = \Carbon\Carbon::parse($ultimoWa->updated_at);
+            if ($fecha->isFuture()) {
+                $fecha = now();
+            }
+            $tiempoTextoWa = $fecha->diffForHumans();
+        }
     } catch (\Throwable $e) {
         $waPendientes = 0;
         $waEnviados = 0;
         $ultimoWa = null;
+        $tiempoTextoWa = 'Hoy';
     }
 @endphp
 <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs transition-all duration-300">
@@ -39,8 +48,18 @@
             </div>
         </div>
 
-        <!-- Derecha: Notificaciones & Menú del Usuario -->
-        <div class="flex items-center gap-3 sm:gap-4">
+        <!-- Derecha: Botón PWA, Notificaciones & Menú del Usuario -->
+        <div class="flex items-center gap-2 sm:gap-4">
+            
+            <!-- Botón PWA Install -->
+            <button id="pwa-install-btn" style="display: none;"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition-all duration-200 cursor-pointer"
+                title="Instalar App El rico bajon">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8l-8 8-8-8"/>
+                </svg>
+                <span class="hidden sm:inline">Instalar App</span>
+            </button>
             
             <!-- Icono de Alertas / Notificaciones Interactivo -->
             <div class="relative" x-data="{ notifOpen: false }">
@@ -87,7 +106,7 @@
                                     @endif
                                 </p>
                                 <span id="notif-wa-time" class="text-[10px] text-slate-400 mt-1 block">
-                                    {{ $ultimoWa ? \Carbon\Carbon::parse($ultimoWa->updated_at)->diffForHumans() : 'Hoy' }}
+                                    {{ $tiempoTextoWa }}
                                 </span>
                             </div>
                         </div>
@@ -208,5 +227,32 @@
                 })
                 .catch(() => {});
         }, 4000);
+    });
+
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const installBtn = document.getElementById('pwa-install-btn');
+        if (installBtn) {
+            installBtn.style.display = 'inline-flex';
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const installBtn = document.getElementById('pwa-install-btn');
+        if (installBtn) {
+            installBtn.addEventListener('click', () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            installBtn.style.display = 'none';
+                        }
+                        deferredPrompt = null;
+                    });
+                }
+            });
+        }
     });
 </script>
