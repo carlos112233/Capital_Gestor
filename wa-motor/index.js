@@ -610,11 +610,15 @@ process.on("unhandledRejection", (reason, promise) => {
     );
 });
 
+// Variable de control para evitar ejecuciones concurrentes del bucle (Mutex lock)
+let isProcessing = false;
+
 // 4. BUCLE DE CONSULTA DUAL CADA 5 SEGUNDOS
 function iniciarBucleEnvio() {
     setInterval(async () => {
         // Si ya está procesando (tomó más de 5 segundos), ignora este turno
         if (isProcessing) return;
+        isProcessing = true;
 
         try {
             const res = await queryDb(
