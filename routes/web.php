@@ -36,6 +36,13 @@ Route::middleware('auth')->group(function () {
     Route::resource('datos', TransferenciaController::class);
     Route::get('cobros', [\App\Http\Controllers\CobroController::class, 'index'])->name('cobros.index');
 
+    // Quejas, Comentarios y Sugerencias (Feedback del usuario)
+    Route::get('feedback', [\App\Http\Controllers\FeedbackController::class, 'index'])->name('feedback.index');
+    Route::post('feedback', [\App\Http\Controllers\FeedbackController::class, 'store'])->name('feedback.store');
+    Route::get('feedback/{feedback}', [\App\Http\Controllers\FeedbackController::class, 'show'])->name('feedback.show');
+    Route::post('feedback/{feedback}/reply', [\App\Http\Controllers\FeedbackController::class, 'reply'])->name('feedback.reply');
+    Route::post('feedback/{feedback}/status', [\App\Http\Controllers\FeedbackController::class, 'updateStatus'])->name('feedback.status');
+
     Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('clientes', ClienteController::class);
         Route::resource('articulos', ArticuloController::class);

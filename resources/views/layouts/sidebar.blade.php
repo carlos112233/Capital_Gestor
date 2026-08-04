@@ -70,6 +70,14 @@
                     </svg>
                     <span x-show="sidebarOpen" x-transition class="ml-3 whitespace-nowrap">Existencias</span>
                 </a>
+
+                <a href="{{ route('feedback.index') }}"
+                   class="flex items-center px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group {{ request()->routeIs('feedback.*') ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                    <svg class="w-5 h-5 flex-shrink-0 {{ request()->routeIs('feedback.*') ? 'text-white' : 'text-purple-400 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                    </svg>
+                    <span x-show="sidebarOpen" x-transition class="ml-3 whitespace-nowrap">Quejas y Sugerencias</span>
+                </a>
             </nav>
         </div>
 
@@ -258,6 +266,14 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                     <span>Existencias</span>
+                </a>
+
+                <a href="{{ route('feedback.index') }}"
+                   class="flex items-center px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group {{ request()->routeIs('feedback.*') ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                    <svg class="w-5 h-5 flex-shrink-0 mr-3 {{ request()->routeIs('feedback.*') ? 'text-white' : 'text-purple-400 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                    </svg>
+                    <span>Quejas y Sugerencias</span>
                 </a>
             </nav>
         </div>
