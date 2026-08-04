@@ -1,10 +1,10 @@
 @php
     if (old('pedidos')) {
-        $pedidos = old('pedidos');
+        $items = old('pedidos');
     } elseif (isset($pedido) && isset($pedido->id)) {
-        $pedidos = $pedidos ?? [$pedido->toArray()];
+        $items = [$pedido->toArray()];
     } else {
-        $pedidos = [[]];
+        $items = [[]];
     }
     $userSelected = $userSelected ?? ($pedido->user_id ?? Auth::id());
 @endphp
@@ -14,10 +14,11 @@
         border-radius: 0.5rem !important;
         padding: 0.5rem !important;
         border: 1px solid #d1d5db !important;
+    }
 </style>
 
 <div class="pedidos-container">
-    @foreach ($pedidos as $i => $p)
+    @foreach ($items as $i => $p)
         <div class="pedido-item mb-4 border p-4 rounded-lg bg-white shadow-sm relative">
             <div class="flex justify-end mb-2">
                 <button type="button"
