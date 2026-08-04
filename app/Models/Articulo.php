@@ -19,6 +19,10 @@ class Articulo extends Model
         'img_tipo',
     ];
 
+    protected $hidden = [
+        'img_base64',
+    ];
+
     public function ventas(): HasMany
     {
         return $this->hasMany(Venta::class);
