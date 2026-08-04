@@ -489,4 +489,7 @@ function iniciarBucleEnvio() {
 }
 
 // 5. INICIALIZAR EL CLIENTE
-client.initialize();
+removerLockFiles(path.join(__dirname, '.wwebjs_auth'));
+removerLockFiles(path.join(__dirname, '..', '.wwebjs_auth'));
+removerLockFiles(path.join(__dirname, '..', 'public', '.wwebjs_auth'));
+client.initialize().catch(e => console.error('Error al inicializar cliente:', e));

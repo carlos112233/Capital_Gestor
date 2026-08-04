@@ -89,9 +89,10 @@ class ConfiguracionController extends Controller
         // Auto-verificar que el motor Node.js esté activo en segundo plano
         try {
             if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
-                $check = shell_exec('pgrep -f "wa-motor"');
+                $check = trim(shell_exec('pgrep -f "wa-motor/index.js" 2>/dev/null') ?? '');
                 if (empty($check)) {
-                    exec('nohup node ' . base_path('wa-motor/index.js') . ' > /dev/null 2>&1 < /dev/null &');
+                    $nodeBin = trim(shell_exec('which node 2>/dev/null') ?? '') ?: '/usr/bin/node';
+                    exec("nohup {$nodeBin} " . base_path('wa-motor/index.js') . ' > /dev/null 2>&1 < /dev/null &');
                 }
             }
         } catch (\Throwable $e) {}
@@ -176,7 +177,8 @@ class ConfiguracionController extends Controller
             // 4. Iniciar limpiamente el motor Node en segundo plano
             try {
                 if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
-                    exec('nohup node ' . base_path('wa-motor/index.js') . ' > /dev/null 2>&1 < /dev/null &');
+                    $nodeBin = trim(shell_exec('which node 2>/dev/null') ?? '') ?: '/usr/bin/node';
+                    exec("nohup {$nodeBin} " . base_path('wa-motor/index.js') . ' > /dev/null 2>&1 < /dev/null &');
                 }
             } catch (\Throwable $e) {}
 
