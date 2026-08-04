@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('entradas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Enlace al usuario
-            $table->foreignId('cliente_id')->constrained()->comment('cliente'); // Enlace al usuario
+            $table->foreignId('cliente_id')->nullable()->constrained('users')->onDelete('cascade')->comment('cliente'); // Enlace al cliente (users)
             $table->foreignId('articulo_id')->constrained()->comment('Artículo vendido'); // Enlace al usuario
             $table->decimal('precio_venta', 10, 2); // Monto con 2 decimales
             $table->text('descripcion')->nullable(); // Una descripción opcional
