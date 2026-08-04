@@ -133,7 +133,8 @@ class PedidoController extends Controller
                 \Illuminate\Support\Facades\Log::error("Error encolando WhatsApp de Nuevo Pedido #{$pedido->id}: " . $exWa->getMessage());
             }
 
-            // 2. Envío por Correo Electrónico (SMTP o Respaldo HTTPS)
+            // 2. Envío por Correo Electrónico deshabilitado (las alertas de nuevos pedidos se envían por WhatsApp al Administrador)
+            /*
             try {
                 Notification::route('mail', 'gestorcapital.0925@gmail.com')
                     ->notify(new \App\Notifications\NuevoPedidoNotification($pedido));
@@ -177,6 +178,7 @@ class PedidoController extends Controller
                     \Illuminate\Support\Facades\Log::error("Error general enviando correo alternativo HTTPS del pedido #" . $pedido->id . ": " . $exHttp->getMessage());
                 }
             }
+            */
         }
 
         return redirect()->route('pedidos.index')->with('success', 'Todos los pedidos fueron creados correctamente.');
