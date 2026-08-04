@@ -101,11 +101,11 @@ let currentDbInfo = {
 };
 
 function probarConexionBaseDatos() {
-    const testQuery = isMysql ? 'SELECT DATABASE() as current_database, CURRENT_USER() as current_user' : 'SELECT current_database(), current_user';
+    const testQuery = isMysql ? 'SELECT DATABASE() as current_database, CURRENT_USER() as `current_user` ' : 'SELECT current_database(), current_user';
     queryDb(testQuery)
         .then(res => {
             const dbName = res.rows[0]?.current_database || res.rows[0]?.['DATABASE()'] || process.env.DB_DATABASE;
-            const dbUser = res.rows[0]?.current_user || res.rows[0]?.['CURRENT_USER()'] || process.env.DB_USERNAME;
+            const dbUser = res.rows[0]?.current_user || res.rows[0]?.['CURRENT_USER()'] || res.rows[0]?.['current_user_name'] || process.env.DB_USERNAME;
             const hostTarget = isMysql ? (process.env.DB_HOST || '127.0.0.1') : (process.env.DATABASE_URL ? 'Render Cloud PostgreSQL' : (process.env.DB_HOST || '127.0.0.1'));
             currentDbInfo = {
                 database: dbName,
