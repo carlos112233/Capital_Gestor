@@ -45,14 +45,7 @@
                     @if (Auth::user()->hasRole('admin'))
                         <td class="px-1 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                             {{-- Botón Editar Modal --}}
-                            <button type="button" onclick='openEditVentaModal(@json([
-                                "id" => $venta->id,
-                                "articulo_id" => $venta->articulo_id,
-                                "precio_venta" => $venta->precio_venta,
-                                "cantidad" => $venta->cantidad,
-                                "user_id" => $venta->user_id,
-                                "descripcion" => $venta->descripcion
-                            ]))'
+                            <button type="button" onclick='openEditVentaModal({{ json_encode(["id" => $venta->id, "articulo_id" => $venta->articulo_id, "precio_venta" => $venta->precio_venta, "cantidad" => $venta->cantidad, "user_id" => $venta->user_id, "descripcion" => $venta->descripcion]) }})'
                                 class="text-indigo-600 hover:text-indigo-900 font-semibold cursor-pointer">
                                 Editar
                             </button>

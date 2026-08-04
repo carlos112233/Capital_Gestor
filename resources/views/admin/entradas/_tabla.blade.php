@@ -31,15 +31,7 @@
                 </td>
                 <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                     {{-- Botón Editar Modal --}}
-                    <button type="button" onclick='openEditModal(@json([
-                        "id" => $entrada->id,
-                        "articulo_id" => $entrada->articulo_id,
-                        "precio_venta" => $entrada->precio_venta,
-                        "cliente_id" => $entrada->cliente_id ?? $entrada->user_id,
-                        "user_id" => $entrada->user_id,
-                        "descripcion" => $entrada->descripcion,
-                        "articulo" => $entrada->articulo ? ["nombre" => $entrada->articulo->nombre] : null
-                    ]))'
+                    <button type="button" onclick='openEditModal({{ json_encode(["id" => $entrada->id, "articulo_id" => $entrada->articulo_id, "precio_venta" => $entrada->precio_venta, "cliente_id" => $entrada->cliente_id ?? $entrada->user_id, "user_id" => $entrada->user_id, "descripcion" => $entrada->descripcion, "articulo" => $entrada->articulo ? ["nombre" => $entrada->articulo->nombre] : null]) }})'
                         class="text-indigo-600 hover:text-indigo-900 font-semibold cursor-pointer">
                         Editar
                     </button>
