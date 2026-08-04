@@ -23,6 +23,9 @@ class PedidoController extends Controller
             $query->where('user_id', $user->id);
         }
 
+        // Optimización de velocidad: restringir a los últimos 15 días
+        $query->where('created_at', '>=', now()->subDays(15));
+
         if ($request->filled('q')) {
             $search = '%' . strtolower($request->input('q')) . '%';
             $query->where(function($q) use ($search) {
@@ -35,8 +38,9 @@ class PedidoController extends Controller
         }
 
         $pedidos = $query->paginate(25)->withQueryString();
-        $articulos = Articulo::orderBy('nombre', 'asc')->get();
-        $users = User::orderBy('name', 'asc')->get();
+        // Cargar únicamente columnas necesarias para el select del modal (reduce uso de memoria y acelera la consulta SQL)
+        $articulos = Articulo::select('id', 'nombre', 'precio')->orderBy('nombre', 'asc')->get();
+        $users = User::select('id', 'name')->orderBy('name', 'asc')->get();
 
         return view('pedidos.index', compact('pedidos', 'articulos', 'users'));
     }
