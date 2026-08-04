@@ -24,7 +24,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
-                    <input type="text" name="q" value="{{ request('q') }}" placeholder="Buscar pedidos por artículo, descripción o usuario..."
+                    <input type="text" name="q" id="search" value="{{ request('q') }}" placeholder="Buscar pedidos por artículo, descripción o usuario..."
                         class="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 text-sm font-medium transition-all outline-none bg-white shadow-xs">
                 </div>
             </form>
@@ -126,27 +126,29 @@
         const input = document.getElementById('search');
         const table = document.querySelector('table tbody');
 
-        input.addEventListener('input', function() {
-            const filter = this.value.toLowerCase();
-            const rows = table.querySelectorAll('tr');
+        if (input && table) {
+            input.addEventListener('input', function() {
+                const filter = this.value.toLowerCase();
+                const rows = table.querySelectorAll('tr');
 
-            rows.forEach(row => {
-                // Columnas: Artículo (2), Descripción (3), Usuario (4)
-                const articulo = row.querySelector('td:nth-child(2)')?.textContent
-                .toLowerCase() || '';
-                const descripcion = row.querySelector('td:nth-child(3)')?.textContent
+                rows.forEach(row => {
+                    // Columnas: Artículo (2), Descripción (3), Usuario (4)
+                    const articulo = row.querySelector('td:nth-child(2)')?.textContent
                     .toLowerCase() || '';
-                const usuario = row.querySelector('td:nth-child(4)')?.textContent
-                .toLowerCase() || '';
+                    const descripcion = row.querySelector('td:nth-child(3)')?.textContent
+                        .toLowerCase() || '';
+                    const usuario = row.querySelector('td:nth-child(4)')?.textContent
+                    .toLowerCase() || '';
 
-                // Mostrar fila si alguna columna coincide
-                if (articulo.includes(filter) || descripcion.includes(filter) || usuario
-                    .includes(filter)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
+                    // Mostrar fila si alguna columna coincide
+                    if (articulo.includes(filter) || descripcion.includes(filter) || usuario
+                        .includes(filter)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
             });
-        });
+        }
     });
 </script>
