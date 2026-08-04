@@ -130,15 +130,15 @@ class ConfiguracionController extends Controller
     public function resetWaSession()
     {
         try {
-            // 1. Matar inmediatamente cualquier proceso previo de wa-motor para liberar el cerrojo de Chromium
+            // 1. Matar o reiniciar el proceso de wa-motor (Soporte para PM2 y procesos nativos)
             try {
                 if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
-                    shell_exec('pkill -9 -f "wa-motor" 2>/dev/null || pkill -9 -f "node.*index.js" 2>/dev/null');
+                    shell_exec('pm2 restart wa-motor 2>/dev/null || pm2 restart index 2>/dev/null || pkill -9 -f "wa-motor" 2>/dev/null || pkill -9 -f "node.*index.js" 2>/dev/null');
                     sleep(1);
                 }
             } catch (\Throwable $eKill) {}
 
-            // 2. Eliminar carpetas de sesión local y cerrojos huérfanos
+            // 2. Eliminar carpetas de sesión local y archivos de estado / cerrojos huérfanos
             $pathsToDelete = [
                 base_path('.wwebjs_auth'),
                 base_path('wa-motor/.wwebjs_auth'),
@@ -147,6 +147,7 @@ class ConfiguracionController extends Controller
                 public_path('qr.png'),
                 base_path('wa-motor/qr.png'),
                 base_path('wa-motor/status.json'),
+                public_path('wa-status.json'),
             ];
 
             foreach ($pathsToDelete as $p) {
