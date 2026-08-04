@@ -13,8 +13,14 @@ return new class extends Migration
     public function up(): void
     {
         if (Schema::hasColumn('entradas', 'cliente_id')) {
-            DB::statement('ALTER TABLE entradas DROP CONSTRAINT IF EXISTS entradas_cliente_id_foreign;');
-            DB::statement('ALTER TABLE entradas ALTER COLUMN cliente_id DROP NOT NULL;');
+            if (DB::getDriverName() === 'pgsql') {
+                DB::statement('ALTER TABLE entradas DROP CONSTRAINT IF EXISTS entradas_cliente_id_foreign;');
+                DB::statement('ALTER TABLE entradas ALTER COLUMN cliente_id DROP NOT NULL;');
+            } else {
+                Schema::table('entradas', function (Blueprint $table) {
+                    $table->unsignedBigInteger('cliente_id')->nullable()->change();
+                });
+            }
         }
     }
 
