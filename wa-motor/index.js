@@ -647,8 +647,8 @@ function iniciarBucleEnvio() {
                                 timeZone: "America/Mexico_City",
                             });
                             await queryDb(
-                                "UPDATE whatsapp_pending_messages SET status = 'fallido', updated_at = $2 WHERE id = $1",
-                                [msg.id, mxNow],
+                                "UPDATE whatsapp_pending_messages SET status = 'fallido', updated_at = $1 WHERE id = $2",
+                                [mxNow, msg.id],
                             );
                             continue;
                         }
@@ -677,8 +677,8 @@ function iniciarBucleEnvio() {
                             { timeZone: "America/Mexico_City" },
                         );
                         await queryDb(
-                            "UPDATE whatsapp_pending_messages SET status = 'enviado', updated_at = $2 WHERE id = $1",
-                            [msg.id, mxNowSuccess],
+                            "UPDATE whatsapp_pending_messages SET status = 'enviado', updated_at = $1 WHERE id = $2",
+                            [mxNowSuccess, msg.id],
                         );
                         console.log(
                             `✅ Mensaje #${msg.id} enviado con éxito a ${msg.numero} (${targetId})`,
@@ -692,8 +692,8 @@ function iniciarBucleEnvio() {
                             timeZone: "America/Mexico_City",
                         });
                         await queryDb(
-                            "UPDATE whatsapp_pending_messages SET status = 'fallido', updated_at = $2 WHERE id = $1",
-                            [msg.id, mxNowErr],
+                            "UPDATE whatsapp_pending_messages SET status = 'fallido', updated_at = $1 WHERE id = $2",
+                            [mxNowErr, msg.id],
                         ).catch(() => {});
                     }
 
