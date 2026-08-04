@@ -1,3 +1,14 @@
+@php
+    try {
+        $waPendientes = \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->where('status', 'pendiente')->count();
+        $waEnviados = \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->where('status', 'enviado')->count();
+        $ultimoWa = \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->orderBy('updated_at', 'desc')->first();
+    } catch (\Throwable $e) {
+        $waPendientes = 0;
+        $waEnviados = 0;
+        $ultimoWa = null;
+    }
+@endphp
 <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs transition-all duration-300">
     <div class="px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
         
@@ -60,16 +71,24 @@
                     </div>
 
                     <div class="max-h-72 overflow-y-auto divide-y divide-slate-100 text-xs">
-                        <div class="p-3.5 hover:bg-slate-50 transition-colors flex items-start gap-3">
-                            <div class="w-8 h-8 rounded-xl bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <div id="notif-wa-item" class="p-3.5 hover:bg-slate-50 transition-colors flex items-start gap-3 {{ $waPendientes > 0 ? 'bg-amber-50/40' : '' }}">
+                            <div id="notif-wa-icon" class="w-8 h-8 rounded-xl {{ $waPendientes > 0 ? 'bg-amber-100 text-amber-600' : 'bg-green-50 text-green-600' }} flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg class="w-4 h-4 {{ $waPendientes > 0 ? 'animate-spin' : '' }}" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347"/>
                                 </svg>
                             </div>
                             <div class="flex-1">
-                                <p class="font-bold text-slate-800">Mensajes de WhatsApp</p>
-                                <p class="text-slate-500 mt-0.5">El envío masivo de recordatorios está encolado y listo.</p>
-                                <span class="text-[10px] text-slate-400 mt-1 block">Hace 5 minutos</span>
+                                <p id="notif-wa-title" class="font-bold text-slate-800">Mensajes de WhatsApp</p>
+                                <p id="notif-wa-text" class="text-slate-600 font-medium mt-0.5">
+                                    @if ($waPendientes > 0)
+                                        Enviando recordatorios... Quedan {{ $waPendientes }} mensaje(s) pendiente(s).
+                                    @else
+                                        Se han enviado todos los mensajes pendientes
+                                    @endif
+                                </p>
+                                <span id="notif-wa-time" class="text-[10px] text-slate-400 mt-1 block">
+                                    {{ $ultimoWa ? \Carbon\Carbon::parse($ultimoWa->updated_at)->diffForHumans() : 'Hoy' }}
+                                </span>
                             </div>
                         </div>
 
@@ -144,3 +163,50 @@
 
     </div>
 </header>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let lastPendingWa = {{ $waPendientes }};
+        
+        setInterval(function() {
+            fetch("{{ route('admin.configuracion.wa-status') }}")
+                .then(r => r.json())
+                .then(data => {
+                    const pendientes = data.pending_count || 0;
+                    const elText = document.getElementById('notif-wa-text');
+                    const elTitle = document.getElementById('notif-wa-title');
+                    const elIcon = document.getElementById('notif-wa-icon');
+                    const elItem = document.getElementById('notif-wa-item');
+                    
+                    if (elText) {
+                        if (pendientes > 0) {
+                            elText.textContent = 'Enviando recordatorios... Quedan ' + pendientes + ' mensaje(s) pendiente(s).';
+                            if (elIcon) elIcon.className = 'w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0 mt-0.5';
+                            if (elItem) elItem.className = 'p-3.5 hover:bg-slate-50 transition-colors flex items-start gap-3 bg-amber-50/40';
+                        } else {
+                            elText.textContent = 'Se han enviado todos los mensajes pendientes';
+                            if (elIcon) elIcon.className = 'w-8 h-8 rounded-xl bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0 mt-0.5';
+                            if (elItem) elItem.className = 'p-3.5 hover:bg-slate-50 transition-colors flex items-start gap-3';
+                        }
+                    }
+                    
+                    // Si el conteo anterior era > 0 y acaba de terminar (llegó a 0), lanzamos notificación flotante
+                    if (lastPendingWa > 0 && pendientes === 0) {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                toast: true,
+                                position: 'top-end',
+                                icon: 'success',
+                                title: '¡Envíos completados!',
+                                text: 'Se han enviado todos los mensajes pendientes',
+                                showConfirmButton: false,
+                                timer: 5000,
+                                timerProgressBar: true
+                            });
+                        }
+                    }
+                    lastPendingWa = pendientes;
+                })
+                .catch(() => {});
+        }, 4000);
+    });
+</script>

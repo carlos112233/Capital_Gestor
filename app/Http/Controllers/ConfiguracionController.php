@@ -63,14 +63,18 @@ class ConfiguracionController extends Controller
             $realDbName = config('database.connections.pgsql.database');
         }
 
-        // Obtener la lista reciente de mensajes desde la tabla whatsapp_pending_messages
+        // Obtener la lista reciente de mensajes y conteos desde la tabla whatsapp_pending_messages
         try {
             $pendingMessages = DB::table('whatsapp_pending_messages')
                 ->orderBy('created_at', 'desc')
                 ->take(20)
                 ->get();
+            $pendingCount = DB::table('whatsapp_pending_messages')->where('status', 'pendiente')->count();
+            $sentCount = DB::table('whatsapp_pending_messages')->where('status', 'enviado')->count();
         } catch (\Throwable $eMsgs) {
             $pendingMessages = [];
+            $pendingCount = 0;
+            $sentCount = 0;
         }
 
         $responsePayload = [
@@ -83,6 +87,8 @@ class ConfiguracionController extends Controller
             'db_name' => $realDbName,
             'qr_exists' => $qrExists,
             'messages' => $pendingMessages,
+            'pending_count' => $pendingCount,
+            'sent_count' => $sentCount,
             'updated_at' => now()->toIso8601String()
         ];
 
