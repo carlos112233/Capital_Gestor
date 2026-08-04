@@ -347,6 +347,11 @@
 
                 init() {
                     this.fetchStatus();
+                    setInterval(() => {
+                        if (this.status === 'cargando' || (this.status === 'qr_pendiente' && this.qrError)) {
+                            this.fetchStatus();
+                        }
+                    }, 4000);
                 },
 
                 fetchStatus() {
