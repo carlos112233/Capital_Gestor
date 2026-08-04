@@ -394,8 +394,9 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
     console.error('❌ Promesa rechazada no manejada:', reason);
     const detailStr = reason ? (reason.stack || reason.message || String(reason)) : 'Rechazo desconocido';
+    const lowerDetail = detailStr.toLowerCase();
     
-    if (detailStr.includes('The browser is already running') || detailStr.includes('SingletonLock') || detailStr.includes('WS endpoint') || detailStr.includes('Timed out after')) {
+    if (lowerDetail.includes('the browser is already running') || lowerDetail.includes('singletonlock') || lowerDetail.includes('ws endpoint') || lowerDetail.includes('timed out after')) {
         removerLockFiles(path.join(__dirname, '.wwebjs_auth'));
         removerLockFiles(path.join(__dirname, '..', '.wwebjs_auth'));
         removerLockFiles(path.join(__dirname, '..', 'public', '.wwebjs_auth'));
@@ -405,15 +406,21 @@ process.on('unhandledRejection', (reason, promise) => {
         return;
     }
 
-    if (detailStr.includes('timed out') || detailStr.includes('ProtocolError')) {
-        guardarEstado('cargando', 'El servidor está inyectando WhatsApp Web (Tiempo de carga extendido)...');
-    } else {
-        guardarEstado('error', 'Error en promesa asíncrona del motor de WhatsApp.', {
-            error_type: 'Promesa Asíncrona',
-            detail: detailStr,
-            solution_hint: 'Reinicia la sesión con el botón de "Cerrar Sesión & Nuevo QR".'
-        });
+    if (lowerDetail.includes('auth timeout') || lowerDetail.includes('qr read timeout') || lowerDetail.includes('protocolerror')) {
+        removerLockFiles(path.join(__dirname, '.wwebjs_auth'));
+        removerLockFiles(path.join(__dirname, '..', '.wwebjs_auth'));
+        removerLockFiles(path.join(__dirname, '..', 'public', '.wwebjs_auth'));
+        console.log('🔄 Reintento automático por expiración del QR / Auth Timeout...');
+        guardarEstado('cargando', 'Generando automáticamente nuevo código QR (Expiró el tiempo del código anterior)...');
+        setTimeout(() => client.initialize().catch(e => console.error('Error al reinicializar cliente tras auth timeout:', e)), 3000);
+        return;
     }
+
+    guardarEstado('error', 'Error en promesa asíncrona del motor de WhatsApp.', {
+        error_type: 'Promesa Asíncrona',
+        detail: detailStr,
+        solution_hint: 'Reinicia la sesión con el botón de "Cerrar Sesión & Nuevo QR".'
+    });
 });
 
 // 4. BUCLE DE CONSULTA DUAL CADA 5 SEGUNDOS
