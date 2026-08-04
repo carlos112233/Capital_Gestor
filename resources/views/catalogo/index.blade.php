@@ -56,6 +56,7 @@
             </div>
             <form method="POST" action="{{ route('ventas.store') }}">
                 @csrf
+                <input type="hidden" name="redirect_to" value="{{ route('catalogo.index') }}">
                 <input type="hidden" name="articulo_id" id="modal_vender_articulo_id">
 
                 <div class="mb-4">

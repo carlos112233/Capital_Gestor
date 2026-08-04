@@ -122,6 +122,14 @@ class VentaController extends Controller
                     }
                 }
 
+                if ($request->filled('redirect_to')) {
+                    return redirect($request->input('redirect_to'))->with('success', '¡Venta registrada con éxito!');
+                }
+
+                if ($request->header('referer') && str_contains($request->header('referer'), 'catalogo')) {
+                    return redirect()->route('catalogo.index')->with('success', '¡Venta registrada con éxito!');
+                }
+
                 return redirect()->route('ventas.index')->with('success', '¡Venta registrada con éxito!');
             });
         } catch (ValidationException $e) {
