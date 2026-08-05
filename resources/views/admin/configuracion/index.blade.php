@@ -443,36 +443,65 @@
                 },
                 
                 markAsSent(id) {
-                    if (confirm('¿Estás seguro de que deseas marcar este mensaje como enviado manualmente?')) {
-                        fetch('{{ url('admin/configuracion/wa-mark-sent') }}/' + id, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: '¿Marcar como enviado?',
+                            text: 'El mensaje se marcará como enviado manualmente y saldrá de la cola pendiente.',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonColor: '#4f46e5',
+                            cancelButtonColor: '#64748b',
+                            confirmButtonText: 'Sí, marcar',
+                            cancelButtonText: 'Cancelar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                this.processMarkAsSent(id);
                             }
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.success) {
-                                this.fetchStatus();
-                                if (typeof Swal !== 'undefined') {
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: 'Mensaje Marcado',
-                                        text: data.message,
-                                        timer: 2000,
-                                        showConfirmButton: false
-                                    });
-                                }
+                        });
+                    } else {
+                        if (confirm('¿Estás seguro de que deseas marcar este mensaje como enviado manualmente?')) {
+                            this.processMarkAsSent(id);
+                        }
+                    }
+                },
+                
+                processMarkAsSent(id) {
+                    fetch('{{ url('admin/configuracion/wa-mark-sent') }}/' + id, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            this.fetchStatus();
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Mensaje Marcado',
+                                    text: data.message,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            }
+                        } else {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire('Error', data.error, 'error');
                             } else {
                                 alert('Error: ' + data.error);
                             }
-                        })
-                        .catch(err => {
-                            console.log('Error marcando mensaje como enviado:', err);
+                        }
+                    })
+                    .catch(err => {
+                        console.log('Error marcando mensaje como enviado:', err);
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Error', 'Ocurrió un error al procesar la solicitud.', 'error');
+                        } else {
                             alert('Ocurrió un error al procesar la solicitud.');
-                        });
-                    }
+                        }
+                    });
                 }
             }
         }
