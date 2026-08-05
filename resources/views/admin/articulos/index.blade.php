@@ -28,17 +28,17 @@
                     <input id="q" type="text" name="q" value="{{ request('q') }}" placeholder="Buscar artículos por nombre o descripción..."
                         class="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 text-sm font-medium transition-all outline-none bg-white shadow-xs">
                 </div>
-                <form action="{{ route('admin.articulos.bulk-disponible') }}" method="POST" class="whitespace-nowrap flex-shrink-0">
+                <form id="form-bulk-enable" action="{{ route('admin.articulos.bulk-disponible') }}" method="POST" class="whitespace-nowrap flex-shrink-0">
                     @csrf
                     <input type="hidden" name="status" value="1">
-                    <button type="submit" onclick="return confirm('¿Seguro que deseas marcar TODOS los artículos con stock como disponibles?')" class="h-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-sm shadow-sm transition-all duration-200">
+                    <button type="button" onclick="confirmBulkAction('form-bulk-enable', '¿Seguro que deseas marcar TODOS los artículos con stock como disponibles?')" class="h-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-sm shadow-sm transition-all duration-200">
                         Activar Todos
                     </button>
                 </form>
-                <form action="{{ route('admin.articulos.bulk-disponible') }}" method="POST" class="whitespace-nowrap flex-shrink-0">
+                <form id="form-bulk-disable" action="{{ route('admin.articulos.bulk-disponible') }}" method="POST" class="whitespace-nowrap flex-shrink-0">
                     @csrf
                     <input type="hidden" name="status" value="0">
-                    <button type="submit" onclick="return confirm('¿Seguro que deseas marcar TODOS los artículos como NO disponibles?')" class="h-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-sm shadow-sm transition-all duration-200">
+                    <button type="button" onclick="confirmBulkAction('form-bulk-disable', '¿Seguro que deseas marcar TODOS los artículos como NO disponibles?')" class="h-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-sm shadow-sm transition-all duration-200">
                         Desactivar Todos
                     </button>
                 </form>
@@ -92,4 +92,21 @@
                 });
         }, 300);
     });
+
+    function confirmBulkAction(formId, message) {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: message,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#4f46e5',
+            cancelButtonColor: '#ef4444',
+            confirmButtonText: 'Sí, continuar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById(formId).submit();
+            }
+        });
+    }
 </script>
