@@ -67,7 +67,7 @@
                 @if (Auth::user()->hasRole('admin'))
                     <div class="mb-4">
                         <label class="block text-gray-700 font-bold mb-2">Cliente</label>
-                        <select name="cliente_id" id="modal_vender_cliente_id" class="w-full border-gray-300 rounded-lg shadow-sm" required>
+                        <select name="cliente_id" id="modal_vender_cliente_id" class="searchable-select w-full border-gray-300 rounded-lg shadow-sm" required>
                             <option value="" disabled selected>Seleccione un cliente</option>
                             @foreach($clientes as $cliente)
                                 <option value="{{ $cliente->id }}">{{ $cliente->name }}</option>

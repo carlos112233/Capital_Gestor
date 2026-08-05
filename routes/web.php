@@ -46,6 +46,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('clientes', ClienteController::class);
         Route::resource('articulos', ArticuloController::class);
+        Route::post('articulos/{articulo}/toggle-disponible', [ArticuloController::class, 'toggleDisponible'])->name('articulos.toggle');
         Route::resource('entradas', EntradaController::class);
         Route::resource('pedidos', PedidoController::class);
         Route::get('configuracion', [\App\Http\Controllers\ConfiguracionController::class, 'index'])->name('configuracion.index');

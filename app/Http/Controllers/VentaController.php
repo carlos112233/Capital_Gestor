@@ -101,8 +101,12 @@ class VentaController extends Controller
                     ? $validated['cliente_id']
                     : Auth::id();
 
-                // 2. Descontar stock del artículo
+                // 2. Descontar stock del artículo y actualizar disponibilidad
                 $articulo->decrement('stock', $cantidadVenta);
+                if ($articulo->stock <= 0) {
+                    $articulo->disponible = false;
+                    $articulo->save();
+                }
 
                 // 3. Calcular total con base en el precio validado
                 $totalVenta = ((float) $validated['precio_venta']) * $cantidadVenta;
@@ -124,8 +128,10 @@ class VentaController extends Controller
                     }
                 }
 
-                // Enviar alerta instantánea por WhatsApp al Administrador ante nueva compra/venta de artículo
-                Venta::notificarAdminWhatsApp($venta);
+                // Enviar alerta instantánea por WhatsApp al Administrador ante nueva compra/venta de artículo (solo si no es admin)
+                if (!Auth::user()->hasRole('admin')) {
+                    Venta::notificarAdminWhatsApp($venta);
+                }
 
                 if ($request->filled('redirect_to')) {
                     return redirect($request->input('redirect_to'))->with('success', '¡Venta registrada con éxito!');

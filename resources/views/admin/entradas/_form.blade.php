@@ -8,7 +8,7 @@
 
 <div class="mb-4">
     <label for="tipo_pago" class="block text-gray-700 font-bold mb-2">Tipo de Pago</label>
-    <select name="tipo_pago" class="tipo_pago_select w-full border-gray-300 rounded-lg shadow-sm" required>
+    <select name="tipo_pago" class="searchable-select tipo_pago_select w-full border-gray-300 rounded-lg shadow-sm" required>
         <option value="" disabled {{ !isset($entrada->id) && !$esSaldar ? 'selected' : '' }}>Seleccione un tipo</option>
         <option value="1" {{ (isset($entrada->id) && optional($entrada->articulo)->nombre != 'Pago saldado') ? 'selected' : '' }}>Por artículo</option>
         <option value="2" {{ $esSaldar || (isset($entrada->id) && optional($entrada->articulo)->nombre == 'Pago saldado') ? 'selected' : '' }}>Saldar adeudo</option>
@@ -17,7 +17,7 @@
 
 <div class="mb-4">
     <label for="articulo_id" class="block text-gray-700 font-bold mb-2">Artículo</label>
-    <select name="articulo_id" class="articulo_id_select w-full border-gray-300 rounded-lg shadow-sm" required>
+    <select name="articulo_id" class="searchable-select articulo_id_select w-full border-gray-300 rounded-lg shadow-sm" required>
         <option value="" disabled {{ !$esSaldar && !old('articulo_id', $entrada->articulo_id ?? '') ? 'selected' : '' }}>Seleccione un artículo</option>
         @foreach($articulos as $art)
             @php
@@ -46,7 +46,7 @@
 @if (Auth::user()->hasRole('admin'))
 <div class="mb-4">
     <label for="cliente_id" class="block text-gray-700 font-bold mb-2">Cliente</label>
-    <select name="cliente_id" class="cliente_id_select w-full border-gray-300 rounded-lg shadow-sm" required>
+    <select name="cliente_id" class="searchable-select cliente_id_select w-full border-gray-300 rounded-lg shadow-sm" required>
         <option value="" disabled {{ !$esSaldar && old('cliente_id', $entrada->cliente_id ?? $entrada->user_id ?? '') == '' ? 'selected' : '' }}>Seleccione un cliente</option>
         @foreach($users as $cliente)
             <option value="{{ $cliente->id }}" 

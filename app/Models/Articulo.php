@@ -17,6 +17,11 @@ class Articulo extends Model
         'stock',
         'img_base64',
         'img_tipo',
+        'disponible',
+    ];
+
+    protected $casts = [
+        'disponible' => 'boolean',
     ];
 
     protected $hidden = [

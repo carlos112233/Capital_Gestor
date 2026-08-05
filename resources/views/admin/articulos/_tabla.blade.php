@@ -6,6 +6,8 @@
                                 </th>
                                  <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Stock
                                 </th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Disponible
+                                </th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Precio
                                     Unitario</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Acciones
@@ -26,6 +28,12 @@
                                             <td
                                             class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-gray-900">
                                             {{ $articulo->stock }}</td>
+                                        <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium">
+                                            <button type="button" onclick="toggleDisponibilidad({{ $articulo->id }}, this)"
+                                                class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full cursor-pointer transition-colors duration-200 {{ $articulo->disponible ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-red-100 text-red-800 hover:bg-red-200' }}">
+                                                {{ $articulo->disponible ? 'Sí (Ocultar)' : 'No (Mostrar)' }}
+                                            </button>
+                                        </td>
                                         <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">$
                                             {{ number_format($articulo->precio, 2) }} MXN.</td>
                                         <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium">
@@ -71,3 +79,39 @@
                             @endforelse
                         </tbody>
                     </table>
+
+<script>
+function toggleDisponibilidad(id, btn) {
+    const originalText = btn.innerText;
+    btn.innerText = '...';
+    btn.disabled = true;
+
+    fetch(`/admin/articulos/${id}/toggle-disponible`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            if(data.disponible) {
+                btn.className = 'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full cursor-pointer transition-colors duration-200 bg-green-100 text-green-800 hover:bg-green-200';
+                btn.innerText = 'Sí (Ocultar)';
+            } else {
+                btn.className = 'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full cursor-pointer transition-colors duration-200 bg-red-100 text-red-800 hover:bg-red-200';
+                btn.innerText = 'No (Mostrar)';
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        btn.innerText = originalText;
+    })
+    .finally(() => {
+        btn.disabled = false;
+    });
+}
+</script>

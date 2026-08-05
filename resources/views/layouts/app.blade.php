@@ -167,6 +167,18 @@
                         .catch(err => console.log('Error registrando SW:', err));
                 });
             }
+
+            // Inicialización Global de TomSelect para todos los selects con clase .searchable-select
+            document.addEventListener('DOMContentLoaded', function() {
+                document.querySelectorAll('.searchable-select').forEach(function(select) {
+                    if (!select.tomselect) {
+                        new TomSelect(select, {
+                            create: false,
+                            placeholder: select.getAttribute('placeholder') || "Buscar opción..."
+                        });
+                    }
+                });
+            });
         </script>
     </body>
 </html>

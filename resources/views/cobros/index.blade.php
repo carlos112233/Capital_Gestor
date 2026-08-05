@@ -205,7 +205,7 @@
                 @csrf
                 <div>
                     <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Cliente / Usuario</label>
-                    <select name="cliente_id" class="w-full border-slate-300 rounded-xl p-2.5 text-sm" required>
+                    <select name="cliente_id" class="searchable-select w-full border-slate-300 rounded-xl p-2.5 text-sm" required>
                         @foreach(App\Models\User::orderBy('name')->get() as $user)
                             <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
                         @endforeach
@@ -213,7 +213,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Artículo / Concepto</label>
-                    <select name="articulo_id" class="w-full border-slate-300 rounded-xl p-2.5 text-sm" required>
+                    <select name="articulo_id" class="searchable-select w-full border-slate-300 rounded-xl p-2.5 text-sm" required>
                         @foreach(App\Models\Articulo::comerciales()->orderBy('nombre')->get() as $art)
                             <option value="{{ $art->id }}">{{ $art->nombre }} - ${{ number_format($art->precio, 2) }}</option>
                         @endforeach

@@ -55,7 +55,11 @@ class ArticuloController extends Controller
             'img_base64' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-
+        if (isset($validated['stock']) && $validated['stock'] > 0) {
+            $validated['disponible'] = true;
+        } else {
+            $validated['disponible'] = false;
+        }
 
         Articulo::create($validated);
 
@@ -90,6 +94,14 @@ class ArticuloController extends Controller
             $articulo->imagen_tipo = $request->file('img_base64')->getMimeType();
         }
 
+        if (isset($validated['stock'])) {
+            if ($validated['stock'] > 0) {
+                $validated['disponible'] = true;
+            } else {
+                $validated['disponible'] = false;
+            }
+        }
+
         $articulo->update($validated);
 
         return redirect()->route('admin.articulos.index')
@@ -101,5 +113,16 @@ class ArticuloController extends Controller
         $articulo->delete();
         return redirect()->route('admin.articulos.index')
             ->with('success', 'Artículo eliminado con éxito.');
+    }
+
+    public function toggleDisponible(Articulo $articulo)
+    {
+        $articulo->disponible = !$articulo->disponible;
+        $articulo->save();
+
+        return response()->json([
+            'success' => true,
+            'disponible' => $articulo->disponible
+        ]);
     }
 }
