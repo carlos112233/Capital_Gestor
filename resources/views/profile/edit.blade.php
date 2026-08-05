@@ -36,4 +36,35 @@
             </div>
         </div>
     </div>
+
+    <!-- SweetAlert2 Scripts for Profile Status -->
+    @if (session('status') === 'profile-updated')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                Swal.fire({
+                    title: '¡Perfil Actualizado!',
+                    text: 'Tu información personal se ha guardado correctamente.',
+                    icon: 'success',
+                    confirmButtonColor: '#4f46e5',
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+            });
+        </script>
+    @endif
+
+    @if (session('status') === 'password-updated')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                Swal.fire({
+                    title: '¡Contraseña Actualizada!',
+                    text: 'Tu contraseña se ha cambiado de forma segura.',
+                    icon: 'success',
+                    confirmButtonColor: '#4f46e5',
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+            });
+        </script>
+    @endif
 </x-app-layout>
