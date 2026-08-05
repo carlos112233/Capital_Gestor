@@ -28,23 +28,23 @@
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $r->nombre }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right">
                                             @if($r->saldo_corte_anterior > 0)
-                                                <span class="text-red-600 font-bold">-${{ number_format($r->saldo_corte_anterior, 2) }}</span>
+                                                <span class="text-red-600 font-bold">${{ number_format($r->saldo_corte_anterior, 2) }}</span>
                                             @else
                                                 <span class="text-gray-400">$0.00</span>
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right">
                                             @if($r->saldo_corte_actual > 0)
-                                                <span class="text-gray-700">-${{ number_format($r->saldo_corte_actual, 2) }}</span>
+                                                <span class="text-gray-700">${{ number_format($r->saldo_corte_actual, 2) }}</span>
                                             @else
                                                 <span class="text-gray-400">$0.00</span>
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right">
                                             @if($r->saldo >= 0)
-                                                <span class="text-green-600 font-bold">+${{ number_format($r->saldo, 2) }}</span>
+                                                <span class="text-green-600 font-bold">${{ number_format($r->saldo, 2) }}</span>
                                             @else
-                                                <span class="text-red-600 font-bold">-${{ number_format(abs($r->saldo), 2) }}</span>
+                                                <span class="text-red-600 font-bold">${{ number_format(abs($r->saldo), 2) }}</span>
                                             @endif
                                         </td>
                                     </tr>
