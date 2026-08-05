@@ -85,7 +85,15 @@
             <form method="GET" action="{{ route('feedback.index') }}" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-wrap gap-4 items-center justify-between">
                 <div class="flex flex-wrap gap-3 flex-1">
                     <div class="flex-1 min-w-[200px]">
-                        <input type="text" name="q" value="{{ request('q') }}" placeholder="Buscar por asunto, mensaje o usuario..." class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                        <div class="relative z-0 w-full group">
+    <input type="text" name="q" id="search_q" value="{{ request('q') }}" class="block py-2.5 px-0 w-full text-sm text-slate-800 bg-transparent border-0 border-b-2 border-slate-300 appearance-none focus:outline-none focus:ring-0 focus:border-indigo-600 peer" placeholder=" " autocomplete="off" />
+    <label for="search_q" class="peer-focus:font-medium absolute text-sm text-slate-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 rtl:peer-focus:translate-x-1/4 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6 flex items-center gap-2 cursor-text">
+        <svg class="w-4 h-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        Buscar por asunto, mensaje o usuario...
+    </label>
+</div>
                     </div>
                     <div>
                         <select name="estatus" class="border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
