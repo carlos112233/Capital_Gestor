@@ -125,7 +125,31 @@ class EntradaController extends Controller
             $data['cliente_id'] = $clienteId;
         }
 
-        Entrada::create($data);
+        $entrada = Entrada::create($data);
+
+        // Enviar notificación de WhatsApp si es admin y se le registró a un cliente
+        if (Auth::user()->hasRole('admin') && $clienteId != Auth::id()) {
+            $cliente = User::find($clienteId);
+            if ($cliente && !empty($cliente->telefono)) {
+                try {
+                    $num = preg_replace('/[^0-9]/', '', $cliente->telefono);
+                    $telCliente = (strlen($num) == 10) ? '521' . $num : $num;
+                    $totalFormatted = number_format($entrada->precio_venta, 2);
+                    $mensajeWa = "💰 ¡Hola {$cliente->name}! Se ha registrado tu Pago por la cantidad de \${$totalFormatted}. ¡Gracias por tu compra!";
+
+                    \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                        'numero'     => $telCliente,
+                        'mensaje'    => $mensajeWa,
+                        'status'     => 'pendiente',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    \Illuminate\Support\Facades\Log::info("Notificación WhatsApp de Pago (Entrada #{$entrada->id}) encolada para cliente: {$telCliente}");
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("Error encolando WhatsApp de Entrada #{$entrada->id}: " . $e->getMessage());
+                }
+            }
+        }
 
         // 4. Redireccionar
         return redirect()->route('admin.entradas.index')
