@@ -20,9 +20,9 @@ class ClienteController extends Controller
                 $search = '%' . strtolower($request->q) . '%';
                 // Buscamos por nombre, email o el nuevo campo telefono
                 $query->where(function($q) use ($search) {
-                    $q->where('name', 'ilike', $search)
-                      ->orWhere('email', 'ilike', $search)
-                      ->orWhere('telefono', 'ilike', $search);
+                    $q->where('name', 'like', $search)
+                      ->orWhere('email', 'like', $search)
+                      ->orWhere('telefono', 'like', $search);
                 });
             }, function ($query) {
                 // Si no hay búsqueda, no mostramos ningún registro
