@@ -24,6 +24,9 @@ class ClienteController extends Controller
                       ->orWhere('email', 'ilike', $search)
                       ->orWhere('telefono', 'ilike', $search);
                 });
+            }, function ($query) {
+                // Si no hay búsqueda, no mostramos ningún registro
+                $query->whereRaw('1 = 0');
             })
             ->orderBy('name', 'asc')
             ->paginate(10) // Laravel hace el trabajo sucio por ti
