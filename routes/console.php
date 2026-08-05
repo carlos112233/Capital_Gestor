@@ -8,5 +8,5 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// --- AÑADE ESTA LÍNEA ---
 Schedule::command('sanctum:prune-expired --hours=2')->daily();
+Schedule::command('db:backup')->dailyAt('00:00');

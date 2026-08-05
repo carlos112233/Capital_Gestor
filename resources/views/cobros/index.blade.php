@@ -17,10 +17,15 @@
         </div>
     </div>
 
-    <!-- Tarjetas de Métricas KPI (4 Indicadores de la Imagen) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    @php
+        $isAdminUser = Auth::user() && Auth::user()->hasRole('admin');
+    @endphp
+
+    <!-- Tarjetas de Métricas KPI -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 {{ $isAdminUser ? 'lg:grid-cols-4' : 'lg:grid-cols-3' }} gap-4 mb-6">
         
-        <!-- KPI 1: Total Cobrado -->
+        @if($isAdminUser)
+        <!-- KPI 1: Total Cobrado (Solo Admin) -->
         <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
             <div>
                 <span class="text-[11px] font-bold tracking-wider text-slate-400 uppercase block mb-1">TOTAL COBRADO</span>
@@ -35,6 +40,7 @@
                 </svg>
             </div>
         </div>
+        @endif
 
         <!-- KPI 2: Cobros de este Mes -->
         <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">

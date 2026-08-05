@@ -20,13 +20,18 @@ class CobroController extends Controller
         $user = \Illuminate\Support\Facades\Auth::user();
         $isAdmin = $user && $user->hasRole('admin');
 
-        // Optimización de velocidad para la tabla: cargar transacciones de los últimos 30 días
-        $rangoFecha = \Carbon\Carbon::now()->subDays(30);
+        // Para Admin: transacciones de los últimos 30 días
+        // Para usuario estándar: pagos del mes en curso y cobros pendientes sin límite
+        $rangoFechaAdmin = \Carbon\Carbon::now()->subDays(30);
+        $inicioMes = \Carbon\Carbon::now()->startOfMonth();
 
         // 1. Obtener Ventas (Son cobros realizados / confirmados)
-        $ventasQuery = Venta::with(['user:id,name,email', 'articulo:id,nombre'])->where('created_at', '>=', $rangoFecha)->latest();
-        if (!$isAdmin) {
-            $ventasQuery->where('user_id', $user->id);
+        $ventasQuery = Venta::with(['user:id,name,email', 'articulo:id,nombre'])->latest();
+        if ($isAdmin) {
+            $ventasQuery->where('created_at', '>=', $rangoFechaAdmin);
+        } else {
+            $ventasQuery->where('user_id', $user->id)
+                        ->where('created_at', '>=', $inicioMes);
         }
         if ($search) {
             $searchLower = '%' . strtolower($search) . '%';
@@ -52,13 +57,13 @@ class CobroController extends Controller
         });
 
         // 2. Obtener Entradas de Capital (Pagos/Abonos recibidos)
-        $entradasQuery = Entrada::with(['user:id,name,email', 'articulo:id,nombre'])
-            ->where('created_at', '>=', $rangoFecha)
-            ->latest();
-        if (!$isAdmin) {
+        $entradasQuery = Entrada::with(['user:id,name,email', 'articulo:id,nombre'])->latest();
+        if ($isAdmin) {
+            $entradasQuery->where('created_at', '>=', $rangoFechaAdmin);
+        } else {
             $entradasQuery->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)->orWhere('cliente_id', $user->id);
-            });
+            })->where('created_at', '>=', $inicioMes);
         }
         if ($search) {
             $searchLower = '%' . strtolower($search) . '%';
@@ -84,9 +89,15 @@ class CobroController extends Controller
         });
 
         // 3. Obtener Pedidos (Pueden estar Pagados si tienen venta_id, o Pendientes si no)
-        $pedidosQuery = Pedido::with(['user:id,name,email', 'articulo:id,nombre', 'venta:id'])->where('created_at', '>=', $rangoFecha)->latest();
-        if (!$isAdmin) {
-            $pedidosQuery->where('user_id', $user->id);
+        $pedidosQuery = Pedido::with(['user:id,name,email', 'articulo:id,nombre', 'venta:id'])->latest();
+        if ($isAdmin) {
+            $pedidosQuery->where('created_at', '>=', $rangoFechaAdmin);
+        } else {
+            $pedidosQuery->where('user_id', $user->id)
+                ->where(function ($query) use ($inicioMes) {
+                    $query->whereNull('venta_id') // Cobros pendientes sin límite de fecha
+                          ->orWhere('created_at', '>=', $inicioMes); // O pagados en el mes en curso
+                });
         }
         if ($search) {
             $searchLower = '%' . strtolower($search) . '%';
