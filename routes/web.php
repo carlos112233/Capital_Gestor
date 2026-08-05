@@ -45,6 +45,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('clientes', ClienteController::class);
+        Route::post('clientes/{cliente}/activar', [ClienteController::class, 'activar'])->name('clientes.activar');
         Route::resource('articulos', ArticuloController::class);
         Route::post('articulos/bulk-disponible', [ArticuloController::class, 'bulkDisponible'])->name('articulos.bulk-disponible');
         Route::post('articulos/{articulo}/toggle-disponible', [ArticuloController::class, 'toggleDisponible'])->name('articulos.toggle');

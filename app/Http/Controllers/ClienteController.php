@@ -15,7 +15,7 @@ class ClienteController extends Controller
     public function index(Request $request)
     {
         // 1. Optimización: Paginamos directamente en la base de datos (PostgreSQL)
-        $clientes = User::query()
+        $clientes = User::withTrashed()
             ->when($request->filled('q'), function ($query) use ($request) {
                 $search = '%' . strtolower($request->q) . '%';
                 // Buscamos por nombre, email o el nuevo campo telefono
@@ -109,10 +109,19 @@ class ClienteController extends Controller
             ->with('success', 'Usuario actualizado correctamente.');
     }
 
-    public function destroy(User $cliente)
+    public function destroy($id)
     {
+        $cliente = User::withTrashed()->findOrFail($id);
         $cliente->delete();
         return redirect()->route('admin.clientes.index')
-            ->with('success', 'Usuario eliminado correctamente.');
+            ->with('success', 'Usuario dado de baja (eliminado lógicamente) correctamente.');
+    }
+
+    public function activar($id)
+    {
+        $cliente = User::withTrashed()->findOrFail($id);
+        $cliente->restore();
+        return redirect()->route('admin.clientes.index')
+            ->with('success', 'Usuario reactivado correctamente.');
     }
 }

@@ -24,9 +24,9 @@ class Feedback extends Model
         'estatus',
     ];
 
-    public function user(): BelongsTo
+    public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     public function mensajes(): HasMany

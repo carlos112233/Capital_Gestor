@@ -14,7 +14,13 @@
                 <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                     {{ $cliente->id }}</td>
                 <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
-                    {{ $cliente->name }}</td>
+                    {{ $cliente->name }}
+                    @if($cliente->trashed())
+                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                            Inactivo
+                        </span>
+                    @endif
+                </td>
                     <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                     {{ $cliente->telefono }}</td>
                 <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-gray-900">
@@ -28,16 +34,28 @@
                         Editar
                     </button>
 
-                    {{-- Botón Eliminar con SweetAlert2 --}}
-                    <form id="delete-cliente-{{ $cliente->id }}" class="inline-block ml-4"
-                        action="{{ route('admin.clientes.destroy', $cliente) }}" method="POST"
-                        onsubmit="return confirmDelete(this, 'este cliente');">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="text-red-600 hover:text-red-900 font-semibold cursor-pointer">
-                            Eliminar
-                        </button>
-                    </form>
+                    @if($cliente->trashed())
+                        {{-- Botón Activar --}}
+                        <form id="activate-cliente-{{ $cliente->id }}" class="inline-block ml-4"
+                            action="{{ route('admin.clientes.activar', $cliente->id) }}" method="POST"
+                            onsubmit="return confirmDelete(this, 'este cliente (reactivarlo)');">
+                            @csrf
+                            <button type="submit" class="text-green-600 hover:text-green-900 font-semibold cursor-pointer">
+                                Activar
+                            </button>
+                        </form>
+                    @else
+                        {{-- Botón Eliminar con SweetAlert2 --}}
+                        <form id="delete-cliente-{{ $cliente->id }}" class="inline-block ml-4"
+                            action="{{ route('admin.clientes.destroy', $cliente->id) }}" method="POST"
+                            onsubmit="return confirmDelete(this, 'este cliente');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-red-600 hover:text-red-900 font-semibold cursor-pointer">
+                                Dar de Baja
+                            </button>
+                        </form>
+                    @endif
 
                     <!-- Modal Editar Cliente -->
                     <x-modal name="edit-cliente-{{ $cliente->id }}">

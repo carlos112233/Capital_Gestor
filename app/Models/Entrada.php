@@ -19,14 +19,14 @@ class Entrada extends Model
         'fecha_generado',
     ];
 
-    public function user(): BelongsTo
+    public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
-    public function cliente(): BelongsTo
+    public function cliente()
     {
-        return $this->belongsTo(User::class, 'cliente_id');
+        return $this->belongsTo(User::class, 'cliente_id')->withTrashed();
     }
 
      public function articulo(): BelongsTo
