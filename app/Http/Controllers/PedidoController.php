@@ -39,7 +39,11 @@ class PedidoController extends Controller
 
         $pedidos = $query->paginate(25)->withQueryString();
         // Cargar únicamente columnas necesarias para el select del modal (reduce uso de memoria y acelera la consulta SQL)
-        $articulos = Articulo::select('id', 'nombre', 'precio')->orderBy('nombre', 'asc')->get();
+        $query = Articulo::select('id', 'nombre', 'precio')->orderBy('nombre', 'asc');
+        if (!Auth::user()->hasRole('admin')) {
+            $query->where('disponible', true);
+        }
+        $articulos = $query->get();
         $users = User::select('id', 'name')->orderBy('name', 'asc')->get();
 
         return view('pedidos.index', compact('pedidos', 'articulos', 'users'));
