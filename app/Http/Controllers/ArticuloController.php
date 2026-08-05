@@ -125,4 +125,19 @@ class ArticuloController extends Controller
             'disponible' => $articulo->disponible
         ]);
     }
+
+    public function bulkDisponible(Request $request)
+    {
+        $status = $request->input('status') == 1;
+
+        if ($status) {
+            Articulo::where('stock', '>', 0)->update(['disponible' => true]);
+            $mensaje = 'Se habilitaron todos los artículos con stock disponible.';
+        } else {
+            Articulo::query()->update(['disponible' => false]);
+            $mensaje = 'Se deshabilitaron todos los artículos.';
+        }
+
+        return back()->with('success', $mensaje);
+    }
 }
