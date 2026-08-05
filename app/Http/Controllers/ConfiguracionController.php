@@ -193,4 +193,22 @@ class ConfiguracionController extends Controller
             return redirect()->back()->with('error', 'Error eliminando la sesión de WhatsApp: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Marcar un mensaje pendiente como enviado manualmente
+     */
+    public function markMessageAsSent($id)
+    {
+        try {
+            DB::table('whatsapp_pending_messages')
+                ->where('id', $id)
+                ->update([
+                    'status' => 'enviado',
+                    'updated_at' => now(),
+                ]);
+            return response()->json(['success' => true, 'message' => 'Mensaje marcado como enviado correctamente.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
 }

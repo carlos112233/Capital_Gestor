@@ -248,10 +248,15 @@
                                 </td>
                                 <td class="py-3 px-4 whitespace-nowrap">
                                     <template x-if="msg.status === 'pendiente'">
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[11px]">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                                            Pendiente
-                                        </span>
+                                        <div class="flex items-center gap-2">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[11px]">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                                Pendiente
+                                            </span>
+                                            <button type="button" @click="markAsSent(msg.id)" title="Marcar como enviado manualmente" class="p-1 rounded-md bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 transition-colors cursor-pointer shadow-sm">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                            </button>
+                                        </div>
                                     </template>
                                     <template x-if="msg.status === 'enviado'">
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px]">
@@ -434,6 +439,39 @@
                         if (confirm('¿Deseas borrar la sesión de WhatsApp y generar un nuevo código QR?')) {
                             document.getElementById('wa-reset-form').submit();
                         }
+                    }
+                },
+                
+                markAsSent(id) {
+                    if (confirm('¿Estás seguro de que deseas marcar este mensaje como enviado manualmente?')) {
+                        fetch('{{ url('admin/configuracion/wa-mark-sent') }}/' + id, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            }
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                this.fetchStatus();
+                                if (typeof Swal !== 'undefined') {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Mensaje Marcado',
+                                        text: data.message,
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    });
+                                }
+                            } else {
+                                alert('Error: ' + data.error);
+                            }
+                        })
+                        .catch(err => {
+                            console.log('Error marcando mensaje como enviado:', err);
+                            alert('Ocurrió un error al procesar la solicitud.');
+                        });
                     }
                 }
             }
