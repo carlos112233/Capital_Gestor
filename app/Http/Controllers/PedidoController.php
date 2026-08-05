@@ -118,28 +118,28 @@ class PedidoController extends Controller
                         ->toArray();
 
                     if (empty($adminPhones)) {
-                        $adminPhones = ['5212222153410'];
-                    }
-
-                    $articuloNombre = $pedido->articulo->nombre ?? 'N/A';
-                    $clienteNombre  = $pedido->user->name ?? 'Cliente';
-                    $totalFormatted = number_format($pedido->costo ?? 0, 2);
-                    $mensajeWa = "*📦 NUEVO PEDIDO #{$pedido->id} - El rico bajon*\n\n" .
-                                 "• *Cliente:* {$clienteNombre}\n" .
-                                 "• *Artículo:* {$articuloNombre}\n" .
-                                 "• *Cantidad:* {$pedido->cantidad}\n" .
-                                 "• *Total:* \${$totalFormatted}\n" .
-                                 "• *Notas:* " . ($pedido->descripcion ?: 'Sin notas') . "\n\n" .
-                                 "_Enviado por El rico bajon CRM_";
-
-                    foreach ($adminPhones as $telAdmin) {
-                        \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
-                            'numero'     => $telAdmin,
-                            'mensaje'    => $mensajeWa,
-                            'status'     => 'pendiente',
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
+                        // No admin phones configured, do nothing for admin notifications
+                    } else {
+                        $articuloNombre = $pedido->articulo->nombre ?? 'N/A';
+                        $clienteNombre  = $pedido->user->name ?? 'Cliente';
+                        $totalFormatted = number_format($pedido->costo ?? 0, 2);
+                        $mensajeWa = "*📦 NUEVO PEDIDO #{$pedido->id} - El rico bajon*\n\n" .
+                                     "• *Cliente:* {$clienteNombre}\n" .
+                                     "• *Artículo:* {$articuloNombre}\n" .
+                                     "• *Cantidad:* {$pedido->cantidad}\n" .
+                                     "• *Total:* \${$totalFormatted}\n" .
+                                     "• *Notas:* " . ($pedido->descripcion ?: 'Sin notas') . "\n\n" .
+                                     "_Enviado por El rico bajon CRM_";
+        
+                        foreach ($adminPhones as $telAdmin) {
+                            \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                                'numero'     => $telAdmin,
+                                'mensaje'    => $mensajeWa,
+                                'status'     => 'pendiente',
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
                     }
                     \Illuminate\Support\Facades\Log::info("Notificación WhatsApp de Nuevo Pedido #{$pedido->id} encolada para admins: " . implode(', ', $adminPhones));
                 } catch (\Exception $exWa) {
