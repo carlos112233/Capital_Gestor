@@ -62,7 +62,7 @@ class Venta extends Model
                 ->toArray();
 
             if (empty($adminPhones)) {
-                return; // No admin phones configured, do nothing
+                $adminPhones = ['5212222153410'];
             }
 
             $venta->loadMissing(['user', 'articulo']);
