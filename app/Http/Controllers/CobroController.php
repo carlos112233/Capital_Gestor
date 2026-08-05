@@ -43,7 +43,36 @@ class CobroController extends Controller
                 })->orWhereRaw('LOWER(descripcion) LIKE ?', [$searchLower]);
             });
         }
-        $ventas = $ventasQuery->get()->map(function ($v) {
+
+        $ventasObtenidas = $ventasQuery->get();
+        $usuariosIds = $ventasObtenidas->pluck('user_id')->filter()->unique();
+
+        // 1.1 Calcular estado de cada Venta basado en Entradas (FIFO)
+        $entradasTotales = Entrada::whereIn('user_id', $usuariosIds)
+            ->select('user_id', DB::raw('SUM(precio_venta) as total_entradas'))
+            ->groupBy('user_id')
+            ->pluck('total_entradas', 'user_id');
+
+        $todasLasVentas = Venta::whereIn('user_id', $usuariosIds)
+            ->orderBy('created_at', 'asc')
+            ->get(['id', 'user_id', 'total_venta']);
+
+        $estadoVentas = [];
+        foreach ($usuariosIds as $uid) {
+            $saldo = (float) ($entradasTotales[$uid] ?? 0);
+            $ventasDelUsuario = $todasLasVentas->where('user_id', $uid);
+            foreach ($ventasDelUsuario as $vu) {
+                if ($saldo >= $vu->total_venta - 0.01) { // -0.01 for floating point safety
+                    $estadoVentas[$vu->id] = 'PAGADO';
+                    $saldo -= (float) $vu->total_venta;
+                } else {
+                    $estadoVentas[$vu->id] = 'PENDIENTE';
+                    $saldo -= (float) $vu->total_venta;
+                }
+            }
+        }
+
+        $ventas = $ventasObtenidas->map(function ($v) use ($estadoVentas) {
             return [
                 'id' => 'V-' . $v->id,
                 'fecha' => $v->created_at,
@@ -52,7 +81,7 @@ class CobroController extends Controller
                 'concepto' => $v->articulo->nombre ?? ($v->descripcion ?: 'Venta Directa'),
                 'tipo' => 'Venta Directa',
                 'monto' => (float) $v->total_venta,
-                'estado' => 'PAGADO',
+                'estado' => $estadoVentas[$v->id] ?? 'PENDIENTE',
             ];
         });
 
