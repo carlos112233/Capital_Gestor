@@ -26,6 +26,14 @@ class ComprobanteController extends Controller
         $notasAdicionales = "";
 
         try {
+            if (!class_exists('\Google\Cloud\Vision\V1\ImageAnnotatorClient')) {
+                throw new \Exception("La librería de Google Vision no está instalada en este servidor.");
+            }
+            if (!env('GOOGLE_APPLICATION_CREDENTIALS') || !file_exists(base_path(env('GOOGLE_APPLICATION_CREDENTIALS')))) {
+                // Si falta la key json
+                throw new \Exception("Falta el archivo de credenciales de Google Vision (google-credentials.json).");
+            }
+
             // Inicializar cliente de Google Vision
             $imageAnnotator = new \Google\Cloud\Vision\V1\ImageAnnotatorClient();
 
@@ -78,9 +86,9 @@ class ComprobanteController extends Controller
             }
 
             $imageAnnotator->close();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Log::error('Error de Google Vision: ' . $e->getMessage());
-            $notasAdicionales = "\n[⚠️ Error interno de IA al verificar]";
+            $notasAdicionales = "\n[⚠️ IA fuera de línea o sin configurar. Revisión manual requerida.]";
         }
 
         // Concatenar notas del usuario con las notas del sistema
