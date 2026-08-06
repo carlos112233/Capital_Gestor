@@ -106,7 +106,7 @@ class PedidoController extends Controller
                     $adminPhones = \Illuminate\Support\Facades\DB::table('users')
                         ->join('role_user', 'users.id', '=', 'role_user.user_id')
                         ->join('roles', 'role_user.role_id', '=', 'roles.id')
-                        ->where('roles.name', 'admin')
+                        ->whereIn('roles.name', ['admin', 'cocina'])
                         ->whereNotNull('users.telefono')
                         ->where('users.telefono', '!=', '')
                         ->pluck('users.telefono')
