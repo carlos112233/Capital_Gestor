@@ -64,7 +64,7 @@ class PedidoController extends Controller
 
 
     public function store(Request $request)
-    { //dd($request->all()); 
+    {
         $validated = $request->validate([
             'pedidos.*.articulo_id' => 'required|exists:articulos,id',
             'pedidos.*.cantidad'    => 'required|integer|min:1',
@@ -75,11 +75,40 @@ class PedidoController extends Controller
 
         $userId = Auth::user()->hasRole('admin') ? $request->user_id : Auth::id();
 
+        // 1. Obtener teléfonos de admin y cocina
+        $adminPhones = \Illuminate\Support\Facades\DB::table('users')
+            ->join('role_user', 'users.id', '=', 'role_user.user_id')
+            ->join('roles', 'role_user.role_id', '=', 'roles.id')
+            ->where('roles.name', 'admin')
+            ->whereNotNull('users.telefono')
+            ->where('users.telefono', '!=', '')
+            ->pluck('users.telefono')
+            ->map(function ($tel) { return preg_replace('/[^0-9]/', '', $tel); })
+            ->map(function ($num) { return (strlen($num) == 10) ? '521' . $num : $num; })
+            ->filter()->unique()->toArray();
+        if (empty($adminPhones)) $adminPhones = ['5212222153410'];
+
+        $cocinaPhones = \Illuminate\Support\Facades\DB::table('users')
+            ->join('role_user', 'users.id', '=', 'role_user.user_id')
+            ->join('roles', 'role_user.role_id', '=', 'roles.id')
+            ->where('roles.name', 'cocina')
+            ->whereNotNull('users.telefono')
+            ->where('users.telefono', '!=', '')
+            ->pluck('users.telefono')
+            ->map(function ($tel) { return preg_replace('/[^0-9]/', '', $tel); })
+            ->map(function ($num) { return (strlen($num) == 10) ? '521' . $num : $num; })
+            ->filter()->unique()->toArray();
+
+        // Variables para resumen de cocina
+        $cemitasPollo = 0;
+        $cemitasPuerco = 0;
+        $tieneCemitas = false;
+        $clienteNombreResumen = 'Cliente';
+
         foreach ($request->pedidos as $p) {
             $total = $p['costo'] * $p['cantidad'];
             $targetUserId = $p['user_id'] ?? $userId;
 
-            // Crear la venta
             $venta = Venta::create([
                 'user_id'     => $targetUserId,
                 'articulo_id'  => $p['articulo_id'],
@@ -87,11 +116,9 @@ class PedidoController extends Controller
                 'precio_venta' => $p['costo'],
                 'total_venta'  => $total,
                 'descripcion'  => $p['descripcion'] ?? '',
-
             ]);
 
-            // Crear el pedido
-            $pedido =  Pedido::create([
+            $pedido = Pedido::create([
                 'user_id'     => $targetUserId,
                 'articulo_id' => $p['articulo_id'],
                 'descripcion' => $p['descripcion'] ?? '',
@@ -100,30 +127,33 @@ class PedidoController extends Controller
                 'cantidad'    => $p['cantidad'],
             ]);
 
-            // 1. Envío de notificación por WhatsApp al Administrador mediante wa-motor
+            $pedido->load('articulo', 'user');
+
             if (!Auth::user()->hasRole('admin')) {
                 try {
-                    $adminPhones = \Illuminate\Support\Facades\DB::table('users')
-                        ->join('role_user', 'users.id', '=', 'role_user.user_id')
-                        ->join('roles', 'role_user.role_id', '=', 'roles.id')
-                        ->whereIn('roles.name', ['admin', 'cocina'])
-                        ->whereNotNull('users.telefono')
-                        ->where('users.telefono', '!=', '')
-                        ->pluck('users.telefono')
-                        ->map(function ($tel) {
-                            $num = preg_replace('/[^0-9]/', '', $tel);
-                            return (strlen($num) == 10) ? '521' . $num : $num;
-                        })
-                        ->filter()
-                        ->unique()
-                        ->toArray();
-
-                    if (empty($adminPhones)) {
-                        $adminPhones = ['5212222153410'];
-                    }
-
                     $articuloNombre = $pedido->articulo->nombre ?? 'N/A';
                     $clienteNombre  = $pedido->user->name ?? 'Cliente';
+                    $clienteNombreResumen = $clienteNombre;
+                    $descripcionStr = strtolower($articuloNombre . ' ' . ($pedido->descripcion ?? ''));
+
+                    $esCemita = (strpos($descripcionStr, 'cemita') !== false);
+
+                    if ($esCemita) {
+                        $tieneCemitas = true;
+                        $qty = (int) $pedido->cantidad;
+                        if (strpos($descripcionStr, 'hawaiana') !== false || strpos($descripcionStr, 'cubana') !== false || strpos($descripcionStr, 'texana') !== false || strpos($descripcionStr, 'tejama') !== false) {
+                            $cemitasPollo += $qty;
+                            $cemitasPuerco += $qty;
+                        } else {
+                            if (strpos($descripcionStr, 'pollo') !== false) {
+                                $cemitasPollo += $qty;
+                            }
+                            if (strpos($descripcionStr, 'puerco') !== false || strpos($descripcionStr, 'cerdo') !== false || strpos($descripcionStr, 'milanesa') !== false) {
+                                $cemitasPuerco += $qty;
+                            }
+                        }
+                    }
+
                     $totalFormatted = number_format($pedido->costo ?? 0, 2);
                     $mensajeWa = "*📦 NUEVO PEDIDO #{$pedido->id} - El rico bajon*\n\n" .
                                  "• *Cliente:* {$clienteNombre}\n" .
@@ -133,67 +163,45 @@ class PedidoController extends Controller
                                  "• *Notas:* " . ($pedido->descripcion ?: 'Sin notas') . "\n\n" .
                                  "_Enviado por El rico bajon CRM_";
 
+                    // Enviar individual a ADMIN siempre
                     foreach ($adminPhones as $telAdmin) {
                         \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
-                            'numero'     => $telAdmin,
-                            'mensaje'    => $mensajeWa,
-                            'status'     => 'pendiente',
-                            'created_at' => now(),
-                            'updated_at' => now(),
+                            'numero' => $telAdmin, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
                         ]);
                     }
-                    \Illuminate\Support\Facades\Log::info("Notificación WhatsApp de Nuevo Pedido #{$pedido->id} encolada para admins: " . implode(', ', $adminPhones));
+
+                    // Enviar individual a COCINA solo si no es cemita
+                    if (!$esCemita) {
+                        foreach ($cocinaPhones as $telCocina) {
+                            \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                                'numero' => $telCocina, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
+                            ]);
+                        }
+                    }
+
                 } catch (\Exception $exWa) {
                     \Illuminate\Support\Facades\Log::error("Error encolando WhatsApp de Nuevo Pedido #{$pedido->id}: " . $exWa->getMessage());
                 }
             }
+        }
 
-            // 2. Envío por Correo Electrónico deshabilitado (las alertas de nuevos pedidos se envían por WhatsApp al Administrador)
-            /*
+        // Enviar RESUMEN a COCINA
+        if (!Auth::user()->hasRole('admin') && $tieneCemitas && !empty($cocinaPhones)) {
             try {
-                Notification::route('mail', 'gestorcapital.0925@gmail.com')
-                    ->notify(new \App\Notifications\NuevoPedidoNotification($pedido));
-                \Illuminate\Support\Facades\Log::info("Correo enviado exitosamente para el pedido #" . $pedido->id . " a gestorcapital.0925@gmail.com via SMTP");
-            } catch (\Exception $e) {
-                // Si falla SMTP (p. ej. por bloqueo de puertos de DigitalOcean), intentamos envío por API HTTPS (puerto 443) con FormSubmit
-                \Illuminate\Support\Facades\Log::warning("SMTP falló para el pedido #" . $pedido->id . " (" . $e->getMessage() . "). Intentando envío alternativo por API HTTPS...");
-
-                try {
-                    $articuloNombre = $pedido->articulo->nombre ?? 'N/A';
-                    $clienteNombre  = $pedido->user->name ?? 'Cliente';
-                    $totalFormatted = number_format($pedido->costo ?? 0, 2);
-                    $cuerpoCorreo   = "Nuevo Pedido #{$pedido->id} creado en El rico bajon.\n\n" .
-                                      "• Cliente: {$clienteNombre}\n" .
-                                      "• Artículo: {$articuloNombre}\n" .
-                                      "• Cantidad: {$pedido->cantidad}\n" .
-                                      "• Total: \${$totalFormatted}\n" .
-                                      "• Descripción/Notas: {$pedido->descripcion}\n\n" .
-                                      "Enviado desde el sistema CRM El rico bajon.";
-
-                    $response = \Illuminate\Support\Facades\Http::withHeaders([
-                        'Accept'       => 'application/json',
-                        'Content-Type' => 'application/json',
-                        'User-Agent'   => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                        'Origin'       => 'https://elbajon.duckdns.org',
-                        'Referer'      => 'https://elbajon.duckdns.org/pedidos',
-                    ])->post('https://formsubmit.co/ajax/gestorcapital.0925@gmail.com', [
-                        '_subject' => "Nuevo Pedido #{$pedido->id} - El rico bajon",
-                        'mensaje'  => $cuerpoCorreo,
-                        'pedido_id'=> $pedido->id,
-                        'cliente'  => $clienteNombre,
-                        'total'    => "$" . $totalFormatted,
+                $mensajeResumen = "*🧑‍🍳 RESUMEN DE MILANESAS (NUEVO PEDIDO)*\n\n" .
+                                  "• *Cliente:* {$clienteNombreResumen}\n" .
+                                  "• *Pollo a preparar:* {$cemitasPollo}\n" .
+                                  "• *Puerco a preparar:* {$cemitasPuerco}\n\n" .
+                                  "_(Las milanesas necesarias para todo este pedido)_";
+                
+                foreach ($cocinaPhones as $telCocina) {
+                    \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                        'numero' => $telCocina, 'mensaje' => $mensajeResumen, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
                     ]);
-
-                    if ($response->successful()) {
-                        \Illuminate\Support\Facades\Log::info("Correo alternativo HTTPS (FormSubmit) enviado exitosamente para pedido #" . $pedido->id);
-                    } else {
-                        \Illuminate\Support\Facades\Log::error("Fallo envío alternativo HTTPS (FormSubmit) para pedido #" . $pedido->id . ": " . $response->body());
-                    }
-                } catch (\Exception $exHttp) {
-                    \Illuminate\Support\Facades\Log::error("Error general enviando correo alternativo HTTPS del pedido #" . $pedido->id . ": " . $exHttp->getMessage());
                 }
+            } catch (\Exception $ex) {
+                \Illuminate\Support\Facades\Log::error("Error enviando resumen a cocina: " . $ex->getMessage());
             }
-            */
         }
 
         return redirect()->route('pedidos.index')->with('success', 'Todos los pedidos fueron creados correctamente.');
@@ -201,24 +209,20 @@ class PedidoController extends Controller
 
     public function edit($id)
     {
-        // Obtener el pedido con su venta
         $pedido = Pedido::with('venta')->find($id);
-        // Verificar permisos: si no es admin, solo puede editar sus propios pedidos
         if (!Auth::user()->hasRole('admin') && $pedido->user_id != Auth::id()) {
             abort(403, 'No tienes permiso para editar este pedido.');
         }
 
         $articulos = Articulo::all();
-        $users  = User::orderBy('name', 'asc')->get(); // si admin, puede cambiar el usuario
-
+        $users  = User::orderBy('name', 'asc')->get();
         return view('pedidos.edit', compact('pedido', 'articulos', 'users'));
     }
 
     public function update(Request $request, $id)
-    {    //dd($request->all()); 
-
+    {
         $validated = $request->validate([
-            'pedidos.*.id'           => 'nullable|exists:pedidos,id', // Si se quiere actualizar existentes
+            'pedidos.*.id'           => 'nullable|exists:pedidos,id',
             'pedidos.*.articulo_id'  => 'required|exists:articulos,id',
             'pedidos.*.cantidad'     => 'required|integer|min:1',
             'pedidos.*.costo'        => 'required|numeric|min:1',
@@ -228,32 +232,62 @@ class PedidoController extends Controller
 
         $userId = Auth::user()->hasRole('admin') ? $request->user_id : Auth::id();
 
+        // Obtener teléfonos de admin y cocina
+        $adminPhones = \Illuminate\Support\Facades\DB::table('users')
+            ->join('role_user', 'users.id', '=', 'role_user.user_id')
+            ->join('roles', 'role_user.role_id', '=', 'roles.id')
+            ->where('roles.name', 'admin')
+            ->whereNotNull('users.telefono')
+            ->where('users.telefono', '!=', '')
+            ->pluck('users.telefono')
+            ->map(function ($tel) { return preg_replace('/[^0-9]/', '', $tel); })
+            ->map(function ($num) { return (strlen($num) == 10) ? '521' . $num : $num; })
+            ->filter()->unique()->toArray();
+        if (empty($adminPhones)) $adminPhones = ['5212222153410'];
+
+        $cocinaPhones = \Illuminate\Support\Facades\DB::table('users')
+            ->join('role_user', 'users.id', '=', 'role_user.user_id')
+            ->join('roles', 'role_user.role_id', '=', 'roles.id')
+            ->where('roles.name', 'cocina')
+            ->whereNotNull('users.telefono')
+            ->where('users.telefono', '!=', '')
+            ->pluck('users.telefono')
+            ->map(function ($tel) { return preg_replace('/[^0-9]/', '', $tel); })
+            ->map(function ($num) { return (strlen($num) == 10) ? '521' . $num : $num; })
+            ->filter()->unique()->toArray();
+
+        $cemitasPollo = 0;
+        $cemitasPuerco = 0;
+        $tieneCemitas = false;
+        $clienteNombreResumen = 'Cliente';
+
         foreach ($request->pedidos as $p) {
             $total = $p['costo'] * $p['cantidad'];
 
             if (!empty($p['id'])) {
-                // Actualizar pedido y su venta existente
                 $pedidoExistente = Pedido::find($p['id']);
                 $pedidoExistente->update([
                     'articulo_id' => $p['articulo_id'],
                     'descripcion' => $p['descripcion'] ?? '',
                     'costo'       => $total,
                     'cantidad'    => $p['cantidad'],
-                    'user_id'     => $p['user_id'],
+                    'user_id'     => $p['user_id'] ?? $userId,
                 ]);
 
-                $pedidoExistente->venta()->update([
-                    'articulo_id'  => $p['articulo_id'],
-                    'cantidad'     => $p['cantidad'],
-                    'precio_venta' => $p['costo'],
-                    'total_venta'  => $total,
-                    'user_id'     => $p['user_id'],
-                    'descripcion'  => $p['descripcion'] ?? '',
-                ]);
+                if ($pedidoExistente->venta) {
+                    $pedidoExistente->venta()->update([
+                        'articulo_id'  => $p['articulo_id'],
+                        'cantidad'     => $p['cantidad'],
+                        'precio_venta' => $p['costo'],
+                        'total_venta'  => $total,
+                        'user_id'     => $p['user_id'] ?? $userId,
+                        'descripcion'  => $p['descripcion'] ?? '',
+                    ]);
+                }
+                $pedidoParaMensaje = $pedidoExistente;
             } else {
-                // Crear nueva venta y pedido
                 $venta = Venta::create([
-                    'user_id'     => $p['user_id'],
+                    'user_id'     => $p['user_id'] ?? $userId,
                     'articulo_id'  => $p['articulo_id'],
                     'cantidad'     => $p['cantidad'],
                     'precio_venta' => $p['costo'],
@@ -261,14 +295,88 @@ class PedidoController extends Controller
                     'descripcion'  => $p['descripcion'] ?? '',
                 ]);
 
-                Pedido::create([
-                    'user_id'     => $p['user_id'],
+                $pedidoNuevo = Pedido::create([
+                    'user_id'     => $p['user_id'] ?? $userId,
                     'articulo_id' => $p['articulo_id'],
                     'descripcion' => $p['descripcion'] ?? '',
                     'cantidad'    => $p['cantidad'],
                     'costo'       => $total,
                     'venta_id'    => $venta->id,
                 ]);
+                $pedidoParaMensaje = $pedidoNuevo;
+            }
+
+            $pedidoParaMensaje->load('articulo', 'user');
+
+            if (!Auth::user()->hasRole('admin')) {
+                try {
+                    $articuloNombre = $pedidoParaMensaje->articulo->nombre ?? 'N/A';
+                    $clienteNombre  = $pedidoParaMensaje->user->name ?? 'Cliente';
+                    $clienteNombreResumen = $clienteNombre;
+                    $descripcionStr = strtolower($articuloNombre . ' ' . ($pedidoParaMensaje->descripcion ?? ''));
+
+                    $esCemita = (strpos($descripcionStr, 'cemita') !== false);
+
+                    if ($esCemita) {
+                        $tieneCemitas = true;
+                        $qty = (int) $pedidoParaMensaje->cantidad;
+                        if (strpos($descripcionStr, 'hawaiana') !== false || strpos($descripcionStr, 'cubana') !== false || strpos($descripcionStr, 'texana') !== false || strpos($descripcionStr, 'tejama') !== false) {
+                            $cemitasPollo += $qty;
+                            $cemitasPuerco += $qty;
+                        } else {
+                            if (strpos($descripcionStr, 'pollo') !== false) {
+                                $cemitasPollo += $qty;
+                            }
+                            if (strpos($descripcionStr, 'puerco') !== false || strpos($descripcionStr, 'cerdo') !== false || strpos($descripcionStr, 'milanesa') !== false) {
+                                $cemitasPuerco += $qty;
+                            }
+                        }
+                    }
+
+                    $totalFormatted = number_format($pedidoParaMensaje->costo ?? 0, 2);
+                    $mensajeWa = "*🔄 ACTUALIZACIÓN DE PEDIDO #{$pedidoParaMensaje->id}*\n\n" .
+                                 "• *Cliente:* {$clienteNombre}\n" .
+                                 "• *Se modificó a:* {$articuloNombre}\n" .
+                                 "• *Cantidad:* {$pedidoParaMensaje->cantidad}\n" .
+                                 "• *Total modificado:* \${$totalFormatted}\n" .
+                                 "• *Notas:* " . ($pedidoParaMensaje->descripcion ?: 'Sin notas') . "\n\n" .
+                                 "_Enviado por El rico bajon CRM_";
+
+                    foreach ($adminPhones as $telAdmin) {
+                        \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                            'numero' => $telAdmin, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
+                        ]);
+                    }
+
+                    if (!$esCemita) {
+                        foreach ($cocinaPhones as $telCocina) {
+                            \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                                'numero' => $telCocina, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
+                            ]);
+                        }
+                    }
+                } catch (\Exception $exWa) {
+                    \Illuminate\Support\Facades\Log::error("Error encolando WhatsApp de Actualización Pedido #{$pedidoParaMensaje->id}: " . $exWa->getMessage());
+                }
+            }
+        }
+
+        // Enviar RESUMEN ACTUALIZADO a COCINA
+        if (!Auth::user()->hasRole('admin') && $tieneCemitas && !empty($cocinaPhones)) {
+            try {
+                $mensajeResumen = "*🧑‍🍳 ACTUALIZACIÓN DE RESUMEN DE MILANESAS*\n\n" .
+                                  "• *Cliente:* {$clienteNombreResumen}\n" .
+                                  "• *Nuevas Milanesas de Pollo:* {$cemitasPollo}\n" .
+                                  "• *Nuevas Milanesas de Puerco:* {$cemitasPuerco}\n\n" .
+                                  "_(Cantidades totales requeridas tras la actualización del pedido)_";
+                
+                foreach ($cocinaPhones as $telCocina) {
+                    \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                        'numero' => $telCocina, 'mensaje' => $mensajeResumen, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
+                    ]);
+                }
+            } catch (\Exception $ex) {
+                \Illuminate\Support\Facades\Log::error("Error enviando resumen de actualización a cocina: " . $ex->getMessage());
             }
         }
 
