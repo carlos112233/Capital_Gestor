@@ -259,16 +259,26 @@
                                         </div>
                                     </template>
                                     <template x-if="msg.status === 'enviado'">
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px]">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                            Enviado
-                                        </span>
+                                        <div class="flex items-center gap-2">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px]">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                Enviado
+                                            </span>
+                                            <button type="button" @click="markAsPending(msg.id)" title="Volver a enviar" class="p-1 rounded-md bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 transition-colors cursor-pointer shadow-sm">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                            </button>
+                                        </div>
                                     </template>
                                     <template x-if="msg.status === 'fallido'">
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[11px]" :title="msg.error_message || ''">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                                            Fallido
-                                        </span>
+                                        <div class="flex items-center gap-2">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[11px]" :title="msg.error_message || ''">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                                Fallido
+                                            </span>
+                                            <button type="button" @click="markAsPending(msg.id)" title="Reintentar envío" class="p-1 rounded-md bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 transition-colors cursor-pointer shadow-sm">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                            </button>
+                                        </div>
                                     </template>
                                 </td>
                                 <td class="py-3 px-4 text-slate-500 font-mono text-[11px]" x-text="msg.created_at ? msg.created_at.replace('T', ' ').substring(0, 19) : ''"></td>
@@ -496,6 +506,68 @@
                     })
                     .catch(err => {
                         console.log('Error marcando mensaje como enviado:', err);
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Error', 'Ocurrió un error al procesar la solicitud.', 'error');
+                        } else {
+                            alert('Ocurrió un error al procesar la solicitud.');
+                        }
+                    });
+                },
+
+                markAsPending(id) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: '¿Reenviar mensaje?',
+                            text: 'El mensaje volverá a la cola y el sistema intentará enviarlo nuevamente.',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonColor: '#f59e0b',
+                            cancelButtonColor: '#64748b',
+                            confirmButtonText: 'Sí, reenviar',
+                            cancelButtonText: 'Cancelar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                this.processMarkAsPending(id);
+                            }
+                        });
+                    } else {
+                        if (confirm('¿Estás seguro de que deseas reenviar este mensaje?')) {
+                            this.processMarkAsPending(id);
+                        }
+                    }
+                },
+                
+                processMarkAsPending(id) {
+                    fetch('{{ url('admin/configuracion/wa-mark-pending') }}/' + id, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            this.fetchStatus();
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Mensaje Reencolado',
+                                    text: data.message,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            }
+                        } else {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire('Error', data.error, 'error');
+                            } else {
+                                alert('Error: ' + data.error);
+                            }
+                        }
+                    })
+                    .catch(err => {
+                        console.log('Error marcando mensaje como pendiente:', err);
                         if (typeof Swal !== 'undefined') {
                             Swal.fire('Error', 'Ocurrió un error al procesar la solicitud.', 'error');
                         } else {

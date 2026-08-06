@@ -211,4 +211,22 @@ class ConfiguracionController extends Controller
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Marcar un mensaje enviado/fallido de vuelta a pendiente para reenviar
+     */
+    public function markMessageAsPending($id)
+    {
+        try {
+            DB::table('whatsapp_pending_messages')
+                ->where('id', $id)
+                ->update([
+                    'status' => 'pendiente',
+                    'updated_at' => now(),
+                ]);
+            return response()->json(['success' => true, 'message' => 'Mensaje reencolado para envío correctamente.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
 }

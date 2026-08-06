@@ -56,6 +56,7 @@ Route::middleware('auth')->group(function () {
         Route::get('configuracion/wa-status', [\App\Http\Controllers\ConfiguracionController::class, 'getWaStatus'])->name('configuracion.wa-status');
         Route::post('configuracion/wa-reset', [\App\Http\Controllers\ConfiguracionController::class, 'resetWaSession'])->name('configuracion.wa-reset');
         Route::post('configuracion/wa-mark-sent/{id}', [\App\Http\Controllers\ConfiguracionController::class, 'markMessageAsSent'])->name('configuracion.wa-mark-sent');
+        Route::post('configuracion/wa-mark-pending/{id}', [\App\Http\Controllers\ConfiguracionController::class, 'markMessageAsPending'])->name('configuracion.wa-mark-pending');
         Route::post('enviar-masivo', [DashboardController::class, 'enviarRecordatoriosMasivos'])->name('enviar.masivo');
         
         // Comprobantes Admin
