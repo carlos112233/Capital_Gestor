@@ -31,7 +31,7 @@ class ComprobanteController extends Controller
 
             // Leer la imagen guardada
             $imageContent = file_get_contents($fullPath);
-            
+
             // Hacer la petición de detección de texto
             $response = $imageAnnotator->textDetection($imageContent);
             $texts = $response->getTextAnnotations();
@@ -39,7 +39,7 @@ class ComprobanteController extends Controller
             if (count($texts) > 0) {
                 // El primer elemento contiene todo el texto detectado
                 $fullText = strtolower($texts[0]->getDescription());
-                
+
                 // 1. Comprobar si parece un ticket bancario (buscar palabras clave)
                 $keywords = ['bbva', 'mercado pago', 'transferencia', 'spei', 'pago', 'exitoso', 'autorización', 'folio', 'importe', 'monto', 'clabe', 'santander', 'banorte', 'stp'];
                 $isTicket = false;
@@ -63,21 +63,21 @@ class ComprobanteController extends Controller
                     $montoBuscado2 = number_format($request->monto, 2, '.', '');  // ej: 1500.00
                     $montoBuscado3 = (string) floatval($request->monto);          // ej: 1500
 
-                    if (strpos($fullText, $montoBuscado1) !== false || 
-                        strpos($fullText, $montoBuscado2) !== false || 
-                        strpos($fullText, $montoBuscado3) !== false) {
+                    if (
+                        strpos($fullText, $montoBuscado1) !== false ||
+                        strpos($fullText, $montoBuscado2) !== false ||
+                        strpos($fullText, $montoBuscado3) !== false
+                    ) {
                         $notasAdicionales = "\n[✅ Verificado por IA: Monto encontrado en la imagen]";
                     } else {
                         $notasAdicionales = "\n[⚠️ ALERTA IA: El monto de $" . $request->monto . " no se detectó claramente en la imagen. Favor de revisar manual.]";
                     }
                 }
-
             } else {
                 $notasAdicionales = "\n[⚠️ ALERTA IA: No se pudo detectar ningún texto en la imagen.]";
             }
-            
-            $imageAnnotator->close();
 
+            $imageAnnotator->close();
         } catch (\Exception $e) {
             \Log::error('Error de Google Vision: ' . $e->getMessage());
             $notasAdicionales = "\n[⚠️ Error interno de IA al verificar]";
@@ -86,13 +86,50 @@ class ComprobanteController extends Controller
         // Concatenar notas del usuario con las notas del sistema
         $notasFinales = $request->notas ? $request->notas . $notasAdicionales : ltrim($notasAdicionales);
 
-        Comprobante::create([
+        $comprobante = Comprobante::create([
             'user_id' => Auth::id(),
             'monto' => $request->monto,
             'imagen' => $path,
             'notas' => $notasFinales,
             'status' => 'pendiente'
         ]);
+
+        // Notificar a los administradores por WhatsApp
+        $adminPhones = \App\Models\User::whereHas('roles', function ($q) {
+            $q->where('name', 'admin');
+        })
+            ->pluck('telefono')
+            ->map(function ($num) {
+                $num = preg_replace('/[^0-9]/', '', (string)$num);
+                return (strlen($num) == 10) ? '521' . $num : $num;
+            })
+            ->filter()
+            ->unique()
+            ->toArray();
+
+        if (empty($adminPhones)) {
+            // Número por defecto en caso de no encontrar admins con teléfono
+            $adminPhones = ['5212222153410'];
+        }
+
+        $clienteNombre = Auth::user()->name;
+        $montoNotif = number_format($request->monto, 2);
+        
+        $mensajeAdmin = "*🔔 NUEVO COMPROBANTE DE PAGO*\n\n" .
+                        "• *Cliente:* {$clienteNombre}\n" .
+                        "• *Monto reportado:* \${$montoNotif}\n" .
+                        "• *Notas:* " . ($request->notas ?: 'Sin notas') . "\n\n" .
+                        "Ingresa al panel de administrador para revisar la imagen y aprobar el pago.";
+
+        foreach ($adminPhones as $telAdmin) {
+            \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                'numero'     => $telAdmin,
+                'mensaje'    => $mensajeAdmin,
+                'status'     => 'pendiente',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
 
         return back()->with('success', 'Comprobante subido exitosamente. Espera a que un administrador lo verifique.');
     }
@@ -101,7 +138,7 @@ class ComprobanteController extends Controller
     public function aprobar($id)
     {
         $comprobante = Comprobante::findOrFail($id);
-        
+
         if ($comprobante->status !== 'pendiente') {
             return back()->with('error', 'El comprobante ya fue procesado.');
         }
@@ -132,12 +169,12 @@ class ComprobanteController extends Controller
             }
 
             $montoFormateado = number_format($comprobante->monto, 2);
-            
-            $mensajeWa = "*✅ PAGO APROBADO - Capital Gestor*\n\n" .
-                         "Hola *" . $comprobante->user->name . "*, te confirmamos que tu comprobante de pago por *\${$montoFormateado}* ha sido revisado y *aprobado* exitosamente.\n\n" .
-                         "Este monto ya ha sido abonado a tu cuenta y descontado de tu saldo pendiente.\n\n" .
-                         "¡Gracias por tu pago!\n" .
-                         "_Mensaje automático de Capital Gestor_";
+
+            $mensajeWa = "*✅ PAGO APROBADO - El bajón*\n\n" .
+                "Hola *" . $comprobante->user->name . "*, te confirmamos que tu comprobante de pago por *\${$montoFormateado}* ha sido revisado y *aprobado* exitosamente.\n\n" .
+                "Este monto ya ha sido abonado a tu cuenta y descontado de tu saldo pendiente.\n\n" .
+                "¡Gracias por tu pago!\n" .
+                "_Mensaje automático de El bajón_";
 
             \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
                 'numero'     => $telefonoCliente,
@@ -155,7 +192,7 @@ class ComprobanteController extends Controller
     public function rechazar($id)
     {
         $comprobante = Comprobante::findOrFail($id);
-        
+
         if ($comprobante->status !== 'pendiente') {
             return back()->with('error', 'El comprobante ya fue procesado.');
         }
@@ -171,13 +208,13 @@ class ComprobanteController extends Controller
             }
 
             $montoFormateado = number_format($comprobante->monto, 2);
-            
-            $mensajeWa = "*❌ COMPROBANTE RECHAZADO - Capital Gestor*\n\n" .
-                         "Hola *" . $comprobante->user->name . "*, te informamos que tu comprobante de pago por *\${$montoFormateado}* no pudo ser validado y ha sido *rechazado*.\n\n" .
-                         "Esto puede suceder si la imagen no es legible, el monto no coincide, o el pago aún no se refleja en nuestra cuenta.\n" .
-                         "Por favor, revisa tu comprobante e intenta subir uno nuevo desde tu panel de usuario.\n\n" .
-                         "Si tienes dudas, contáctanos.\n" .
-                         "_Mensaje automático de Capital Gestor_";
+
+            $mensajeWa = "*❌ COMPROBANTE RECHAZADO - El bajón*\n\n" .
+                "Hola *" . $comprobante->user->name . "*, te informamos que tu comprobante de pago por *\${$montoFormateado}* no pudo ser validado y ha sido *rechazado*.\n\n" .
+                "Esto puede suceder si la imagen no es legible, el monto no coincide, o el pago aún no se refleja en nuestra cuenta.\n" .
+                "Por favor, revisa tu comprobante e intenta subir uno nuevo desde tu panel de usuario.\n\n" .
+                "Si tienes dudas, contáctanos.\n" .
+                "_Mensaje automático de El bajón_";
 
             \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
                 'numero'     => $telefonoCliente,
