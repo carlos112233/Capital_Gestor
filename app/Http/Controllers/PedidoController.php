@@ -77,10 +77,11 @@ class PedidoController extends Controller
 
         foreach ($request->pedidos as $p) {
             $total = $p['costo'] * $p['cantidad'];
+            $targetUserId = $p['user_id'] ?? $userId;
 
             // Crear la venta
             $venta = Venta::create([
-                'user_id'     => $p['user_id'],
+                'user_id'     => $targetUserId,
                 'articulo_id'  => $p['articulo_id'],
                 'cantidad'     => $p['cantidad'],
                 'precio_venta' => $p['costo'],
@@ -91,7 +92,7 @@ class PedidoController extends Controller
 
             // Crear el pedido
             $pedido =  Pedido::create([
-                'user_id'     => $p['user_id'],
+                'user_id'     => $targetUserId,
                 'articulo_id' => $p['articulo_id'],
                 'descripcion' => $p['descripcion'] ?? '',
                 'costo'       => $total,
