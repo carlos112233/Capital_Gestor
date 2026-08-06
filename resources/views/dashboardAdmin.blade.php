@@ -227,6 +227,65 @@
                     </div>
                 </div>
             </div>
+
+            @if(isset($comprobantesPendientes) && count($comprobantesPendientes) > 0)
+            <div class="mt-8 bg-white overflow-hidden shadow-sm sm:rounded-lg border border-amber-200">
+                <div class="p-6 text-gray-900 bg-amber-50/50">
+                    <h3 class="text-lg font-bold text-amber-800 flex items-center gap-2 mb-4">
+                        <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Comprobantes Pendientes de Aprobación ({{ count($comprobantesPendientes) }})
+                    </h3>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-amber-200">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">Cliente</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">Fecha</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">Monto</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">Notas</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-amber-700 uppercase tracking-wider">Comprobante</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-amber-700 uppercase tracking-wider">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-amber-200">
+                                @foreach($comprobantesPendientes as $comp)
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap font-bold">{{ $comp->user->name }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">{{ $comp->created_at->format('d/m/Y h:i A') }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">${{ number_format($comp->monto, 2) }}</td>
+                                    <td class="px-6 py-4 text-sm">{{ $comp->notas ?: '-' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <a href="{{ Storage::url($comp->imagen) }}" target="_blank" class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 hover:underline">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                            Ver Imagen
+                                        </a>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <div class="flex items-center justify-center gap-2">
+                                            <form action="{{ route('admin.comprobantes.aprobar', $comp->id) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" onclick="return confirm('¿Aprobar comprobante y registrar como entrada de capital?')" class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-bold transition-colors">
+                                                    Aprobar
+                                                </button>
+                                            </form>
+                                            <form action="{{ route('admin.comprobantes.rechazar', $comp->id) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" onclick="return confirm('¿Rechazar comprobante?')" class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-bold transition-colors">
+                                                    Rechazar
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            @endif
+
         </div>
     </div>
 

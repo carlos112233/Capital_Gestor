@@ -57,7 +57,14 @@ Route::middleware('auth')->group(function () {
         Route::post('configuracion/wa-reset', [\App\Http\Controllers\ConfiguracionController::class, 'resetWaSession'])->name('configuracion.wa-reset');
         Route::post('configuracion/wa-mark-sent/{id}', [\App\Http\Controllers\ConfiguracionController::class, 'markMessageAsSent'])->name('configuracion.wa-mark-sent');
         Route::post('enviar-masivo', [DashboardController::class, 'enviarRecordatoriosMasivos'])->name('enviar.masivo');
+        
+        // Comprobantes Admin
+        Route::post('comprobantes/{id}/aprobar', [\App\Http\Controllers\ComprobanteController::class, 'aprobar'])->name('comprobantes.aprobar');
+        Route::post('comprobantes/{id}/rechazar', [\App\Http\Controllers\ComprobanteController::class, 'rechazar'])->name('comprobantes.rechazar');
     });
+
+    // Comprobantes Usuario
+    Route::post('comprobantes', [\App\Http\Controllers\ComprobanteController::class, 'store'])->name('comprobantes.store');
 });
 
 require __DIR__ . '/auth.php';

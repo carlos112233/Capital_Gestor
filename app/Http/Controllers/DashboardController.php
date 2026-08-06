@@ -48,8 +48,13 @@ class DashboardController extends Controller
         $articulos = \App\Models\Articulo::select('id', 'nombre', 'precio')->orderBy('nombre', 'asc')->get();
         $users = User::select('id', 'name')->orderBy('name', 'asc')->get();
 
+        $comprobantesPendientes = \App\Models\Comprobante::with('user')
+            ->where('status', 'pendiente')
+            ->orderBy('created_at', 'asc')
+            ->get();
+
         if (Auth::user()->hasRole('admin')) {
-            return view('dashboardAdmin', compact('resumen', 'totalSaldo', 'articulos', 'users'));
+            return view('dashboardAdmin', compact('resumen', 'totalSaldo', 'articulos', 'users', 'comprobantesPendientes'));
         } else {
             return redirect()->intended(route('dashboard'));
         }
@@ -82,8 +87,13 @@ class DashboardController extends Controller
         // Sumatoria de todos los saldos (en este caso solo el suyo)
         $totalSaldo = $resumen->sum('saldo');
 
+        $comprobantes = \App\Models\Comprobante::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
         if (!Auth::user()->hasRole('admin')) {
-            return view('dashboard', compact('resumen', 'totalSaldo'));
+            return view('dashboard', compact('resumen', 'totalSaldo', 'comprobantes'));
         } else {
             return redirect()->intended(route('dashboardAdmin'));
         }
