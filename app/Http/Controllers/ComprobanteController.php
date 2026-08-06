@@ -157,7 +157,7 @@ class ComprobanteController extends Controller
 
         // Registrar la entrada de capital en la tabla `entradas`
         Entrada::create([
-            'user_id' => Auth::id(), // Admin
+            'user_id' => $comprobante->user_id, // El cliente (para mantener consistencia en la vista de Entradas)
             'cliente_id' => $comprobante->user_id, // Cliente
             'articulo_id' => $articuloId,
             'precio_venta' => $comprobante->monto,
