@@ -122,7 +122,33 @@ class ComprobanteController extends Controller
 
         $comprobante->update(['status' => 'aprobado']);
 
-        return back()->with('success', 'Comprobante aprobado y saldo actualizado.');
+        // Enviar notificación por WhatsApp al cliente si tiene teléfono
+        if ($comprobante->user && $comprobante->user->telefono) {
+            $telefonoCliente = $comprobante->user->telefono;
+            // Limpiar y formatear número (ej. agregar 521 si es de 10 dígitos)
+            $telefonoCliente = preg_replace('/[^0-9]/', '', $telefonoCliente);
+            if (strlen($telefonoCliente) == 10) {
+                $telefonoCliente = '521' . $telefonoCliente;
+            }
+
+            $montoFormateado = number_format($comprobante->monto, 2);
+            
+            $mensajeWa = "*✅ PAGO APROBADO - Capital Gestor*\n\n" .
+                         "Hola *" . $comprobante->user->name . "*, te confirmamos que tu comprobante de pago por *\${$montoFormateado}* ha sido revisado y *aprobado* exitosamente.\n\n" .
+                         "Este monto ya ha sido abonado a tu cuenta y descontado de tu saldo pendiente.\n\n" .
+                         "¡Gracias por tu pago!\n" .
+                         "_Mensaje automático de Capital Gestor_";
+
+            \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                'numero'     => $telefonoCliente,
+                'mensaje'    => $mensajeWa,
+                'status'     => 'pendiente',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return back()->with('success', 'Comprobante aprobado, saldo actualizado y notificación enviada al cliente.');
     }
 
     // Función para que el admin rechace el comprobante
@@ -136,6 +162,32 @@ class ComprobanteController extends Controller
 
         $comprobante->update(['status' => 'rechazado']);
 
-        return back()->with('success', 'Comprobante rechazado correctamente.');
+        // Enviar notificación por WhatsApp al cliente sobre el rechazo
+        if ($comprobante->user && $comprobante->user->telefono) {
+            $telefonoCliente = $comprobante->user->telefono;
+            $telefonoCliente = preg_replace('/[^0-9]/', '', $telefonoCliente);
+            if (strlen($telefonoCliente) == 10) {
+                $telefonoCliente = '521' . $telefonoCliente;
+            }
+
+            $montoFormateado = number_format($comprobante->monto, 2);
+            
+            $mensajeWa = "*❌ COMPROBANTE RECHAZADO - Capital Gestor*\n\n" .
+                         "Hola *" . $comprobante->user->name . "*, te informamos que tu comprobante de pago por *\${$montoFormateado}* no pudo ser validado y ha sido *rechazado*.\n\n" .
+                         "Esto puede suceder si la imagen no es legible, el monto no coincide, o el pago aún no se refleja en nuestra cuenta.\n" .
+                         "Por favor, revisa tu comprobante e intenta subir uno nuevo desde tu panel de usuario.\n\n" .
+                         "Si tienes dudas, contáctanos.\n" .
+                         "_Mensaje automático de Capital Gestor_";
+
+            \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                'numero'     => $telefonoCliente,
+                'mensaje'    => $mensajeWa,
+                'status'     => 'pendiente',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return back()->with('success', 'Comprobante rechazado correctamente y notificación enviada.');
     }
 }
