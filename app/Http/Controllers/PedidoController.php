@@ -129,64 +129,62 @@ class PedidoController extends Controller
 
             $pedido->load('articulo', 'user');
 
-            if (!Auth::user()->hasRole('admin')) {
-                try {
-                    $articuloNombre = $pedido->articulo->nombre ?? 'N/A';
-                    $clienteNombre  = $pedido->user->name ?? 'Cliente';
-                    $clienteNombreResumen = $clienteNombre;
-                    $descripcionStr = strtolower($articuloNombre . ' ' . ($pedido->descripcion ?? ''));
+            try {
+                $articuloNombre = $pedido->articulo->nombre ?? 'N/A';
+                $clienteNombre  = $pedido->user->name ?? 'Cliente';
+                $clienteNombreResumen = $clienteNombre;
+                $descripcionStr = strtolower($articuloNombre . ' ' . ($pedido->descripcion ?? ''));
 
-                    $esCemita = (strpos($descripcionStr, 'cemita') !== false);
+                $esCemita = (strpos($descripcionStr, 'cemita') !== false);
 
-                    if ($esCemita) {
-                        $tieneCemitas = true;
-                        $qty = (int) $pedido->cantidad;
-                        if (strpos($descripcionStr, 'hawaiana') !== false || strpos($descripcionStr, 'cubana') !== false || strpos($descripcionStr, 'texana') !== false || strpos($descripcionStr, 'tejama') !== false) {
+                if ($esCemita) {
+                    $tieneCemitas = true;
+                    $qty = (int) $pedido->cantidad;
+                    if (strpos($descripcionStr, 'hawaiana') !== false || strpos($descripcionStr, 'cubana') !== false || strpos($descripcionStr, 'texana') !== false || strpos($descripcionStr, 'tejama') !== false) {
+                        $cemitasPollo += $qty;
+                        $cemitasPuerco += $qty;
+                    } else {
+                        if (strpos($descripcionStr, 'pollo') !== false) {
                             $cemitasPollo += $qty;
+                        }
+                        if (strpos($descripcionStr, 'puerco') !== false || strpos($descripcionStr, 'cerdo') !== false || strpos($descripcionStr, 'milanesa') !== false) {
                             $cemitasPuerco += $qty;
-                        } else {
-                            if (strpos($descripcionStr, 'pollo') !== false) {
-                                $cemitasPollo += $qty;
-                            }
-                            if (strpos($descripcionStr, 'puerco') !== false || strpos($descripcionStr, 'cerdo') !== false || strpos($descripcionStr, 'milanesa') !== false) {
-                                $cemitasPuerco += $qty;
-                            }
                         }
                     }
+                }
 
-                    $totalFormatted = number_format($pedido->costo ?? 0, 2);
-                    $mensajeWa = "*📦 NUEVO PEDIDO #{$pedido->id} - El rico bajon*\n\n" .
-                                 "• *Cliente:* {$clienteNombre}\n" .
-                                 "• *Artículo:* {$articuloNombre}\n" .
-                                 "• *Cantidad:* {$pedido->cantidad}\n" .
-                                 "• *Total:* \${$totalFormatted}\n" .
-                                 "• *Notas:* " . ($pedido->descripcion ?: 'Sin notas') . "\n\n" .
-                                 "_Enviado por El rico bajon CRM_";
+                $totalFormatted = number_format($pedido->costo ?? 0, 2);
+                $mensajeWa = "*📦 NUEVO PEDIDO #{$pedido->id} - El rico bajon*\n\n" .
+                             "• *Cliente:* {$clienteNombre}\n" .
+                             "• *Artículo:* {$articuloNombre}\n" .
+                             "• *Cantidad:* {$pedido->cantidad}\n" .
+                             "• *Total:* \${$totalFormatted}\n" .
+                             "• *Notas:* " . ($pedido->descripcion ?: 'Sin notas') . "\n\n" .
+                             "_Enviado por El rico bajon CRM_";
 
-                    // Enviar individual a ADMIN siempre
-                    foreach ($adminPhones as $telAdmin) {
+                // Enviar individual a ADMIN siempre
+                foreach ($adminPhones as $telAdmin) {
+                    \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                        'numero' => $telAdmin, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
+                    ]);
+                }
+
+                // Enviar individual a COCINA solo si no es cemita
+                if (!$esCemita) {
+                    foreach ($cocinaPhones as $telCocina) {
                         \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
-                            'numero' => $telAdmin, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
+                            'numero' => $telCocina, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
                         ]);
                     }
-
-                    // Enviar individual a COCINA solo si no es cemita
-                    if (!$esCemita) {
-                        foreach ($cocinaPhones as $telCocina) {
-                            \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
-                                'numero' => $telCocina, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
-                            ]);
-                        }
-                    }
-
-                } catch (\Exception $exWa) {
-                    \Illuminate\Support\Facades\Log::error("Error encolando WhatsApp de Nuevo Pedido #{$pedido->id}: " . $exWa->getMessage());
                 }
+
+            } catch (\Exception $exWa) {
+                \Illuminate\Support\Facades\Log::error("Error encolando WhatsApp de Nuevo Pedido #{$pedido->id}: " . $exWa->getMessage());
             }
         }
 
         // Enviar RESUMEN a COCINA
-        if (!Auth::user()->hasRole('admin') && $tieneCemitas && !empty($cocinaPhones)) {
+        if ($tieneCemitas && !empty($cocinaPhones)) {
             try {
                 $mensajeResumen = "*🧑‍🍳 RESUMEN DE MILANESAS (NUEVO PEDIDO)*\n\n" .
                                   "• *Cliente:* {$clienteNombreResumen}\n" .
@@ -308,61 +306,59 @@ class PedidoController extends Controller
 
             $pedidoParaMensaje->load('articulo', 'user');
 
-            if (!Auth::user()->hasRole('admin')) {
-                try {
-                    $articuloNombre = $pedidoParaMensaje->articulo->nombre ?? 'N/A';
-                    $clienteNombre  = $pedidoParaMensaje->user->name ?? 'Cliente';
-                    $clienteNombreResumen = $clienteNombre;
-                    $descripcionStr = strtolower($articuloNombre . ' ' . ($pedidoParaMensaje->descripcion ?? ''));
+            try {
+                $articuloNombre = $pedidoParaMensaje->articulo->nombre ?? 'N/A';
+                $clienteNombre  = $pedidoParaMensaje->user->name ?? 'Cliente';
+                $clienteNombreResumen = $clienteNombre;
+                $descripcionStr = strtolower($articuloNombre . ' ' . ($pedidoParaMensaje->descripcion ?? ''));
 
-                    $esCemita = (strpos($descripcionStr, 'cemita') !== false);
+                $esCemita = (strpos($descripcionStr, 'cemita') !== false);
 
-                    if ($esCemita) {
-                        $tieneCemitas = true;
-                        $qty = (int) $pedidoParaMensaje->cantidad;
-                        if (strpos($descripcionStr, 'hawaiana') !== false || strpos($descripcionStr, 'cubana') !== false || strpos($descripcionStr, 'texana') !== false || strpos($descripcionStr, 'tejama') !== false) {
+                if ($esCemita) {
+                    $tieneCemitas = true;
+                    $qty = (int) $pedidoParaMensaje->cantidad;
+                    if (strpos($descripcionStr, 'hawaiana') !== false || strpos($descripcionStr, 'cubana') !== false || strpos($descripcionStr, 'texana') !== false || strpos($descripcionStr, 'tejama') !== false) {
+                        $cemitasPollo += $qty;
+                        $cemitasPuerco += $qty;
+                    } else {
+                        if (strpos($descripcionStr, 'pollo') !== false) {
                             $cemitasPollo += $qty;
+                        }
+                        if (strpos($descripcionStr, 'puerco') !== false || strpos($descripcionStr, 'cerdo') !== false || strpos($descripcionStr, 'milanesa') !== false) {
                             $cemitasPuerco += $qty;
-                        } else {
-                            if (strpos($descripcionStr, 'pollo') !== false) {
-                                $cemitasPollo += $qty;
-                            }
-                            if (strpos($descripcionStr, 'puerco') !== false || strpos($descripcionStr, 'cerdo') !== false || strpos($descripcionStr, 'milanesa') !== false) {
-                                $cemitasPuerco += $qty;
-                            }
                         }
                     }
+                }
 
-                    $totalFormatted = number_format($pedidoParaMensaje->costo ?? 0, 2);
-                    $mensajeWa = "*🔄 ACTUALIZACIÓN DE PEDIDO #{$pedidoParaMensaje->id}*\n\n" .
-                                 "• *Cliente:* {$clienteNombre}\n" .
-                                 "• *Se modificó a:* {$articuloNombre}\n" .
-                                 "• *Cantidad:* {$pedidoParaMensaje->cantidad}\n" .
-                                 "• *Total modificado:* \${$totalFormatted}\n" .
-                                 "• *Notas:* " . ($pedidoParaMensaje->descripcion ?: 'Sin notas') . "\n\n" .
-                                 "_Enviado por El rico bajon CRM_";
+                $totalFormatted = number_format($pedidoParaMensaje->costo ?? 0, 2);
+                $mensajeWa = "*🔄 ACTUALIZACIÓN DE PEDIDO #{$pedidoParaMensaje->id}*\n\n" .
+                             "• *Cliente:* {$clienteNombre}\n" .
+                             "• *Se modificó a:* {$articuloNombre}\n" .
+                             "• *Cantidad:* {$pedidoParaMensaje->cantidad}\n" .
+                             "• *Total modificado:* \${$totalFormatted}\n" .
+                             "• *Notas:* " . ($pedidoParaMensaje->descripcion ?: 'Sin notas') . "\n\n" .
+                             "_Enviado por El rico bajon CRM_";
 
-                    foreach ($adminPhones as $telAdmin) {
+                foreach ($adminPhones as $telAdmin) {
+                    \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                        'numero' => $telAdmin, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
+                    ]);
+                }
+
+                if (!$esCemita) {
+                    foreach ($cocinaPhones as $telCocina) {
                         \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
-                            'numero' => $telAdmin, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
+                            'numero' => $telCocina, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
                         ]);
                     }
-
-                    if (!$esCemita) {
-                        foreach ($cocinaPhones as $telCocina) {
-                            \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
-                                'numero' => $telCocina, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
-                            ]);
-                        }
-                    }
-                } catch (\Exception $exWa) {
-                    \Illuminate\Support\Facades\Log::error("Error encolando WhatsApp de Actualización Pedido #{$pedidoParaMensaje->id}: " . $exWa->getMessage());
                 }
+            } catch (\Exception $exWa) {
+                \Illuminate\Support\Facades\Log::error("Error encolando WhatsApp de Actualización Pedido #{$pedidoParaMensaje->id}: " . $exWa->getMessage());
             }
         }
 
         // Enviar RESUMEN ACTUALIZADO a COCINA
-        if (!Auth::user()->hasRole('admin') && $tieneCemitas && !empty($cocinaPhones)) {
+        if ($tieneCemitas && !empty($cocinaPhones)) {
             try {
                 $mensajeResumen = "*🧑‍🍳 ACTUALIZACIÓN DE RESUMEN DE MILANESAS*\n\n" .
                                   "• *Cliente:* {$clienteNombreResumen}\n" .
