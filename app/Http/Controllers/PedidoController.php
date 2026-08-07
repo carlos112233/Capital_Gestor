@@ -146,8 +146,7 @@ class PedidoController extends Controller
                     } else {
                         if (strpos($descripcionStr, 'pollo') !== false) {
                             $cemitasPollo += $qty;
-                        }
-                        if (strpos($descripcionStr, 'puerco') !== false || strpos($descripcionStr, 'cerdo') !== false || strpos($descripcionStr, 'milanesa') !== false) {
+                        } elseif (strpos($descripcionStr, 'puerco') !== false || strpos($descripcionStr, 'cerdo') !== false || strpos($descripcionStr, 'milanesa') !== false) {
                             $cemitasPuerco += $qty;
                         }
                     }
@@ -330,8 +329,7 @@ class PedidoController extends Controller
                     } else {
                         if (strpos($descripcionStr, 'pollo') !== false) {
                             $cemitasPollo += $qty;
-                        }
-                        if (strpos($descripcionStr, 'puerco') !== false || strpos($descripcionStr, 'cerdo') !== false || strpos($descripcionStr, 'milanesa') !== false) {
+                        } elseif (strpos($descripcionStr, 'puerco') !== false || strpos($descripcionStr, 'cerdo') !== false || strpos($descripcionStr, 'milanesa') !== false) {
                             $cemitasPuerco += $qty;
                         }
                     }
