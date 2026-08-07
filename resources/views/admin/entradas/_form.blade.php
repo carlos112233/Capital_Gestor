@@ -64,7 +64,7 @@
 <div class="mb-4">
     <label for="descripcion" class="block text-gray-700 font-bold mb-2">Descripción del pedido</label>
     <textarea name="descripcion"
-              class="descripcion_input block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ $esSaldar ? 'Pagar saldo' : old('descripcion', $entrada->descripcion ?? '') }}</textarea>
+              class="descripcion_input block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ $esSaldar ? 'Pago saldado' : old('descripcion', $entrada->descripcion ?? '') }}</textarea>
 </div>
 
 <div class="flex justify-end gap-3 mt-4 border-t border-slate-100 pt-4">
@@ -129,9 +129,7 @@
                     }
                 }
 
-                tipoPago.addEventListener('change', function() {
-                    updateArticulos();
-                    
+                function applySaldarLogic() {
                     if (articuloSelect.tomselect && tipoPago.value === '2') {
                         let saldadoVal = null;
                         Array.from(articuloSelect.options).forEach(opt => {
@@ -140,9 +138,22 @@
                             }
                         });
                         if (saldadoVal) articuloSelect.tomselect.setValue(saldadoVal);
-                    } else if (articuloSelect.tomselect && tipoPago.value === '1') {
+                    }
+
+                    const descInput = form.querySelector('.descripcion_input');
+                    if (tipoPago.value === '2' && descInput && (!descInput.value || descInput.value === "Pagar saldo")) {
+                        descInput.value = "Pago saldado";
+                    }
+                }
+
+                tipoPago.addEventListener('change', function() {
+                    updateArticulos();
+                    
+                    if (articuloSelect.tomselect && tipoPago.value === '1') {
                         articuloSelect.tomselect.setValue('');
                     }
+                    
+                    applySaldarLogic();
 
                     if (tipoPago.value === '1' && articuloSelect.selectedIndex > 0) {
                         const selOpt = articuloSelect.options[articuloSelect.selectedIndex];
@@ -152,9 +163,7 @@
                     }
 
                     const descInput = form.querySelector('.descripcion_input');
-                    if (tipoPago.value === '2' && descInput) {
-                        descInput.value = "Pagar saldo";
-                    } else if (tipoPago.value === '1' && descInput && descInput.value === "Pagar saldo") {
+                    if (tipoPago.value === '1' && descInput && (descInput.value === "Pagar saldo" || descInput.value === "Pago saldado")) {
                         descInput.value = "";
                     }
                 });
@@ -168,6 +177,8 @@
 
                 if (tipoPago.value) {
                     updateArticulos();
+                    // We must wait for tomselect to be initialized globally
+                    setTimeout(applySaldarLogic, 100);
                 }
             });
         }
