@@ -93,8 +93,8 @@
 
                 function updateArticulos() {
                     const val = tipoPago.value;
-                    let saldadoOption = null;
-                    let firstRegularOption = null;
+                    let saldadoVal = null;
+                    let firstRegularVal = null;
 
                     Array.from(articuloSelect.options).forEach(opt => {
                         if (opt.value === "") return;
@@ -104,66 +104,64 @@
                             if (isSaldado) {
                                 opt.hidden = false;
                                 opt.disabled = false;
-                                opt.selected = true;
-                                saldadoOption = opt;
+                                saldadoVal = opt.value;
+                                if (articuloSelect.tomselect) articuloSelect.tomselect.enableOption(opt.value);
                             } else {
                                 opt.hidden = true;
                                 opt.disabled = true;
-                                opt.selected = false;
+                                if (articuloSelect.tomselect) articuloSelect.tomselect.disableOption(opt.value);
                             }
                         } else if (val === "1") { // Por artículo
                             if (isSaldado) {
                                 opt.hidden = true;
                                 opt.disabled = true;
-                                opt.selected = false;
+                                if (articuloSelect.tomselect) articuloSelect.tomselect.disableOption(opt.value);
                             } else {
                                 opt.hidden = false;
                                 opt.disabled = false;
-                                if (!firstRegularOption) firstRegularOption = opt;
+                                if (!firstRegularVal) firstRegularVal = opt.value;
+                                if (articuloSelect.tomselect) articuloSelect.tomselect.enableOption(opt.value);
                             }
                         }
                     });
 
-                    if (val === "2" && saldadoOption) {
-                        saldadoOption.selected = true;
+                    if (val === "2" && saldadoVal) {
+                        if (articuloSelect.tomselect) {
+                            articuloSelect.tomselect.setValue(saldadoVal);
+                        } else {
+                            articuloSelect.value = saldadoVal;
+                        }
                     }
                 }
 
-                function applySaldarLogic() {
-                    if (articuloSelect.tomselect && tipoPago.value === '2') {
-                        // updateArticulos ya seleccionó el option correcto en el DOM nativo
-                        articuloSelect.tomselect.setValue(articuloSelect.value);
-                    }
-
+                function updateDescription() {
                     const descInput = form.querySelector('.descripcion_input');
-                    if (tipoPago.value === '2' && descInput && (!descInput.value || descInput.value === "Pagar saldo")) {
-                        descInput.value = "Pago saldado";
+                    if (!descInput) return;
+                    
+                    if (tipoPago.value === '2') {
+                        if (!descInput.value || descInput.value === "Pagar saldo") {
+                            descInput.value = "Pago saldado";
+                        }
+                    } else if (tipoPago.value === '1') {
+                        if (descInput.value === "Pagar saldo" || descInput.value === "Pago saldado") {
+                            descInput.value = "";
+                        }
                     }
                 }
 
                 tipoPago.addEventListener('change', function() {
                     updateArticulos();
-                    
-                    if (articuloSelect.tomselect) {
-                        articuloSelect.tomselect.sync();
-                    }
+                    updateDescription();
                     
                     if (articuloSelect.tomselect && tipoPago.value === '1') {
                         articuloSelect.tomselect.setValue('');
                     }
-                    
-                    applySaldarLogic();
 
                     if (tipoPago.value === '1' && articuloSelect.selectedIndex > 0) {
                         const selOpt = articuloSelect.options[articuloSelect.selectedIndex];
                         if (selOpt && selOpt.dataset.precio && precioInput) {
                             precioInput.value = parseFloat(selOpt.dataset.precio).toFixed(2);
                         }
-                    }
-
-                    const descInput = form.querySelector('.descripcion_input');
-                    if (tipoPago.value === '1' && descInput && (descInput.value === "Pagar saldo" || descInput.value === "Pago saldado")) {
-                        descInput.value = "";
                     }
                 });
 
@@ -176,11 +174,11 @@
 
                 if (tipoPago.value) {
                     updateArticulos();
+                    updateDescription();
                     let attempts = 0;
                     let checkTs = setInterval(function() {
                         if (articuloSelect.tomselect) {
-                            articuloSelect.tomselect.sync();
-                            applySaldarLogic();
+                            updateArticulos();
                             clearInterval(checkTs);
                         }
                         if (++attempts > 20) clearInterval(checkTs);
