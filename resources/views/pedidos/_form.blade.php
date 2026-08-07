@@ -33,7 +33,7 @@
             @if (Auth::user()->hasRole('admin'))
                 <div class="mb-2">
                     <label class="block font-bold text-gray-700">Usuario</label>
-                    <select name="pedidos[{{ $i }}][user_id]" class="w-full border-gray-300 rounded-lg"
+                    <select name="pedidos[{{ $i }}][user_id]" class="user-select w-full border-gray-300 rounded-lg"
                         required>
                         <option value="">Seleccione un usuario</option>
                         @foreach ($users as $user)
@@ -141,6 +141,14 @@
         });
     }
 
+    function activarBuscadorUser(el) {
+        if (!el || el.tomselect || typeof TomSelect === 'undefined') return;
+        new TomSelect(el, {
+            create: false,
+            placeholder: "Buscar usuario..."
+        });
+    }
+
     let moldeLimpio = null;
     let index = form.querySelectorAll('.pedido-item').length || 1;
 
@@ -156,6 +164,10 @@
         form.querySelectorAll('.articulo-select').forEach(select => {
             activarBuscador(select);
             actualizarCosto(select);
+        });
+
+        form.querySelectorAll('.user-select').forEach(select => {
+            activarBuscadorUser(select);
         });
     }
 
@@ -193,6 +205,8 @@
                     moldeLimpio.querySelectorAll('input, textarea').forEach(el => el.value = '');
                     const selectMolde = moldeLimpio.querySelector('.articulo-select');
                     if (selectMolde) selectMolde.value = "";
+                    const selectUserMolde = moldeLimpio.querySelector('.user-select');
+                    if (selectUserMolde) selectUserMolde.value = "";
                 }
             }
             if (!moldeLimpio) return;
@@ -210,6 +224,10 @@
             container.appendChild(clone);
             const nuevoSelect = clone.querySelector('.articulo-select');
             activarBuscador(nuevoSelect);
+            
+            const nuevoUserSelect = clone.querySelector('.user-select');
+            if (nuevoUserSelect) activarBuscadorUser(nuevoUserSelect);
+            
             index++;
         });
     }

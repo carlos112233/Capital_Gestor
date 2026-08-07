@@ -87,10 +87,16 @@
             const clienteSelect = form.querySelector('[name="cliente_id"]');
             const descripcionInput = form.querySelector('[name="descripcion"]');
 
-            if (articuloSelect) articuloSelect.value = venta.articulo_id || '';
+            if (articuloSelect) {
+                if (articuloSelect.tomselect) articuloSelect.tomselect.setValue(venta.articulo_id || '');
+                else articuloSelect.value = venta.articulo_id || '';
+            }
             if (precioInput) precioInput.value = parseFloat(venta.precio_venta || 0).toFixed(2);
             if (cantidadInput) cantidadInput.value = venta.cantidad || 1;
-            if (clienteSelect) clienteSelect.value = venta.user_id || '';
+            if (clienteSelect) {
+                if (clienteSelect.tomselect) clienteSelect.tomselect.setValue(venta.user_id || '');
+                else clienteSelect.value = venta.user_id || '';
+            }
             if (descripcionInput) descripcionInput.value = venta.descripcion || '';
         }
         openModal('edit-venta');
