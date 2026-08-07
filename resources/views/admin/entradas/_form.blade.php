@@ -149,6 +149,10 @@
                 tipoPago.addEventListener('change', function() {
                     updateArticulos();
                     
+                    if (articuloSelect.tomselect) {
+                        articuloSelect.tomselect.sync();
+                    }
+                    
                     if (articuloSelect.tomselect && tipoPago.value === '1') {
                         articuloSelect.tomselect.setValue('');
                     }
@@ -177,8 +181,15 @@
 
                 if (tipoPago.value) {
                     updateArticulos();
-                    // We must wait for tomselect to be initialized globally
-                    setTimeout(applySaldarLogic, 100);
+                    let attempts = 0;
+                    let checkTs = setInterval(function() {
+                        if (articuloSelect.tomselect) {
+                            articuloSelect.tomselect.sync();
+                            applySaldarLogic();
+                            clearInterval(checkTs);
+                        }
+                        if (++attempts > 20) clearInterval(checkTs);
+                    }, 100);
                 }
             });
         }
