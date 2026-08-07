@@ -131,13 +131,8 @@
 
                 function applySaldarLogic() {
                     if (articuloSelect.tomselect && tipoPago.value === '2') {
-                        let saldadoVal = null;
-                        Array.from(articuloSelect.options).forEach(opt => {
-                            if (opt.textContent.trim().toLowerCase() === 'pago saldado') {
-                                saldadoVal = opt.value;
-                            }
-                        });
-                        if (saldadoVal) articuloSelect.tomselect.setValue(saldadoVal);
+                        // updateArticulos ya seleccionó el option correcto en el DOM nativo
+                        articuloSelect.tomselect.setValue(articuloSelect.value);
                     }
 
                     const descInput = form.querySelector('.descripcion_input');
