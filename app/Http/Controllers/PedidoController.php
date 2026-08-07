@@ -162,11 +162,18 @@ class PedidoController extends Controller
                              "• *Notas:* " . ($pedido->descripcion ?: 'Sin notas') . "\n\n" .
                              "_Enviado por El rico bajon CRM_";
 
-                // Enviar individual a ADMIN siempre
-                foreach ($adminPhones as $telAdmin) {
-                    \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
-                        'numero' => $telAdmin, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
-                    ]);
+                // Enviar individual a ADMIN
+                $sendToAdmin = true;
+                if (Auth::user()->hasRole('admin') && !$esCemita) {
+                    $sendToAdmin = false;
+                }
+
+                if ($sendToAdmin) {
+                    foreach ($adminPhones as $telAdmin) {
+                        \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                            'numero' => $telAdmin, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
+                        ]);
+                    }
                 }
 
                 // Enviar individual a COCINA solo si no es cemita
@@ -339,10 +346,17 @@ class PedidoController extends Controller
                              "• *Notas:* " . ($pedidoParaMensaje->descripcion ?: 'Sin notas') . "\n\n" .
                              "_Enviado por El rico bajon CRM_";
 
-                foreach ($adminPhones as $telAdmin) {
-                    \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
-                        'numero' => $telAdmin, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
-                    ]);
+                $sendToAdmin = true;
+                if (Auth::user()->hasRole('admin') && !$esCemita) {
+                    $sendToAdmin = false;
+                }
+
+                if ($sendToAdmin) {
+                    foreach ($adminPhones as $telAdmin) {
+                        \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                            'numero' => $telAdmin, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
+                        ]);
+                    }
                 }
 
                 if (!$esCemita) {
