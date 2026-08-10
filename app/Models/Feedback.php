@@ -86,17 +86,17 @@ class Feedback extends Model
             }
 
             $feedback->loadMissing('user');
-            $usuarioNombre = $feedback->user->name ?? 'Usuario del CRM';
+            $usuarioNombre = $feedback->user->name ?? 'Usuario del sistema';
             $tipoLabel = strtoupper($feedback->tipo);
             $asunto = $feedback->asunto ?: 'Sin asunto';
 
-            $mensajeWa = "*📢 NUEVO / A " . $tipoLabel . " - El rico bajon*\n\n" .
-                         "• *Usuario:* {$usuarioNombre}\n" .
-                         "• *Tipo:* " . ucfirst($feedback->tipo) . "\n" .
-                         "• *Asunto:* {$asunto}\n" .
-                         "• *Mensaje:* {$feedback->mensaje}\n" .
-                         "• *Estado:* Enviado 🔴\n\n" .
-                         "_Ingresa al CRM en la sección Quejas y Sugerencias para revisarlo y responder._";
+            $mensajeWa = "*📢 NUEVO / A " . $tipoLabel . " - El bajon*\n\n" .
+                "• *Usuario:* {$usuarioNombre}\n" .
+                "• *Tipo:* " . ucfirst($feedback->tipo) . "\n" .
+                "• *Asunto:* {$asunto}\n" .
+                "• *Mensaje:* {$feedback->mensaje}\n" .
+                "• *Estado:* Enviado 🔴\n\n" .
+                "_Ingresa al CRM en la sección Quejas y Sugerencias para revisarlo y responder._";
 
             foreach ($adminPhones as $telAdmin) {
                 DB::table('whatsapp_pending_messages')->insert([

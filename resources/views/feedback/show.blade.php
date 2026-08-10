@@ -60,7 +60,7 @@
                         <span class="text-2xl">🟠</span>
                         <div>
                             <p class="font-bold text-sm">El Administrador está revisando tu mensaje</p>
-                            <p class="text-xs opacity-90">El equipo del CRM ya abrió esta conversación y está al tanto de tu queja o sugerencia.</p>
+                            <p class="text-xs opacity-90">El equipo ya abrió esta conversación y está al tanto de tu queja o sugerencia.</p>
                         </div>
                     @else
                         <span class="text-2xl">🟢</span>
@@ -104,7 +104,7 @@
                         </div>
                         <div>
                             <h3 class="font-bold text-gray-900 text-base">
-                                {{ $feedback->user->name ?? 'Usuario del CRM' }}
+                                {{ $feedback->user->name ?? 'Usuario del sistema' }}
                                 @if($feedback->user && $feedback->user->hasRole('admin'))
                                     <span class="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full ml-1">ADMIN</span>
                                 @endif

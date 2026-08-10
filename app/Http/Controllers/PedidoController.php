@@ -153,13 +153,13 @@ class PedidoController extends Controller
                 }
 
                 $totalFormatted = number_format($pedido->costo ?? 0, 2);
-                $mensajeWa = "*📦 NUEVO PEDIDO #{$pedido->id} - El rico bajon*\n\n" .
+                $mensajeWa = "*📦 NUEVO PEDIDO #{$pedido->id} - El bajon*\n\n" .
                              "• *Cliente:* {$clienteNombre}\n" .
                              "• *Artículo:* {$articuloNombre}\n" .
                              "• *Cantidad:* {$pedido->cantidad}\n" .
                              "• *Total:* \${$totalFormatted}\n" .
                              "• *Notas:* " . ($pedido->descripcion ?: 'Sin notas') . "\n\n" .
-                             "_Enviado por El rico bajon CRM_";
+                             "_Enviado por El bajon_";
 
                 // Enviar individual a ADMIN
                 $sendToAdmin = true;
@@ -342,7 +342,7 @@ class PedidoController extends Controller
                              "• *Cantidad:* {$pedidoParaMensaje->cantidad}\n" .
                              "• *Total modificado:* \${$totalFormatted}\n" .
                              "• *Notas:* " . ($pedidoParaMensaje->descripcion ?: 'Sin notas') . "\n\n" .
-                             "_Enviado por El rico bajon CRM_";
+                             "_Enviado por El bajon_";
 
                 $sendToAdmin = true;
                 if (Auth::user()->hasRole('admin') && !$esCemita) {

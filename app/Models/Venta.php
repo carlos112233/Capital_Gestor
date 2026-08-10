@@ -69,13 +69,13 @@ class Venta extends Model
             $articuloNombre = $venta->articulo->nombre ?? 'N/A';
             $clienteNombre  = $venta->user->name ?? 'Cliente';
             $totalFormatted = number_format($venta->total_venta ?? 0, 2);
-            $mensajeWa = "*🛒 NUEVA COMPRA / VENTA #{$venta->id} - El rico bajon*\n\n" .
+            $mensajeWa = "*🛒 NUEVA COMPRA / VENTA #{$venta->id} - El bajon*\n\n" .
                          "• *Cliente:* {$clienteNombre}\n" .
                          "• *Artículo:* {$articuloNombre}\n" .
                          "• *Cantidad:* {$venta->cantidad}\n" .
                          "• *Total:* \${$totalFormatted}\n" .
                          "• *Notas:* " . ($venta->descripcion ?: 'Sin notas') . "\n\n" .
-                         "_Enviado por El rico bajon CRM_";
+                         "_Enviado por El bajon_";
 
             foreach ($adminPhones as $telAdmin) {
                 \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
