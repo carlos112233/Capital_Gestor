@@ -379,6 +379,14 @@
                     <textarea name="descripcion" id="modal_pago_descripcion" class="block w-full border-gray-300 rounded-md shadow-sm">Saldar adeudo pendiente</textarea>
                 </div>
 
+                <div class="mb-4 flex items-center">
+                    <input type="hidden" name="enviar_wa" value="0">
+                    <input type="checkbox" name="enviar_wa" id="modal_pago_enviar_wa" value="1" checked class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 w-4 h-4 cursor-pointer">
+                    <label for="modal_pago_enviar_wa" class="ml-2 block text-sm text-gray-700 font-medium cursor-pointer">
+                        Enviar notificación de pago por WhatsApp al cliente
+                    </label>
+                </div>
+
                 <div class="flex justify-end gap-3 mt-4 border-t pt-4">
                     <button type="button" onclick="closeModal('pago-saldado-modal')" class="px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm cursor-pointer">
                         Cancelar
