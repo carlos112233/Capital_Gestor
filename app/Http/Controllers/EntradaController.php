@@ -128,7 +128,9 @@ class EntradaController extends Controller
         $entrada = Entrada::create($data);
 
         // Enviar notificación de WhatsApp si es admin, se le registró a un cliente, y el checkbox enviar_wa está marcado
-        $enviarWa = $request->has('enviar_wa') ? $request->boolean('enviar_wa') : true;
+        $enviarWa = filter_var($request->input('enviar_wa', 1), FILTER_VALIDATE_BOOLEAN);
+
+        \Illuminate\Support\Facades\Log::info("Debug WhatsApp Entrada #{$entrada->id}: enviarWa=" . ($enviarWa ? '1' : '0') . " | requestValue=" . json_encode($request->input('enviar_wa')) . " | isAdmin=" . (Auth::user()->hasRole('admin') ? '1' : '0') . " | clienteId={$clienteId} | authId=" . Auth::id());
 
         if ($enviarWa && Auth::user()->hasRole('admin') && $clienteId != Auth::id()) {
             $cliente = User::find($clienteId);
