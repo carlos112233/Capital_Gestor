@@ -16,7 +16,7 @@ class DashboardController extends Controller
     {
         $fechaCorteAnterior = (new User())->fecha_corte_anterior;
 
-        $resumen = User::select('id', 'name', 'email', 'telefono')
+        $resumen = User::select('id', 'name', 'email', 'telefono', 'image', 'image_tipo')
             ->withSum('ventas', 'total_venta')
             ->withSum(['ventas as ventas_corte_sum' => function ($query) use ($fechaCorteAnterior) {
                 $query->where('created_at', '<=', $fechaCorteAnterior);
