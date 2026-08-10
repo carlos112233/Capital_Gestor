@@ -19,6 +19,17 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Aprovechamos para configurar los proxies de Render (evita errores de HTTPS)
         $middleware->trustProxies(at: '*');
+
+        // Redirección para usuarios NO autenticados que intentan acceder a rutas protegidas
+        $middleware->redirectGuestsTo('/login');
+
+        // Redirección para usuarios SÍ autenticados que intentan acceder al login/registro
+        $middleware->redirectUsersTo(function () {
+            if (auth()->check() && auth()->user()->hasRole('admin')) {
+                return route('dashboardAdmin');
+            }
+            return route('dashboard');
+        });
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

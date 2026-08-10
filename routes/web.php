@@ -14,8 +14,15 @@ use App\Http\Controllers\DashboardController;
 use App\Notifications\GeneralNotification;
 use Illuminate\Support\Facades\Http;
 
-Route::get('/', [AuthenticatedSessionController::class, 'create'])
-    ->name('session');
+Route::get('/', function () {
+    if (auth()->check()) {
+        if (auth()->user()->hasRole('admin')) {
+            return redirect()->route('dashboardAdmin');
+        }
+        return redirect()->route('dashboard');
+    }
+    return redirect()->route('login');
+})->name('session');
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('dashboardAdmin', [DashboardController::class, 'indexAdmin'])
