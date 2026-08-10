@@ -52,6 +52,18 @@
             </div>
         </div>
 
+        <!-- Modal Foto de Perfil (Global) que escucha el evento -->
+        @if(Auth::check() && Auth::user()->image)
+            <div x-data="{ openGlobalPhotoModal: false }" @open-global-photo-modal.window="openGlobalPhotoModal = true" x-show="openGlobalPhotoModal" style="display: none;" x-transition class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+                <div @click.away="openGlobalPhotoModal = false" class="relative w-full max-w-3xl flex justify-center items-center">
+                    <button @click="openGlobalPhotoModal = false" class="absolute -top-12 right-0 md:-right-8 md:-top-8 text-white hover:text-slate-300 focus:outline-none bg-white/10 p-2 rounded-full backdrop-blur-md">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                    <img src="data:{{ Auth::user()->image_tipo }};base64,{{ Auth::user()->image }}" class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-white/10">
+                </div>
+            </div>
+        @endif
+
         <!-- SweetAlert2 -->
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
