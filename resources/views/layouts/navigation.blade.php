@@ -254,7 +254,7 @@
             <div class="flex items-center mr-1">
                 @if(Auth::user()->image)
                     <button @click="$dispatch('open-global-photo-modal')" class="focus:outline-none cursor-pointer transform hover:scale-105 transition-transform" title="Ver foto de perfil">
-                        <img src="{{ route('user.image', Auth::user()->id) }}" class="w-9 h-9 rounded-xl object-cover shadow-sm border border-slate-200" alt="Foto de perfil">
+                        <img src="{{ route('user.image', Auth::user()->id) }}?v={{ Auth::user()->updated_at?->timestamp }}" class="w-9 h-9 rounded-xl object-cover shadow-sm border border-slate-200" alt="Foto de perfil">
                     </button>
                 @else
                     <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
