@@ -5,45 +5,56 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'El rico bajon') }}</title>
+        <title>{{ config('app.name', 'El bajon') }}</title>
         <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
         <link rel="icon" type="image/png" href="{{ asset('img/Logo.png') }}">
         <link rel="manifest" href="{{ asset('manifest.json') }}">
         <meta name="theme-color" content="#4f46e5">
-        <link rel="apple-touch-icon" href="{{ asset('img/icon-192.png') }}">
+
+        <!-- Meta Tags para PWA -->
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-        <meta name="apple-mobile-web-app-title" content="El rico bajon">
-
+        <meta name="apple-mobile-web-app-title" content="El bajon">
+        
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased text-slate-800 bg-slate-900 selection:bg-indigo-500 selection:text-white">
-        <div class="min-h-screen flex flex-col sm:justify-center items-center py-8 px-4 relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
-            
-            <!-- Glow decorative background -->
-            <div class="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl pointer-events-none"></div>
+    <body class="font-inter antialiased bg-slate-50 dark:bg-[#0B0F19] selection:bg-indigo-500 selection:text-white">
+        <!-- Partículas de fondo animadas -->
+        <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+            <div class="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-[100px] animate-pulse-slow"></div>
+            <div class="absolute top-[20%] -right-[10%] w-[40%] h-[60%] rounded-full bg-violet-500/10 blur-[120px] animate-pulse-slow" style="animation-delay: 2s;"></div>
+            <div class="absolute -bottom-[20%] left-[20%] w-[60%] h-[40%] rounded-full bg-fuchsia-500/10 blur-[100px] animate-pulse-slow" style="animation-delay: 4s;"></div>
+        </div>
 
-            <div class="mb-4 relative z-10">
-                <a href="/" class="flex justify-center group">
-                    <img src="{{ file_exists(public_path('img/Logo.svg')) ? asset('img/Logo.svg') : asset('img/Logo.png') }}?v={{ time() }}" 
-                         style="height: 180px; width: auto; object-fit: contain;" 
-                         class="mx-auto drop-shadow-2xl transition-transform duration-300 group-hover:scale-105" 
-                         alt="Capital Gestor Logo">
+        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 relative z-10">
+            <!-- Logo con efecto de levitación -->
+            <div class="mb-8 transform hover:scale-105 transition-all duration-300 animate-float">
+                <a href="/" class="flex flex-col items-center gap-4 group">
+                    <div class="relative p-4 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 shadow-2xl">
+                        <div class="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 rounded-2xl blur-md group-hover:blur-lg transition-all"></div>
+                        <img src="{{ asset('img/Logo.png') }}" 
+                         class="h-24 w-auto relative z-10 drop-shadow-xl" 
+                         alt="El bajon Logo">
+                    </div>
                 </a>
             </div>
 
-            <div class="w-full sm:max-w-md bg-white border border-slate-100 shadow-2xl rounded-2xl p-6 sm:p-8 relative z-10">
+            <!-- Contenedor Glassmorphism para el contenido -->
+            <div class="w-full sm:max-w-md mt-2 px-8 py-10 bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] sm:rounded-3xl border border-slate-200/50 dark:border-white/10 relative overflow-hidden">
+                <!-- Brillo superior -->
+                <div class="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
+                
                 {{ $slot }}
             </div>
 
-            <div class="mt-6 text-center text-xs text-slate-400 relative z-10 font-medium">
-                &copy; {{ date('Y') }} El rico bajon &bull; Todos los derechos reservados
+            <!-- Footer minimalista -->
+            <div class="mt-8 text-sm text-slate-500 dark:text-slate-400">
+                &copy; {{ date('Y') }} El bajon &bull; Todos los derechos reservados
             </div>
         </div>
         <script>

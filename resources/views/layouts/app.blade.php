@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'El rico bajon') }}</title>
+        <title>{{ config('app.name', 'El bajon') }}</title>
         <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
         <link rel="icon" type="image/png" href="{{ asset('img/Logo.png') }}">
         <link rel="manifest" href="{{ asset('manifest.json') }}">
@@ -13,7 +13,7 @@
         <link rel="apple-touch-icon" href="{{ asset('img/icon-192.png') }}">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-        <meta name="apple-mobile-web-app-title" content="El rico bajon">
+        <meta name="apple-mobile-web-app-title" content="El bajon">
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />

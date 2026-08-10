@@ -22,7 +22,7 @@
                 <img src="{{ file_exists(public_path('img/Logo.svg')) ? asset('img/Logo.svg') : asset('img/Logo.png') }}?v={{ time() }}" class="h-9 w-9 object-contain" alt="Logo Comida Rápida">
             </div>
             <div x-show="sidebarOpen" x-transition class="flex flex-col whitespace-nowrap">
-                <span class="font-extrabold text-white text-base tracking-wide leading-tight">Capital Gestor</span>
+                <span class="font-extrabold text-white text-base tracking-wide leading-tight">El bajon</span>
                 <span class="text-[11px] text-indigo-400 font-extrabold tracking-wider uppercase mt-0.5">PANEL ADMIN</span>
             </div>
         </a>
@@ -222,7 +222,7 @@
                 <img src="{{ file_exists(public_path('img/Logo.svg')) ? asset('img/Logo.svg') : asset('img/Logo.png') }}?v={{ time() }}" class="h-8 w-8 object-contain" alt="Logo">
             </div>
             <div class="flex flex-col whitespace-nowrap">
-                <span class="font-extrabold text-white text-base tracking-wide leading-tight">Capital Gestor</span>
+                <span class="font-extrabold text-white text-base tracking-wide leading-tight">El bajon</span>
                 <span class="text-[11px] text-indigo-400 font-extrabold tracking-wider uppercase mt-0.5">PANEL ADMIN</span>
             </div>
         </a>

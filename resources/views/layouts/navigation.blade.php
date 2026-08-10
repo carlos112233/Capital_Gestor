@@ -69,7 +69,7 @@
             <!-- Botón PWA Install -->
             <button id="pwa-install-btn" style="display: none;"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition-all duration-200 cursor-pointer"
-                title="Instalar App El rico bajon">
+                title="Instalar App El bajon">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8l-8 8-8-8"/>
                 </svg>
