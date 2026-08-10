@@ -29,6 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/user/{id}/image', [ProfileController::class, 'showImage'])->name('user.image');
     Route::get('catalogo', [CatalogoController::class, 'index'])->name('catalogo.index');
     Route::post('catalogo/vender', [CatalogoController::class, 'vender'])->name('catalogo.vender');
     Route::resource('pedidos', PedidoController::class);

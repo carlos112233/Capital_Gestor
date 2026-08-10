@@ -63,4 +63,22 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+
+    /**
+     * Show the user profile image
+     */
+    public function showImage($id)
+    {
+        $user = \App\Models\User::select('image', 'image_tipo')->findOrFail($id);
+
+        if (!$user->image) {
+            abort(404);
+        }
+
+        $image = base64_decode($user->image);
+
+        return response($image, 200)
+            ->header('Content-Type', $user->image_tipo ?? 'image/jpeg')
+            ->header('Cache-Control', 'max-age=86400, public');
+    }
 }
