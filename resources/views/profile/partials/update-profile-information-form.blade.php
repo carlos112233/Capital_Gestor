@@ -15,7 +15,7 @@
         @csrf
     </form>
 
-    <form method="post" action="{{ route('profile.update') }}" class="space-y-5">
+    <form method="post" action="{{ route('profile.update') }}" class="space-y-5" enctype="multipart/form-data">
         @csrf
         @method('patch')
 
@@ -54,6 +54,30 @@
                             Se ha enviado un nuevo enlace de verificación a tu correo.
                         </p>
                     @endif
+                </div>
+            @endif
+        </div>
+
+        <div>
+            <label for="image" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Foto de Perfil</label>
+            <div x-data="{ fileName: '' }" class="relative">
+                <label class="flex items-center justify-center gap-3 w-full px-4 py-3 rounded-xl border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-indigo-50/50 hover:bg-indigo-50 text-indigo-700 font-semibold text-sm cursor-pointer transition-all duration-200 shadow-sm">
+                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                    </svg>
+                    <span x-text="fileName ? fileName : 'Haga clic para seleccionar imagen de perfil o arrastre aquí'"></span>
+                    <input type="file" name="image" id="image" accept="image/*" class="hidden"
+                           @change="fileName = $event.target.files[0] ? $event.target.files[0].name : ''">
+                </label>
+            </div>
+            <p class="text-slate-500 text-xs mt-1">Formatos permitidos: JPG, PNG. Máximo 2MB.</p>
+            <x-input-error class="mt-1.5 text-xs text-rose-500 font-semibold" :messages="$errors->get('image')" />
+
+            @if ($user->image)
+                <div class="mt-3">
+                    <p class="text-sm text-slate-600 mb-1">Imagen actual:</p>
+                    <img src="data:{{ $user->image_tipo }};base64,{{ $user->image }}" 
+                         class="w-32 h-32 object-cover rounded-lg border shadow-md">
                 </div>
             @endif
         </div>

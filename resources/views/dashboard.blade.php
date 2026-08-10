@@ -1,8 +1,26 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Resumen semanal') }}
-        </h2>
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                {{ __('Resumen semanal') }}
+            </h2>
+            @if(Auth::user()->image)
+                <div x-data="{ openDashboardPhoto: false }" class="flex items-center">
+                    <button @click="openDashboardPhoto = true" class="focus:outline-none cursor-pointer transform hover:scale-105 transition-transform" title="Ver foto de perfil">
+                        <img src="data:{{ Auth::user()->image_tipo }};base64,{{ Auth::user()->image }}" class="w-10 h-10 rounded-full object-cover shadow-sm border-2 border-indigo-200" alt="Foto de perfil">
+                    </button>
+                    <!-- Modal Foto de Perfil (Dashboard) -->
+                    <div x-show="openDashboardPhoto" style="display: none;" x-transition class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+                        <div @click.away="openDashboardPhoto = false" class="relative max-w-2xl w-full transform transition-all">
+                            <button @click="openDashboardPhoto = false" class="absolute -top-12 right-0 text-white hover:text-slate-300 focus:outline-none bg-white/10 p-2 rounded-full backdrop-blur-md">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                            <img src="data:{{ Auth::user()->image_tipo }};base64,{{ Auth::user()->image }}" class="w-full h-auto rounded-2xl shadow-2xl object-contain max-h-[85vh] border border-white/10">
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </div>
     </x-slot>
 
     <div class="py-12">

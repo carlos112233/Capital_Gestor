@@ -250,14 +250,33 @@
 
             <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
 
+            <!-- Botón Foto de Perfil / Modal -->
+            <div x-data="{ openPhotoModal: false }" class="flex items-center mr-1">
+                @if(Auth::user()->image)
+                    <button @click="openPhotoModal = true" class="focus:outline-none cursor-pointer transform hover:scale-105 transition-transform" title="Ver foto de perfil">
+                        <img src="data:{{ Auth::user()->image_tipo }};base64,{{ Auth::user()->image }}" class="w-9 h-9 rounded-xl object-cover shadow-sm border border-slate-200" alt="Foto de perfil">
+                    </button>
+                    <!-- Modal Foto de Perfil (Global) -->
+                    <div x-show="openPhotoModal" style="display: none;" x-transition class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+                        <div @click.away="openPhotoModal = false" class="relative max-w-2xl w-full transform transition-all">
+                            <button @click="openPhotoModal = false" class="absolute -top-12 right-0 text-white hover:text-slate-300 focus:outline-none bg-white/10 p-2 rounded-full backdrop-blur-md">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                            <img src="data:{{ Auth::user()->image_tipo }};base64,{{ Auth::user()->image }}" class="w-full h-auto rounded-2xl shadow-2xl object-contain max-h-[85vh] border border-white/10">
+                        </div>
+                    </div>
+                @else
+                    <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
+                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                    </div>
+                @endif
+            </div>
+
             <!-- Dropdown Perfil de Usuario -->
             <x-dropdown align="right" width="48">
                 <x-slot name="trigger">
-                    <button class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer">
-                        <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-xs shadow-sm">
-                            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-                        </div>
-                        <span class="hidden sm:inline-block font-semibold text-sm text-slate-700">{{ Auth::user()->name }}</span>
+                    <button class="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer">
+                        <span class="hidden sm:inline-block font-semibold text-sm text-slate-700 ml-1">{{ Auth::user()->name }}</span>
                         <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
