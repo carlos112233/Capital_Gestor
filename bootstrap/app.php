@@ -20,6 +20,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Aprovechamos para configurar los proxies de Render (evita errores de HTTPS)
         $middleware->trustProxies(at: '*');
 
+        // Excluir rutas Push de CSRF para evitar error 419 en PWA
+        $middleware->validateCsrfTokens(except: [
+            '/push/*',
+        ]);
+
         // Redirección para usuarios NO autenticados que intentan acceder a rutas protegidas
         $middleware->redirectGuestsTo('/login');
 
