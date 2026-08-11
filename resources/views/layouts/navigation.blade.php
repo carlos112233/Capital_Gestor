@@ -272,8 +272,7 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
         
         // Push Notifications Logic
         const pushBtn = document.getElementById('enable-push-btn');
-        if (pushBtn) {
-            // Siempre mostrar el botón para depurar
+        if (pushBtn && 'serviceWorker' in navigator && 'PushManager' in window) {
             pushBtn.style.display = 'inline-block';
             
             // Convertir VAPID a Uint8Array
@@ -286,60 +285,50 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
                 return outputArray;
             }
             
-            if ('serviceWorker' in navigator && 'PushManager' in window) {
-                navigator.serviceWorker.ready.then(function(registration) {
-                    registration.pushManager.getSubscription().then(function(subscription) {
-                        if (subscription) {
-                            pushBtn.style.display = 'none'; // Ya está suscrito
-                            fetch('{{ route('push.subscribe') }}', {
-                                method: 'POST',
-                                headers: { 
-                                    'Content-Type': 'application/json', 
-                                    'Accept': 'application/json',
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}' 
-                                },
-                                body: JSON.stringify(subscription)
-                            }).then(response => response.json()).then(data => {
-                                if (!data.success) alert("Error Push: " + JSON.stringify(data));
-                            }).catch(err => alert("Fallo Fetch Push: " + err));
-                        }
-                    });
+            navigator.serviceWorker.ready.then(function(registration) {
+                registration.pushManager.getSubscription().then(function(subscription) {
+                    if (subscription) {
+                        pushBtn.style.display = 'none'; // Ya está suscrito
+                        fetch('{{ route('push.subscribe') }}', {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json', 
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}' 
+                            },
+                            body: JSON.stringify(subscription)
+                        }).catch(() => {}); // Sincronización silenciosa
+                    }
                 });
+            });
 
-                pushBtn.addEventListener('click', () => {
-                    Notification.requestPermission().then(permission => {
-                        if (permission === 'granted') {
-                            navigator.serviceWorker.ready.then(function(registration) {
-                                const vapidPublicKey = '{{ env('VAPID_PUBLIC_KEY') }}';
-                                const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
-                                registration.pushManager.subscribe({
-                                    userVisibleOnly: true,
-                                    applicationServerKey: convertedVapidKey
-                                }).then(function(subscription) {
-                                    fetch('{{ route('push.subscribe') }}', {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                            'Accept': 'application/json',
-                                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                        },
-                                        body: JSON.stringify(subscription)
-                                    }).then(() => {
-                                        pushBtn.style.display = 'none';
-                                        if (typeof Swal !== 'undefined') Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Activado', showConfirmButton: false, timer: 3000 });
-                                    });
-                                }).catch(err => alert("Error suscribiendo: " + err));
-                            });
-                        } else {
-                            alert("Permiso denegado");
-                        }
-                    });
+            pushBtn.addEventListener('click', () => {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        navigator.serviceWorker.ready.then(function(registration) {
+                            const vapidPublicKey = '{{ env('VAPID_PUBLIC_KEY') }}';
+                            const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+                            registration.pushManager.subscribe({
+                                userVisibleOnly: true,
+                                applicationServerKey: convertedVapidKey
+                            }).then(function(subscription) {
+                                fetch('{{ route('push.subscribe') }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                    },
+                                    body: JSON.stringify(subscription)
+                                }).then(() => {
+                                    pushBtn.style.display = 'none';
+                                    if (typeof Swal !== 'undefined') Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Activado', showConfirmButton: false, timer: 3000 });
+                                });
+                            }).catch(() => {});
+                        });
+                    }
                 });
-            } else {
-                pushBtn.addEventListener('click', () => {
-                    alert("Tu navegador no soporta Notificaciones Push o no estás en una conexión segura (HTTPS).");
-                });
-            }
+            });
         }
     });
 </script>
