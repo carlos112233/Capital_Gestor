@@ -276,85 +276,74 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
         
         // Push Notifications Logic
         const pushBtn = document.getElementById('enable-push-btn');
-        if (pushBtn && 'serviceWorker' in navigator && 'PushManager' in window) {
+        if (pushBtn) {
+            // Siempre mostrar el botón para depurar
             pushBtn.style.display = 'inline-block';
             
             // Convertir VAPID a Uint8Array
             function urlBase64ToUint8Array(base64String) {
                 const padding = '='.repeat((4 - base64String.length % 4) % 4);
-                const base64 = (base64String + padding)
-                    .replace(/\-/g, '+')
-                    .replace(/_/g, '/');
-
+                const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
                 const rawData = window.atob(base64);
                 const outputArray = new Uint8Array(rawData.length);
-
-                for (let i = 0; i < rawData.length; ++i) {
-                    outputArray[i] = rawData.charCodeAt(i);
-                }
+                for (let i = 0; i < rawData.length; ++i) { outputArray[i] = rawData.charCodeAt(i); }
                 return outputArray;
             }
             
-            // Revisar si ya está suscrito
-            navigator.serviceWorker.ready.then(function(registration) {
-                registration.pushManager.getSubscription().then(function(subscription) {
-                    if (subscription) {
-                        pushBtn.style.display = 'none'; // Ya está suscrito
-                        // Sincronizar silenciosamente con el backend por si se borró de la BD
-                        fetch('{{ route('push.subscribe') }}', {
-                            method: 'POST',
-                            headers: { 
-                                'Content-Type': 'application/json', 
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}' 
-                            },
-                            body: JSON.stringify(subscription)
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                console.log("Push sincronizado: ", data);
-                            } else {
-                                alert("Error sincronizando Push: " + JSON.stringify(data));
-                            }
-                        })
-                        .catch(err => {
-                            alert("Fallo Fetch Push: " + err);
-                        });
-                    }
+            if ('serviceWorker' in navigator && 'PushManager' in window) {
+                navigator.serviceWorker.ready.then(function(registration) {
+                    registration.pushManager.getSubscription().then(function(subscription) {
+                        if (subscription) {
+                            pushBtn.style.display = 'none'; // Ya está suscrito
+                            fetch('{{ route('push.subscribe') }}', {
+                                method: 'POST',
+                                headers: { 
+                                    'Content-Type': 'application/json', 
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}' 
+                                },
+                                body: JSON.stringify(subscription)
+                            }).then(response => response.json()).then(data => {
+                                if (!data.success) alert("Error Push: " + JSON.stringify(data));
+                            }).catch(err => alert("Fallo Fetch Push: " + err));
+                        }
+                    });
                 });
-            });
 
-            pushBtn.addEventListener('click', () => {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        navigator.serviceWorker.ready.then(function(registration) {
-                            const vapidPublicKey = '{{ env('VAPID_PUBLIC_KEY') }}';
-                            const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
-                            
-                            registration.pushManager.subscribe({
-                                userVisibleOnly: true,
-                                applicationServerKey: convertedVapidKey
-                            }).then(function(subscription) {
-                                // Enviar a Laravel
-                                fetch('{{ route('push.subscribe') }}', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                    },
-                                    body: JSON.stringify(subscription)
-                                }).then(() => {
-                                    pushBtn.style.display = 'none';
-                                    if (typeof Swal !== 'undefined') {
-                                        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Notificaciones activadas', showConfirmButton: false, timer: 3000 });
-                                    }
-                                });
+                pushBtn.addEventListener('click', () => {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            navigator.serviceWorker.ready.then(function(registration) {
+                                const vapidPublicKey = '{{ env('VAPID_PUBLIC_KEY') }}';
+                                const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+                                registration.pushManager.subscribe({
+                                    userVisibleOnly: true,
+                                    applicationServerKey: convertedVapidKey
+                                }).then(function(subscription) {
+                                    fetch('{{ route('push.subscribe') }}', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Accept': 'application/json',
+                                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                        },
+                                        body: JSON.stringify(subscription)
+                                    }).then(() => {
+                                        pushBtn.style.display = 'none';
+                                        if (typeof Swal !== 'undefined') Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Activado', showConfirmButton: false, timer: 3000 });
+                                    });
+                                }).catch(err => alert("Error suscribiendo: " + err));
                             });
-                        });
-                    }
+                        } else {
+                            alert("Permiso denegado");
+                        }
+                    });
                 });
-            });
+            } else {
+                pushBtn.addEventListener('click', () => {
+                    alert("Tu navegador no soporta Notificaciones Push o no estás en una conexión segura (HTTPS).");
+                });
+            }
         }
     });
 </script>
