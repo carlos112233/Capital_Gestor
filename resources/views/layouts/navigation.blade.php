@@ -303,9 +303,24 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
                         // Sincronizar silenciosamente con el backend por si se borró de la BD
                         fetch('{{ route('push.subscribe') }}', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                            headers: { 
+                                'Content-Type': 'application/json', 
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}' 
+                            },
                             body: JSON.stringify(subscription)
-                        }).catch(() => {});
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log("Push sincronizado: ", data);
+                            } else {
+                                alert("Error sincronizando Push: " + JSON.stringify(data));
+                            }
+                        })
+                        .catch(err => {
+                            alert("Fallo Fetch Push: " + err);
+                        });
                     }
                 });
             });
