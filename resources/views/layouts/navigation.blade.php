@@ -300,6 +300,12 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
                 registration.pushManager.getSubscription().then(function(subscription) {
                     if (subscription) {
                         pushBtn.style.display = 'none'; // Ya está suscrito
+                        // Sincronizar silenciosamente con el backend por si se borró de la BD
+                        fetch('{{ route('push.subscribe') }}', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                            body: JSON.stringify(subscription)
+                        }).catch(() => {});
                     }
                 });
             });
