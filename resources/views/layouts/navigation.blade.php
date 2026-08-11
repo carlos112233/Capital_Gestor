@@ -94,7 +94,7 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
                     x-transition:leave="transition ease-in duration-75"
                     x-transition:leave-start="transform opacity-100 scale-100"
                     x-transition:leave-end="transform opacity-0 scale-95"
-                    class="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-2 z-50 overflow-hidden"
+                    class="absolute -right-12 sm:right-0 mt-2 w-[300px] sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-2 z-[60] overflow-hidden"
                     style="display: none;">
 
                     <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
