@@ -69,3 +69,63 @@ self.addEventListener('fetch', (event) => {
     // Demás solicitudes: Network normal
     event.respondWith(fetch(event.request));
 });
+
+// ---------------------------------------------------------
+// WEB PUSH NOTIFICATIONS
+// ---------------------------------------------------------
+self.addEventListener('push', function (e) {
+    if (!(self.Notification && self.Notification.permission === 'granted')) {
+        return;
+    }
+
+    let data = { title: 'Nueva Notificación', body: 'Tienes un nuevo mensaje.', icon: '/img/icon-192.png', url: '/' };
+    
+    if (e.data) {
+        try {
+            const parsed = e.data.json();
+            data.title = parsed.title || data.title;
+            data.body = parsed.body || data.body;
+            data.icon = parsed.icon || data.icon;
+            data.url = parsed.data && parsed.data.url ? parsed.data.url : data.url;
+        } catch (err) {
+            data.body = e.data.text();
+        }
+    }
+
+    var options = {
+        body: data.body,
+        icon: data.icon,
+        vibrate: [100, 50, 100],
+        data: {
+            url: data.url
+        }
+    };
+
+    e.waitUntil(
+        self.registration.showNotification(data.title, options)
+    );
+});
+
+self.addEventListener('notificationclick', function (e) {
+    var notification = e.notification;
+    var action = e.action;
+    var url = notification.data.url || '/';
+
+    notification.close();
+
+    e.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (windowClients) {
+            // Revisa si ya hay una pestaña abierta con esa URL o el mismo origen
+            for (var i = 0; i < windowClients.length; i++) {
+                var client = windowClients[i];
+                if (client.url.includes(url) && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            // Si no está abierta, abre una nueva
+            if (clients.openWindow) {
+                return clients.openWindow(url);
+            }
+        })
+    );
+});

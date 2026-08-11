@@ -148,6 +148,14 @@ class EntradaController extends Controller
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
+                    
+                    // Web Push y Database Notification
+                    $cliente->notify(new \App\Notifications\AppNotification(
+                        'Pago Registrado 💰', 
+                        "Se ha registrado tu Pago por \${$totalFormatted}.",
+                        route('dashboard')
+                    ));
+
                     \Illuminate\Support\Facades\Log::info("Notificación WhatsApp de Pago (Entrada #{$entrada->id}) encolada para cliente: {$telCliente}");
                 } catch (\Exception $e) {
                     \Illuminate\Support\Facades\Log::error("Error encolando WhatsApp de Entrada #{$entrada->id}: " . $e->getMessage());

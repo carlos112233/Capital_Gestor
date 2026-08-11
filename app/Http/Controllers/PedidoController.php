@@ -168,6 +168,14 @@ class PedidoController extends Controller
                 }
 
                 if ($sendToAdmin) {
+                    // Web Push / Database Notification
+                    $adminUsers = \App\Models\User::whereHas('roles', function($q) { $q->where('name', 'admin'); })->get();
+                    \Illuminate\Support\Facades\Notification::send($adminUsers, new \App\Notifications\AppNotification(
+                        "NUEVO PEDIDO #{$pedido->id} 📦", 
+                        "{$clienteNombre} ordenó {$articuloNombre} ($" . $totalFormatted . ")",
+                        route('pedidos.index')
+                    ));
+
                     foreach ($adminPhones as $telAdmin) {
                         \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
                             'numero' => $telAdmin, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
@@ -177,6 +185,14 @@ class PedidoController extends Controller
 
                 // Enviar individual a COCINA solo si no es cemita
                 if (!$esCemita) {
+                    // Web Push / Database Notification
+                    $cocinaUsers = \App\Models\User::whereHas('roles', function($q) { $q->where('name', 'cocina'); })->get();
+                    \Illuminate\Support\Facades\Notification::send($cocinaUsers, new \App\Notifications\AppNotification(
+                        "PREPARAR PEDIDO #{$pedido->id} 🧑‍🍳", 
+                        "{$articuloNombre} para {$clienteNombre}",
+                        route('pedidos.index')
+                    ));
+
                     foreach ($cocinaPhones as $telCocina) {
                         \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
                             'numero' => $telCocina, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()

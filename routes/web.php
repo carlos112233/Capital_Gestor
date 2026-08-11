@@ -74,6 +74,13 @@ Route::middleware('auth')->group(function () {
 
     // Comprobantes Usuario
     Route::post('comprobantes', [\App\Http\Controllers\ComprobanteController::class, 'store'])->name('comprobantes.store');
+    
+    // -------------------------------------------------------------
+    // Notificaciones Web Push y DB
+    // -------------------------------------------------------------
+    Route::post('/push/subscribe', [\App\Http\Controllers\PushSubscriptionController::class, 'store'])->name('push.subscribe');
+    Route::post('/push/unsubscribe', [\App\Http\Controllers\PushSubscriptionController::class, 'destroy'])->name('push.unsubscribe');
+    Route::post('/notifications/mark-all-read', [\App\Http\Controllers\PushSubscriptionController::class, 'markAllRead'])->name('notifications.markAllRead');
 });
 
 require __DIR__ . '/auth.php';
