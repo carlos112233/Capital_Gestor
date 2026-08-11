@@ -198,11 +198,7 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         @if($isAdminNav)
-        let lastPendingWa = {
-            {
-                $waPendientes
-            }
-        };
+        let lastPendingWa = {{ $waPendientes ?? 0 }};
 
         setInterval(function() {
             fetch("{{ route('admin.configuracion.wa-status') }}")
