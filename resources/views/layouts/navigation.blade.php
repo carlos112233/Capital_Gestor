@@ -133,7 +133,7 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
                             <span class="font-bold text-slate-700">Total:</span>
                             <span class="font-bold text-lg text-indigo-600" x-text="'$ ' + total.toFixed(2)"></span>
                         </div>
-                        <form method="POST" action="{{ route('ventas.storeMultiple') }}" @submit.prevent="const form = $el; setTimeout(() => { clearCart(); }, 100); form.submit();">
+                        <form method="POST" action="{{ route('ventas.storeMultiple') }}">
                             @csrf
                             <input type="hidden" name="redirect_to" value="{{ route('ventas.index') }}">
                             <template x-for="(item, index) in items" :key="index">
@@ -413,6 +413,12 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
         return {
             cartOpen: false,
             items: JSON.parse(localStorage.getItem('user_cart')) || [],
+            init() {
+                // Si venimos de una redirección exitosa (ej. compra concretada), vaciar el carrito.
+                @if(session('success'))
+                    this.clearCart();
+                @endif
+            },
             get itemCount() {
                 return this.items.reduce((total, item) => total + parseInt(item.cantidad), 0);
             },
