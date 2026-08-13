@@ -13,12 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         // Redirección de dominio antiguo a nuevo
-        $middleware->append(function ($request, $next) {
-            if ($request->getHost() === 'elbajon.duckdns.org') {
-                return redirect()->to('https://elbajon.store' . $request->getRequestUri(), 301);
-            }
-            return $next($request);
-        });
+        $middleware->append(\App\Http\Middleware\BlockOldDomain::class);
 
         // Registramos el alias para que Laravel entienda qué es 'role'
         $middleware->alias([
