@@ -15,8 +15,11 @@ class BlockOldDomain
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->getHost() === 'elbajon.duckdns.org') {
-            return redirect()->to('https://elbajon.store' . $request->getRequestUri(), 301);
+        $host = $request->getHost();
+        $headerHost = $request->header('host', '');
+
+        if (str_contains($host, 'duckdns.org') || str_contains($headerHost, 'duckdns.org')) {
+            return redirect()->away('https://elbajon.store' . $request->getRequestUri(), 301);
         }
         
         return $next($request);
