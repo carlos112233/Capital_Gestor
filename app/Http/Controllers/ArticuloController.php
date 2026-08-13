@@ -20,10 +20,12 @@ class ArticuloController extends Controller
             ->paginate(10)
             ->withQueryString();
 
+        $clientes = \App\Models\User::orderBy('name', 'asc')->get();
+
         if ($request->ajax()) {
-            return view('admin.articulos._tabla', compact('articulos'))->render();
+            return view('admin.articulos._tabla', compact('articulos', 'clientes'))->render();
         }
-        return view('admin.articulos.index', compact('articulos'));
+        return view('admin.articulos.index', compact('articulos', 'clientes'));
     }
 
     public function create(): View

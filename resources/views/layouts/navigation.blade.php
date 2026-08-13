@@ -76,6 +76,83 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
                 <span class="hidden sm:inline">Instalar App</span>
             </button>
 
+            <!-- Carrito de Compras -->
+            @if(!Auth::user()->hasRole('admin'))
+            <div class="relative" x-data="shoppingCart()" @add-to-cart.window="addItem($event.detail)">
+                <button @click="cartOpen = !cartOpen" @click.away="cartOpen = false"
+                    class="relative p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
+                    title="Carrito de Compras">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span x-show="itemCount > 0" x-text="itemCount" x-transition
+                        class="absolute top-1 right-1 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-[10px] font-bold text-white border border-white shadow-sm" style="display: none;">
+                    </span>
+                </button>
+
+                <!-- Dropdown Carrito -->
+                <div x-show="cartOpen" x-transition:enter="transition ease-out duration-100"
+                    x-transition:enter-start="transform opacity-0 scale-95"
+                    x-transition:enter-end="transform opacity-100 scale-100"
+                    x-transition:leave="transition ease-in duration-75"
+                    x-transition:leave-start="transform opacity-100 scale-100"
+                    x-transition:leave-end="transform opacity-0 scale-95"
+                    class="absolute -right-12 sm:right-0 mt-2 w-[320px] sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-2 z-[60] overflow-hidden"
+                    style="display: none;">
+                    
+                    <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                            Tu Carrito
+                        </h4>
+                        <button @click="clearCart()" class="text-[10px] font-bold text-rose-600 hover:text-rose-800">Vaciar</button>
+                    </div>
+
+                    <div class="max-h-72 overflow-y-auto divide-y divide-slate-100 text-xs">
+                        <template x-if="items.length === 0">
+                            <div class="p-4 text-center text-slate-500">El carrito está vacío.</div>
+                        </template>
+                        <template x-for="(item, index) in items" :key="index">
+                            <div class="p-3.5 flex items-start justify-between gap-3 bg-white hover:bg-slate-50 transition-colors">
+                                <div class="flex-1">
+                                    <p class="font-bold text-slate-800" x-text="item.nombre"></p>
+                                    <p class="text-slate-600 font-medium mt-0.5" x-text="'$ ' + parseFloat(item.precio).toFixed(2)"></p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" x-model.number="item.cantidad" @change="saveCart()" min="1" class="w-16 h-7 text-xs border-slate-200 rounded-md text-center py-0 px-1">
+                                    <button @click="removeItem(index)" class="text-rose-500 hover:text-rose-700 p-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="px-4 py-3 bg-slate-50 border-t border-slate-100">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-bold text-slate-700">Total:</span>
+                            <span class="font-bold text-lg text-indigo-600" x-text="'$ ' + total.toFixed(2)"></span>
+                        </div>
+                        <form method="POST" action="{{ route('ventas.storeMultiple') }}">
+                            @csrf
+                            <input type="hidden" name="redirect_to" value="{{ route('ventas.index') }}">
+                            <template x-for="(item, index) in items" :key="index">
+                                <div>
+                                    <input type="hidden" :name="`ventas[${index}][articulo_id]`" :value="item.id">
+                                    <input type="hidden" :name="`ventas[${index}][cantidad]`" :value="item.cantidad">
+                                    <input type="hidden" :name="`ventas[${index}][precio]`" :value="item.precio">
+                                </div>
+                            </template>
+                            <button type="submit" :disabled="items.length === 0"
+                                class="w-full inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                                Proceder al Pago
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <!-- Icono de Alertas / Notificaciones Interactivo -->
             <div class="relative" x-data="{ notifOpen: false }">
                 @php
@@ -331,4 +408,41 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
             });
         }
     });
+
+    function shoppingCart() {
+        return {
+            cartOpen: false,
+            items: JSON.parse(localStorage.getItem('user_cart')) || [],
+            get itemCount() {
+                return this.items.reduce((total, item) => total + parseInt(item.cantidad), 0);
+            },
+            get total() {
+                return this.items.reduce((total, item) => total + (parseFloat(item.precio) * parseInt(item.cantidad)), 0);
+            },
+            saveCart() {
+                localStorage.setItem('user_cart', JSON.stringify(this.items));
+            },
+            addItem(newItem) {
+                let existingItem = this.items.find(i => i.id === newItem.id);
+                if (existingItem) {
+                    existingItem.cantidad += parseInt(newItem.cantidad);
+                } else {
+                    this.items.push(newItem);
+                }
+                this.saveCart();
+                
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Agregado al carrito', showConfirmButton: false, timer: 2000 });
+                }
+            },
+            removeItem(index) {
+                this.items.splice(index, 1);
+                this.saveCart();
+            },
+            clearCart() {
+                this.items = [];
+                this.saveCart();
+            }
+        }
+    }
 </script>

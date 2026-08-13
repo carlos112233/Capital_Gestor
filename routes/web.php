@@ -40,6 +40,7 @@ Route::middleware('auth')->group(function () {
     Route::get('catalogo', [CatalogoController::class, 'index'])->name('catalogo.index');
     Route::post('catalogo/vender', [CatalogoController::class, 'vender'])->name('catalogo.vender');
     Route::resource('pedidos', PedidoController::class);
+    Route::post('ventas/multiples', [VentaController::class, 'storeMultiple'])->name('ventas.storeMultiple');
     Route::resource('ventas', VentaController::class);
     Route::resource('datos', TransferenciaController::class);
     Route::get('cobros', [\App\Http\Controllers\CobroController::class, 'index'])->name('cobros.index');

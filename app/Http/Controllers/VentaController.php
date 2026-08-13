@@ -152,6 +152,81 @@ class VentaController extends Controller
     }
 
     /**
+     * Almacena múltiples ventas en una sola transacción.
+     */
+    public function storeMultiple(Request $request)
+    {
+        $validated = $request->validate([
+            'ventas' => 'required|array|min:1',
+            'ventas.*.articulo_id' => 'required|exists:articulos,id',
+            'ventas.*.cantidad' => 'required|integer|min:1',
+            'ventas.*.precio' => 'required|numeric|min:0',
+            'ventas.*.user_id' => 'nullable|exists:users,id', // Para admin
+            'ventas.*.descripcion' => 'nullable|string',
+            'redirect_to' => 'nullable|string'
+        ]);
+
+        try {
+            return DB::transaction(function () use ($validated, $request) {
+                $ventasData = $validated['ventas'];
+                $isAdmin = Auth::user()->hasRole('admin');
+                $authUserId = Auth::id();
+                
+                $huboNotificacionAdmin = false;
+
+                foreach ($ventasData as $ventaData) {
+                    $articulo = Articulo::lockForUpdate()->findOrFail($ventaData['articulo_id']);
+                    $cantidadVenta = (int) $ventaData['cantidad'];
+
+                    if ($articulo->stock < $cantidadVenta) {
+                        throw ValidationException::withMessages([
+                            'ventas' => "Stock insuficiente para el artículo '{$articulo->nombre}'. Disponible: {$articulo->stock}",
+                        ]);
+                    }
+
+                    // Determinar ID del cliente
+                    $finalUserId = ($isAdmin && !empty($ventaData['user_id'])) ? $ventaData['user_id'] : $authUserId;
+
+                    // Descontar stock
+                    $articulo->decrement('stock', $cantidadVenta);
+                    if ($articulo->stock <= 0) {
+                        $articulo->disponible = false;
+                        $articulo->save();
+                    }
+
+                    $totalVenta = ((float) $ventaData['precio']) * $cantidadVenta;
+
+                    // Crear venta
+                    $venta = $articulo->ventas()->create([
+                        'user_id'      => $finalUserId,
+                        'cantidad'     => $cantidadVenta,
+                        'precio_venta' => $ventaData['precio'],
+                        'total_venta'  => $totalVenta,
+                        'descripcion'  => $ventaData['descripcion'] ?? null,
+                    ]);
+
+                    // Notificar admin (solo enviaremos 1 notificación por todo el carrito para no hacer spam si es usuario)
+                    if (!$isAdmin && !$huboNotificacionAdmin) {
+                        Venta::notificarAdminWhatsApp($venta); // Usa una sola venta representativa para notificar
+                        $huboNotificacionAdmin = true;
+                    }
+                }
+
+                if ($request->filled('redirect_to')) {
+                    return redirect($request->input('redirect_to'))->with('success', '¡Ventas registradas con éxito!');
+                }
+
+                return redirect()->route('ventas.index')->with('success', '¡Ventas registradas con éxito!');
+            });
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            \Log::critical("Error en StoreMultiple Venta: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Error en base de datos al registrar las ventas.');
+        }
+    }
+
+    /**
      * Muestra una venta específica.
      */
     public function show(Venta $venta)
