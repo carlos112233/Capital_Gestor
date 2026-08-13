@@ -104,6 +104,8 @@ class PedidoController extends Controller
         $cemitasPuerco = 0;
         $tieneCemitas = false;
         $clienteNombreResumen = 'Cliente';
+        $isAdmin = Auth::user()->hasRole('admin');
+        $resumenItemsAdmin = [];
 
         foreach ($request->pedidos as $p) {
             $total = $p['costo'] * $p['cantidad'];
@@ -163,7 +165,7 @@ class PedidoController extends Controller
 
                 // Enviar individual a ADMIN
                 $sendToAdmin = true;
-                if (Auth::user()->hasRole('admin') && !$esCemita) {
+                if ($isAdmin && !$esCemita) {
                     $sendToAdmin = false;
                 }
 
@@ -183,20 +185,37 @@ class PedidoController extends Controller
                     }
                 }
 
-                // Enviar individual a COCINA solo si no es cemita
-                if (!$esCemita) {
-                    // Web Push / Database Notification
-                    $cocinaUsers = \App\Models\User::whereHas('roles', function($q) { $q->where('name', 'cocina'); })->get();
-                    \Illuminate\Support\Facades\Notification::send($cocinaUsers, new \App\Notifications\AppNotification(
-                        "PREPARAR PEDIDO #{$pedido->id} 🧑‍🍳", 
-                        "{$articuloNombre} para {$clienteNombre}",
-                        route('pedidos.index')
-                    ));
+                // A COCINA
+                if ($isAdmin) {
+                    // Si es admin, no mandamos WA individual, lo agruparemos luego.
+                    if (!$esCemita) {
+                        // Web Push a Cocina sí se manda individual (o podemos obviarlo, pero mantengamos el push)
+                        $cocinaUsers = \App\Models\User::whereHas('roles', function($q) { $q->where('name', 'cocina'); })->get();
+                        \Illuminate\Support\Facades\Notification::send($cocinaUsers, new \App\Notifications\AppNotification(
+                            "PREPARAR PEDIDO #{$pedido->id} 🧑‍🍳", 
+                            "{$articuloNombre} para {$clienteNombre}",
+                            route('pedidos.index')
+                        ));
 
-                    foreach ($cocinaPhones as $telCocina) {
-                        \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
-                            'numero' => $telCocina, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
-                        ]);
+                        // Acumulamos texto para WA
+                        $resumenItemsAdmin[] = "• *{$articuloNombre}* (x{$pedido->cantidad})\n  _Nota:_ " . ($pedido->descripcion ?: 'Sin notas');
+                    }
+                } else {
+                    // Enviar individual a COCINA (usuario normal)
+                    if (!$esCemita) {
+                        // Web Push / Database Notification
+                        $cocinaUsers = \App\Models\User::whereHas('roles', function($q) { $q->where('name', 'cocina'); })->get();
+                        \Illuminate\Support\Facades\Notification::send($cocinaUsers, new \App\Notifications\AppNotification(
+                            "PREPARAR PEDIDO #{$pedido->id} 🧑‍🍳", 
+                            "{$articuloNombre} para {$clienteNombre}",
+                            route('pedidos.index')
+                        ));
+
+                        foreach ($cocinaPhones as $telCocina) {
+                            \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                                'numero' => $telCocina, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
+                            ]);
+                        }
                     }
                 }
 
@@ -206,7 +225,35 @@ class PedidoController extends Controller
         }
 
         // Enviar RESUMEN a COCINA
-        if ($tieneCemitas && !empty($cocinaPhones)) {
+        if ($isAdmin && (!empty($resumenItemsAdmin) || $tieneCemitas) && !empty($cocinaPhones)) {
+            try {
+                $mensajeResumenAdmin = "*🧑‍🍳 NUEVA ORDEN COMPLETA - El bajon*\n\n" .
+                                       "• *Cliente:* {$clienteNombreResumen}\n\n";
+
+                if (!empty($resumenItemsAdmin)) {
+                    $mensajeResumenAdmin .= "*PLATILLOS:*\n" . implode("\n------------------------------------------\n", $resumenItemsAdmin) . "\n\n";
+                }
+
+                if ($tieneCemitas) {
+                    $mensajeResumenAdmin .= "------------------------------------------\n" .
+                                            "*RESUMEN DE MILANESAS:*\n" .
+                                            "• Pollo a preparar: {$cemitasPollo}\n" .
+                                            "• Puerco a preparar: {$cemitasPuerco}\n\n" .
+                                            "_(Las milanesas necesarias para todo este pedido)_\n\n";
+                }
+
+                $mensajeResumenAdmin .= "_Enviado por El bajon_";
+
+                foreach ($cocinaPhones as $telCocina) {
+                    \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                        'numero' => $telCocina, 'mensaje' => $mensajeResumenAdmin, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
+                    ]);
+                }
+            } catch (\Exception $ex) {
+                \Illuminate\Support\Facades\Log::error("Error enviando resumen completo a cocina: " . $ex->getMessage());
+            }
+        } elseif (!$isAdmin && $tieneCemitas && !empty($cocinaPhones)) {
+            // Lógica original (tal cual) para usuario normal con cemitas
             try {
                 $mensajeResumen = "*🧑‍🍳 RESUMEN DE MILANESAS (NUEVO PEDIDO)*\n\n" .
                                   "• *Cliente:* {$clienteNombreResumen}\n" .
