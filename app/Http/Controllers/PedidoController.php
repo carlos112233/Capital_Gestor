@@ -75,28 +75,34 @@ class PedidoController extends Controller
 
         $userId = Auth::user()->hasRole('admin') ? $request->user_id : Auth::id();
 
+        // Helper para formatear teléfonos mexicanos a formato WhatsApp (521XXXXXXXXXX)
+        $formatPhone = function ($tel) {
+            $num = preg_replace('/[^0-9]/', '', $tel);
+            if (strlen($num) == 10) return '521' . $num;
+            if (strlen($num) == 12 && str_starts_with($num, '52')) return '521' . substr($num, 2);
+            return $num;
+        };
+
         // 1. Obtener teléfonos de admin y cocina
         $adminPhones = \Illuminate\Support\Facades\DB::table('users')
             ->join('role_user', 'users.id', '=', 'role_user.user_id')
             ->join('roles', 'role_user.role_id', '=', 'roles.id')
-            ->where('roles.name', 'admin')
+            ->whereIn(\Illuminate\Support\Facades\DB::raw('LOWER(roles.name)'), ['admin', 'administrador'])
             ->whereNotNull('users.telefono')
             ->where('users.telefono', '!=', '')
             ->pluck('users.telefono')
-            ->map(function ($tel) { return preg_replace('/[^0-9]/', '', $tel); })
-            ->map(function ($num) { return (strlen($num) == 10) ? '521' . $num : $num; })
+            ->map($formatPhone)
             ->filter()->unique()->toArray();
         if (empty($adminPhones)) $adminPhones = ['5212222153410'];
 
         $cocinaPhones = \Illuminate\Support\Facades\DB::table('users')
             ->join('role_user', 'users.id', '=', 'role_user.user_id')
             ->join('roles', 'role_user.role_id', '=', 'roles.id')
-            ->where('roles.name', 'cocina')
+            ->whereIn(\Illuminate\Support\Facades\DB::raw('LOWER(roles.name)'), ['cocina'])
             ->whereNotNull('users.telefono')
             ->where('users.telefono', '!=', '')
             ->pluck('users.telefono')
-            ->map(function ($tel) { return preg_replace('/[^0-9]/', '', $tel); })
-            ->map(function ($num) { return (strlen($num) == 10) ? '521' . $num : $num; })
+            ->map($formatPhone)
             ->filter()->unique()->toArray();
 
         // Variables para resumen de cocina
@@ -135,9 +141,9 @@ class PedidoController extends Controller
                 $articuloNombre = $pedido->articulo->nombre ?? 'N/A';
                 $clienteNombre  = $pedido->user->name ?? 'Cliente';
                 $clienteNombreResumen = $clienteNombre;
-                $descripcionStr = strtolower($articuloNombre . ' ' . ($pedido->descripcion ?? ''));
+                $descripcionStr = mb_strtolower($articuloNombre . ' ' . ($pedido->descripcion ?? ''));
 
-                $esCemita = (strpos($descripcionStr, 'cemita') !== false);
+                $esCemita = (str_contains($descripcionStr, 'cemita') || str_contains($descripcionStr, 'milanesa'));
 
                 if ($esCemita) {
                     $tieneCemitas = true;

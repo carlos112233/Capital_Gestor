@@ -49,13 +49,15 @@ class Venta extends Model
             $adminPhones = \Illuminate\Support\Facades\DB::table('users')
                 ->join('role_user', 'users.id', '=', 'role_user.user_id')
                 ->join('roles', 'role_user.role_id', '=', 'roles.id')
-                ->where('roles.name', 'admin')
+                ->whereIn(\Illuminate\Support\Facades\DB::raw('LOWER(roles.name)'), ['admin', 'administrador'])
                 ->whereNotNull('users.telefono')
                 ->where('users.telefono', '!=', '')
                 ->pluck('users.telefono')
                 ->map(function ($tel) {
                     $num = preg_replace('/[^0-9]/', '', $tel);
-                    return (strlen($num) == 10) ? '521' . $num : $num;
+                    if (strlen($num) == 10) return '521' . $num;
+                    if (strlen($num) == 12 && str_starts_with($num, '52')) return '521' . substr($num, 2);
+                    return $num;
                 })
                 ->filter()
                 ->unique()
