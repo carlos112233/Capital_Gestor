@@ -68,6 +68,23 @@
     @endif
 </div>
 
+<!-- CHECKBOX ENVIAR ACCESOS POR WHATSAPP -->
+<div class="mb-5 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 shadow-sm">
+    <label class="flex items-center gap-3 cursor-pointer">
+        <input type="checkbox" name="send_whatsapp_credentials" value="1" 
+            class="w-5 h-5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 transition cursor-pointer"
+            {{ (!isset($cliente) || !$cliente->id) ? 'checked' : '' }}>
+        <div>
+            <span class="block text-sm font-bold text-emerald-900">
+                📲 Enviar accesos por WhatsApp {{ (!isset($cliente) || !$cliente->id) ? 'al registrar' : 'al guardar cambios' }}
+            </span>
+            <span class="block text-xs text-emerald-700 mt-0.5">
+                Encola automáticamente las credenciales (Email y Contraseña) al número de WhatsApp del cliente.
+            </span>
+        </div>
+    </label>
+</div>
+
 <div class="flex justify-end mt-6">
     <button type="button" x-data x-on:click="$dispatch('close-modal', 'create-cliente'); $dispatch('close-modal', 'edit-cliente-{{ $cliente->id ?? 0 }}')"
         class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm shadow-sm transition-all duration-200 hover:border-slate-400 focus:outline-none cursor-pointer mr-3">

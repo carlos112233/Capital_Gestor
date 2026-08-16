@@ -7,8 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
-use function PHPUnit\Framework\isEmpty;
-use function PHPUnit\Framework\isNull;
+use Illuminate\Support\Facades\DB;
 
 class ClienteController extends Controller
 {
@@ -54,6 +53,8 @@ class ClienteController extends Controller
             'image'    => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
+        $rawPassword = $request->password;
+
         // Manejo de Imagen
         if ($request->hasFile('image')) {
             $file = $request->file('image');
@@ -63,10 +64,17 @@ class ClienteController extends Controller
 
         $validated['password'] = Hash::make($validated['password']);
 
-        User::create($validated);
+        $cliente = User::create($validated);
+
+        $waEnviado = false;
+        if ($request->boolean('send_whatsapp_credentials') && !empty($cliente->telefono)) {
+            $waEnviado = $this->queueWhatsAppCredentials($cliente, $rawPassword);
+        }
+
+        $mensajeExito = 'Usuario creado correctamente' . ($waEnviado ? ' y accesos encolados por WhatsApp.' : '.');
 
         return redirect()->route('admin.clientes.index')
-            ->with('success', 'Usuario creado correctamente.');
+            ->with('success', $mensajeExito);
     }
 
     public function edit($id)
@@ -99,8 +107,10 @@ class ClienteController extends Controller
             $validated['image_tipo'] = $file->getMimeType();
         }
 
+        $rawPassword = null;
         // Manejo de Password
         if ($request->filled('password')) {
+            $rawPassword = $request->password;
             $validated['password'] = Hash::make($validated['password']);
         } else {
             unset($validated['password']);
@@ -108,8 +118,64 @@ class ClienteController extends Controller
 
         $cliente->update($validated);
 
+        if ($request->boolean('send_whatsapp_credentials') && !empty($cliente->telefono)) {
+            $this->queueWhatsAppCredentials($cliente, $rawPassword ?? 'Su contraseña actual');
+        }
+
         return redirect()->route('admin.clientes.index')
             ->with('success', 'Usuario actualizado correctamente.');
+    }
+
+    public function enviarWhatsAppAccess(Request $request, $id)
+    {
+        $cliente = User::withTrashed()->findOrFail($id);
+
+        if (empty($cliente->telefono)) {
+            return back()->with('error', 'El cliente no tiene un número de teléfono registrado.');
+        }
+
+        $passwordText = $request->input('password');
+
+        if (!empty($passwordText)) {
+            $cliente->update([
+                'password' => Hash::make($passwordText),
+            ]);
+        } else {
+            $passwordText = 'Su contraseña asignada';
+        }
+
+        $this->queueWhatsAppCredentials($cliente, $passwordText);
+
+        return back()->with('success', 'Mensaje de accesos por WhatsApp encolado correctamente para ' . $cliente->name . '.');
+    }
+
+    private function queueWhatsAppCredentials(User $cliente, string $password): bool
+    {
+        $phone = preg_replace('/[^0-9]/', '', $cliente->telefono);
+        if (empty($phone)) return false;
+
+        // Si son 10 dígitos (México), anteponer 521
+        if (strlen($phone) === 10) {
+            $phone = '521' . $phone;
+        }
+
+        $mensaje = "🔐 *ACCESOS DE CUENTA - Capital Gestor*\n\n" .
+                   "Hola *{$cliente->name}*,\n" .
+                   "Tus credenciales de acceso a la plataforma son:\n\n" .
+                   "👤 *Usuario/Email:* {$cliente->email}\n" .
+                   "🔑 *Contraseña:* {$password}\n\n" .
+                   "🌐 *Iniciar Sesión:* " . url('/login') . "\n\n" .
+                   "¡Gracias por formar parte de Capital Gestor!";
+
+        DB::table('whatsapp_pending_messages')->insert([
+            'numero'     => $phone,
+            'mensaje'    => $mensaje,
+            'status'     => 'pendiente',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return true;
     }
 
     public function destroy($id)
