@@ -1,48 +1,63 @@
-*.log
-.DS_Store
+# Environment & Config
 .env
 .env.backup
 .env.production
-.phpactor.json
-.phpunit.result.cache
-/.fleet
-/.idea
-/.nova
-/.phpunit.cache
-/.vscode
-/.zed
+.env.local
+.env.*.local
 /auth.json
+
+# Dependencies & Builds
 /node_modules
+/vendor
 /public/build
 /public/hot
 /public/storage
-/storage/*.key
-/storage/pail
-/vendor
-Homestead.json
-Homestead.yaml
+wa-motor/node_modules/
+
+# Logs & Caches
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.phpunit.result.cache
+/.phpunit.cache
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+.phpactor.json
 Thumbs.db
+.DS_Store
 
-# managed by open-wa
-**.data.json
-**.node-persist**
-**_IGNORE_**
-# end managed by open-wa
-
-# WhatsApp Motor Session & QR files
+# WhatsApp Engine (Session, Cache & QR files)
 .wwebjs_auth/
 **/.wwebjs_auth/
+.wwebjs_cache/
+**/.wwebjs_cache/
+.wwebjs_test/
+**/.wwebjs_test/
 wa-motor/.wwebjs_auth/
+wa-motor/.wwebjs_cache/
+wa-motor/.wwebjs_test/
 wa-motor/qr.png
-wa-motor/node_modules/
 wa-motor/status.json
 public/img/qr.png
 public/qr.png
 public/wa-status.json
 public/.wwebjs_cache/
+**.data.json
+**.node-persist**
 
-# Dumps & Backups
+# Storage Keys & Backups
+/storage/*.key
+/storage/pail
 storage/backups/
 *.sql
-scratch/
+*.mp3
+*.wav
 
+# Scratch & Temporary Scripts
+scratch/
+scratch_*.php
+scratch_*.js

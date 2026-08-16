@@ -159,13 +159,13 @@ class ClienteController extends Controller
             $phone = '521' . $phone;
         }
 
-        $mensaje = "🔐 *ACCESOS DE CUENTA - Capital Gestor*\n\n" .
+        $mensaje = "🔐 *ACCESOS DE CUENTA - El Bajón*\n\n" .
                    "Hola *{$cliente->name}*,\n" .
                    "Tus credenciales de acceso a la plataforma son:\n\n" .
                    "👤 *Usuario/Email:* {$cliente->email}\n" .
                    "🔑 *Contraseña:* {$password}\n\n" .
                    "🌐 *Iniciar Sesión:* " . url('/login') . "\n\n" .
-                   "¡Gracias por formar parte de Capital Gestor!";
+                   "¡Gracias por formar parte de El Bajón!";
 
         DB::table('whatsapp_pending_messages')->insert([
             'numero'     => $phone,
