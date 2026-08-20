@@ -173,6 +173,8 @@ class VentaController extends Controller
                 $authUserId = Auth::id();
                 
                 $huboNotificacionAdmin = false;
+                $ventasCreadasParaResumen = [];
+                $totalCarrito = 0;
 
                 foreach ($ventasData as $ventaData) {
                     $articulo = Articulo::lockForUpdate()->findOrFail($ventaData['articulo_id']);
@@ -195,6 +197,7 @@ class VentaController extends Controller
                     }
 
                     $totalVenta = ((float) $ventaData['precio']) * $cantidadVenta;
+                    $totalCarrito += $totalVenta;
 
                     // Crear venta
                     $venta = $articulo->ventas()->create([
@@ -205,11 +208,12 @@ class VentaController extends Controller
                         'descripcion'  => $ventaData['descripcion'] ?? null,
                     ]);
 
-                    // Notificar admin (solo enviaremos 1 notificación por todo el carrito para no hacer spam si es usuario)
-                    if (!$isAdmin && !$huboNotificacionAdmin) {
-                        Venta::notificarAdminWhatsApp($venta); // Usa una sola venta representativa para notificar
-                        $huboNotificacionAdmin = true;
-                    }
+                    $ventasCreadasParaResumen[] = $venta;
+                }
+
+                // Notificar admin (un solo mensaje consolidado si es usuario)
+                if (!$isAdmin && count($ventasCreadasParaResumen) > 0) {
+                    Venta::notificarCarritoAdminWhatsApp($ventasCreadasParaResumen, $totalCarrito);
                 }
 
                 if ($request->filled('redirect_to')) {
