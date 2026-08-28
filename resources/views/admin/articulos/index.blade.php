@@ -63,6 +63,17 @@
                             <span>Desactivar Todos</span>
                         </button>
                     </form>
+                    <form id="form-reset-stock" action="{{ route('admin.articulos.reset-stock') }}" method="POST" class="inline-block">
+                        @csrf
+                        <button type="button" onclick="confirmBulkAction('form-reset-stock', '¿Confirmas el Cierre de Jornada (7:00 PM)? Esto pondrá el stock de TODOS los artículos en 0.')"
+                            title="Cierre 7:00 PM - Poner Stock de todos los artículos en 0"
+                            class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold text-xs shadow-sm transition-all duration-200 cursor-pointer">
+                            <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span>Cierre 7 PM (Stock 0)</span>
+                        </button>
+                    </form>
                 </div>
             </div>
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">

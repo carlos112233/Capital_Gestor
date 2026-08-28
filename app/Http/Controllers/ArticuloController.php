@@ -142,4 +142,10 @@ class ArticuloController extends Controller
 
         return back()->with('success', $mensaje);
     }
+
+    public function resetStock(): RedirectResponse
+    {
+        $affected = Articulo::comerciales()->update(['stock' => 0, 'disponible' => false]);
+        return back()->with('status', "Cierre 7:00 PM: Se actualizó el stock a 0 en {$affected} artículos.");
+    }
 }

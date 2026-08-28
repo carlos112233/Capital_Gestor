@@ -60,6 +60,7 @@ Route::middleware('auth')->group(function () {
         Route::post('clientes/{cliente}/activar', [ClienteController::class, 'activar'])->name('clientes.activar');
         Route::post('clientes/{cliente}/enviar-whatsapp', [ClienteController::class, 'enviarWhatsAppAccess'])->name('clientes.enviar-whatsapp');
         Route::resource('articulos', ArticuloController::class);
+        Route::post('articulos/reset-stock', [ArticuloController::class, 'resetStock'])->name('articulos.reset-stock');
         Route::post('articulos/bulk-disponible', [ArticuloController::class, 'bulkDisponible'])->name('articulos.bulk-disponible');
         Route::post('articulos/{articulo}/toggle-disponible', [ArticuloController::class, 'toggleDisponible'])->name('articulos.toggle');
         Route::resource('entradas', EntradaController::class);

@@ -19,18 +19,23 @@ class ResetArticulosDisponibilidad extends Command
      *
      * @var string
      */
-    protected $description = 'Reinicia la disponibilidad de todos los artículos a falso (no disponible)';
+    protected $description = 'Reinicia el stock a 0 y la disponibilidad a falso de todos los artículos (Cierre 7:00 PM)';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->info('Iniciando reseteo de disponibilidad de artículos...');
+        $this->info('Iniciando reseteo de stock a 0 de artículos (7:00 PM)...');
         
-        $affected = DB::table('articulos')->update(['disponible' => false]);
+        $affected = DB::table('articulos')
+            ->where('nombre', '!=', 'Pago saldado')
+            ->update([
+                'stock' => 0,
+                'disponible' => false
+            ]);
         
-        $this->info("Se han actualizado {$affected} artículos a 'No Disponible'.");
-        \Illuminate\Support\Facades\Log::info("Comando articulos:reset-disponibilidad ejecutado. Artículos reseteados: {$affected}.");
+        $this->info("Se ha actualizado el stock a 0 y estado 'No Disponible' de {$affected} artículos.");
+        \Illuminate\Support\Facades\Log::info("Comando articulos:reset-disponibilidad ejecutado a las 7:00 PM. Artículos en 0: {$affected}.");
     }
 }
