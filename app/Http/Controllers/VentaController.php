@@ -24,9 +24,7 @@ class VentaController extends Controller
         // Optimización de velocidad: restringir a los últimos 15 días (sin alterar datos en base de datos)
         $quinceDiasAtras = \Carbon\Carbon::now()->subDays(15);
 
-        // PostgreSQL es sensible a mayúsculas en búsquedas (LIKE vs ILIKE)
         $ventasQuery = Venta::with(['user:id,name', 'articulo:id,nombre,precio'])
-            ->where('created_at', '>=', $quinceDiasAtras)
             ->latest();
 
         if (!$user->hasRole('admin')) {
@@ -36,9 +34,11 @@ class VentaController extends Controller
         if ($request->filled('q')) {
             $search = $request->input('q');
             $ventasQuery->whereHas('user', function ($query) use ($search) {
-                // ILIKE es específico de Postgres para búsquedas insensibles a mayúsculas
                 $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']);
             });
+        } else {
+            // Optimización de velocidad: restringir a los últimos 15 días sólo cuando no hay búsqueda activa
+            $ventasQuery->where('created_at', '>=', $quinceDiasAtras);
         }
 
         $ventas = $ventasQuery->paginate(25)->withQueryString();

@@ -23,8 +23,10 @@ class PedidoController extends Controller
             $query->where('user_id', $user->id);
         }
 
-        // Optimización de velocidad: restringir a los últimos 15 días
-        $query->where('created_at', '>=', now()->subDays(15));
+        // Optimización de velocidad: restringir a los últimos 15 días sólo cuando no hay búsqueda activa
+        if (!$request->filled('q')) {
+            $query->where('created_at', '>=', now()->subDays(15));
+        }
 
         if ($request->filled('q')) {
             $search = '%' . strtolower($request->input('q')) . '%';

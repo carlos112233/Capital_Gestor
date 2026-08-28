@@ -18,7 +18,13 @@
                                         <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-slate-900">
                                             {{ $articulo->nombre }}</td>
                                         <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-slate-900">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $articulo->stock > 0 ? 'bg-slate-100 text-slate-800' : 'bg-amber-100 text-amber-800' }}">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $articulo->stock > 5 ? 'bg-slate-100 text-slate-800' : ($articulo->stock > 0 ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-rose-100 text-rose-800 border border-rose-300') }}"
+                                                title="{{ $articulo->stock <= 5 ? ($articulo->stock == 0 ? 'Agotado: Sin Stock' : '¡Bajo Stock! Quedan pocas unidades') : 'Stock suficiente' }}">
+                                                @if($articulo->stock <= 5 && $articulo->stock > 0)
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                                @elseif($articulo->stock == 0)
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                                @endif
                                                 {{ $articulo->stock }}
                                             </span>
                                         </td>
