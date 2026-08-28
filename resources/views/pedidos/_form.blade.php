@@ -196,7 +196,7 @@
     });
 
     if (btnAgregar) {
-        btnAgregar.addEventListener('click', () => {
+        btnAgregar.addEventListener('click', async () => {
             if (!container) return;
             if (!moldeLimpio) {
                 const firstItem = form.querySelector('.pedido-item');
@@ -221,11 +221,30 @@
             });
             const hiddenId = clone.querySelector('input[type="hidden"][name*="[id]"]');
             if (hiddenId) hiddenId.remove();
+            
+            const nuevoUserSelect = clone.querySelector('.user-select');
+            if (nuevoUserSelect) {
+                try {
+                    const response = await fetch("{{ route('admin.api.clientes') }}", {
+                        headers: { "X-Requested-With": "XMLHttpRequest" }
+                    });
+                    if (response.ok) {
+                        const clientes = await response.json();
+                        let optionsHtml = '<option value="">Seleccione un usuario</option>';
+                        clientes.forEach(c => {
+                            optionsHtml += `<option value="${c.id}">${c.name}</option>`;
+                        });
+                        nuevoUserSelect.innerHTML = optionsHtml;
+                    }
+                } catch(e) {
+                    console.error('Error al actualizar usuarios en pedidos:', e);
+                }
+            }
+
             container.appendChild(clone);
             const nuevoSelect = clone.querySelector('.articulo-select');
             activarBuscador(nuevoSelect);
             
-            const nuevoUserSelect = clone.querySelector('.user-select');
             if (nuevoUserSelect) activarBuscadorUser(nuevoUserSelect);
             
             index++;
