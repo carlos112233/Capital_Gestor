@@ -22,24 +22,29 @@
     </x-slot>
 
     <style>
+        @page {
+            margin: 12mm;
+        }
         @media print {
             .no-print, nav, header { display: none !important; }
-            body { background: #fff !important; color: #000 !important; }
-            .print-container { box-shadow: none !important; border: none !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; }
+            body { background: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; }
+            .py-8 { padding-top: 0 !important; padding-bottom: 0 !important; }
+            .max-w-3xl { max-width: 100% !important; width: 100% !important; }
+            .print-container { box-shadow: none !important; border: 1px solid #cbd5e1 !important; border-radius: 12px !important; margin: 0 auto !important; width: 100% !important; padding: 28px !important; }
         }
     </style>
 
     <div class="py-8">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 print-container">
+            <div class="bg-white p-8 sm:p-10 rounded-2xl shadow-sm border border-slate-200 print-container">
                 <!-- Encabezado de la Nota -->
                 <div class="flex justify-between items-start border-b border-slate-200 pb-6 mb-6">
                     <div>
-                        <h1 class="text-2xl font-bold text-slate-900">CAPITAL GESTOR</h1>
+                        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">EL BAJÓN</h1>
                         <p class="text-xs text-slate-500 mt-1">Comprobante de Venta Directa</p>
                     </div>
                     <div class="text-right">
-                        <span class="inline-block px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full">
+                        <span class="inline-block px-3.5 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full">
                             Venta #{{ $venta->id }}
                         </span>
                         <p class="text-xs text-slate-500 mt-2">Fecha: {{ $venta->created_at ? $venta->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A') }}</p>
@@ -47,15 +52,15 @@
                 </div>
 
                 <!-- Información del Cliente -->
-                <div class="grid grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl mb-6">
+                <div class="grid grid-cols-2 gap-6 bg-slate-50 p-5 rounded-xl mb-6 border border-slate-100">
                     <div>
                         <p class="text-xs font-bold uppercase text-slate-400">Cliente</p>
-                        <p class="font-semibold text-slate-800 mt-1">{{ $venta->user->name ?? 'Cliente General' }}</p>
-                        <p class="text-xs text-slate-500">{{ $venta->user->email ?? '' }}</p>
+                        <p class="font-semibold text-slate-800 mt-1 text-base">{{ $venta->user->name ?? 'Cliente General' }}</p>
+                        <p class="text-xs text-slate-500 mt-0.5">{{ $venta->user->email ?? '' }}</p>
                     </div>
                     <div>
                         <p class="text-xs font-bold uppercase text-slate-400">Teléfono</p>
-                        <p class="font-semibold text-slate-800 mt-1">{{ $venta->user->telefono ?? 'Sin teléfono' }}</p>
+                        <p class="font-semibold text-slate-800 mt-1 text-base">{{ $venta->user->telefono ?? 'Sin teléfono' }}</p>
                     </div>
                 </div>
 
@@ -86,22 +91,22 @@
 
                 <!-- Resumen de Total -->
                 <div class="flex justify-end border-t border-slate-200 pt-4">
-                    <div class="w-1/2 text-right">
-                        <div class="flex justify-between py-1 text-slate-600 text-sm">
+                    <div class="w-full sm:w-1/2 text-right">
+                        <div class="flex justify-between items-center py-1 text-slate-600 text-sm">
                             <span>Subtotal:</span>
                             <span class="font-semibold">${{ number_format($venta->total_venta, 2) }}</span>
                         </div>
-                        <div class="flex justify-between py-2 text-slate-900 text-lg border-t border-slate-200 mt-2 pt-2">
+                        <div class="flex justify-between items-center py-2.5 text-slate-900 text-lg border-t border-slate-200 mt-2 pt-2">
                             <span class="font-bold">Total a Cobrar:</span>
-                            <span class="font-black text-emerald-600">${{ number_format($venta->total_venta, 2) }}</span>
+                            <span class="font-black text-emerald-600 text-xl pl-4">${{ number_format($venta->total_venta, 2) }}</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Pie de página -->
-                <div class="mt-12 text-center text-xs text-slate-400 border-t border-slate-100 pt-6">
-                    <p>¡Gracias por su compra!</p>
-                    <p class="mt-1">Capital Gestor CRM</p>
+                <div class="mt-10 text-center text-xs text-slate-400 border-t border-slate-100 pt-6">
+                    <p class="font-medium">¡Gracias por su compra!</p>
+                    <p class="mt-1 font-semibold text-slate-500">El Bajón</p>
                 </div>
             </div>
         </div>
