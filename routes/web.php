@@ -54,7 +54,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('api/clientes-lista', function() {
-            return response()->json(\App\Models\User::role('user')->orderBy('name', 'asc')->get(['id', 'name']));
+            return response()->json(\App\Models\User::orderBy('name', 'asc')->get(['id', 'name']));
         })->name('api.clientes');
         Route::resource('clientes', ClienteController::class);
         Route::post('clientes/{cliente}/activar', [ClienteController::class, 'activar'])->name('clientes.activar');

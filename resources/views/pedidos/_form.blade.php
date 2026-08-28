@@ -142,10 +142,14 @@
     }
 
     function activarBuscadorUser(el) {
-        if (!el || el.tomselect || typeof TomSelect === 'undefined') return;
+        if (!el || typeof TomSelect === 'undefined') return;
+        if (el.tomselect) {
+            el.tomselect.destroy();
+        }
         new TomSelect(el, {
             create: false,
-            placeholder: "Buscar usuario..."
+            placeholder: "Buscar usuario...",
+            maxOptions: null
         });
     }
 
@@ -156,6 +160,12 @@
         const original = form.querySelector('.pedido-item');
         if (original && !moldeLimpio) {
             moldeLimpio = original.cloneNode(true);
+            moldeLimpio.querySelectorAll('.ts-wrapper').forEach(ts => ts.remove());
+            moldeLimpio.querySelectorAll('.tomselected').forEach(ts => ts.classList.remove('tomselected'));
+            moldeLimpio.querySelectorAll('select').forEach(s => {
+                s.style.display = '';
+                if (s.tomselect) delete s.tomselect;
+            });
             moldeLimpio.querySelectorAll('input, textarea').forEach(el => el.value = '');
             const selectMolde = moldeLimpio.querySelector('.articulo-select');
             if (selectMolde) selectMolde.value = "";
@@ -202,6 +212,12 @@
                 const firstItem = form.querySelector('.pedido-item');
                 if (firstItem) {
                     moldeLimpio = firstItem.cloneNode(true);
+                    moldeLimpio.querySelectorAll('.ts-wrapper').forEach(ts => ts.remove());
+                    moldeLimpio.querySelectorAll('.tomselected').forEach(ts => ts.classList.remove('tomselected'));
+                    moldeLimpio.querySelectorAll('select').forEach(s => {
+                        s.style.display = '';
+                        if (s.tomselect) delete s.tomselect;
+                    });
                     moldeLimpio.querySelectorAll('input, textarea').forEach(el => el.value = '');
                     const selectMolde = moldeLimpio.querySelector('.articulo-select');
                     if (selectMolde) selectMolde.value = "";
@@ -212,6 +228,14 @@
             if (!moldeLimpio) return;
 
             const clone = moldeLimpio.cloneNode(true);
+            // Limpiar residuos de TomSelect en el clone
+            clone.querySelectorAll('.ts-wrapper').forEach(ts => ts.remove());
+            clone.querySelectorAll('.tomselected').forEach(ts => ts.classList.remove('tomselected'));
+            clone.querySelectorAll('select').forEach(s => {
+                s.style.display = '';
+                if (s.tomselect) delete s.tomselect;
+            });
+
             clone.querySelectorAll('input, textarea, select').forEach(el => {
                 if (el.name) {
                     el.name = el.name.replace(/\[\d+\]/, `[${index}]`);
