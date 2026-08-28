@@ -139,7 +139,8 @@ class EntradaController extends Controller
                     $num = preg_replace('/[^0-9]/', '', $cliente->telefono);
                     $telCliente = (strlen($num) == 10) ? '521' . $num : $num;
                     $totalFormatted = number_format($entrada->precio_venta, 2);
-                    $mensajeWa = "💰 ¡Hola {$cliente->name}! Se ha registrado tu Pago por la cantidad de \${$totalFormatted}. ¡Gracias por tu compra!";
+                    $reciboUrl = route('admin.entradas.show', $entrada);
+                    $mensajeWa = "💰 ¡Hola {$cliente->name}! Se ha registrado tu Pago por la cantidad de \${$totalFormatted}.\n📄 Puedes ver e imprimir tu Recibo de Pago aquí:\n{$reciboUrl}\n\n¡Gracias por tu pago en El Bajón!";
 
                     \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
                         'numero'     => $telCliente,
@@ -153,7 +154,7 @@ class EntradaController extends Controller
                     $cliente->notify(new \App\Notifications\AppNotification(
                         'Pago Registrado 💰', 
                         "Se ha registrado tu Pago por \${$totalFormatted}.",
-                        route('dashboard')
+                        route('admin.entradas.show', $entrada)
                     ));
 
                     \Illuminate\Support\Facades\Log::info("Notificación WhatsApp de Pago (Entrada #{$entrada->id}) encolada para cliente: {$telCliente}");
@@ -166,6 +167,15 @@ class EntradaController extends Controller
         // 4. Redireccionar
         return redirect()->route('admin.entradas.index')
             ->with('success', 'Entrada de capital registrada con éxito.');
+    }
+
+    /**
+     * Muestra el comprobante/recibo de pago individual.
+     */
+    public function show(Entrada $entrada)
+    {
+        $entrada->load(['user', 'cliente', 'articulo']);
+        return view('admin.entradas.show', compact('entrada'));
     }
 
 
