@@ -43,7 +43,16 @@
                         ${{ number_format($venta->total_venta, 2) }}
                     </td>
                     @if (Auth::user()->hasRole('admin'))
-                        <td class="px-1 py-4 text-center whitespace-nowrap text-sm text-gray-500">
+                        <td class="px-1 py-4 text-center whitespace-nowrap text-sm text-gray-500 flex items-center justify-center gap-3">
+                            {{-- Botón Imprimir Nota --}}
+                            <a href="{{ route('ventas.show', $venta) }}" target="_blank" title="Imprimir Nota de Venta"
+                                class="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-800 font-semibold cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                </svg>
+                                <span>Nota</span>
+                            </a>
+
                             {{-- Botón Editar Modal --}}
                             <button type="button" onclick='openEditVentaModal({{ json_encode(["id" => $venta->id, "articulo_id" => $venta->articulo_id, "precio_venta" => $venta->precio_venta, "cantidad" => $venta->cantidad, "user_id" => $venta->user_id, "descripcion" => $venta->descripcion]) }})'
                                 class="text-indigo-600 hover:text-indigo-900 font-semibold cursor-pointer">
@@ -51,7 +60,7 @@
                             </button>
 
                             {{-- Botón Eliminar con SweetAlert2 --}}
-                            <form id="delete-venta-{{ $venta->id }}" class="inline-block ml-4"
+                            <form id="delete-venta-{{ $venta->id }}" class="inline-block"
                                 action="{{ route('ventas.destroy', $venta) }}" method="POST"
                                 onsubmit="return confirmDelete(this, 'esta venta');">
                                 @csrf

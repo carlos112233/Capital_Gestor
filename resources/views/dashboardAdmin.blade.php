@@ -410,33 +410,30 @@
         if (precioInput) precioInput.value = parseFloat(saldo).toFixed(2);
         openModal('pago-saldado-modal');
     }
-    // --- 1. EXPORTACIÓN A EXCEL ---
     function exportarExcel() {
         const tabla = document.getElementById('tabla-resumen');
         if (!tabla) return;
 
-        const ws = XLSX.utils.table_to_sheet(tabla, { raw: false });
-
-        const estiloVerde = { font: { color: { rgb: "16A34A" }, bold: true }, alignment: { horizontal: "right" } };
-        const estiloRojo = { font: { color: { rgb: "DC2626" }, bold: true }, alignment: { horizontal: "right" } };
-
-        for (let cell in ws) {
-            if (cell[0] === '!') continue;
-            const cellData = ws[cell];
-            const valorStr = cellData.v.toString();
-
-            if (valorStr.includes('$')) {
-                const valorNumerico = parseFloat(valorStr.replace(/[$,]/g, ''));
-                cellData.s = (valorNumerico > 0) ? estiloVerde : estiloRojo;
+        const clone = tabla.cloneNode(true);
+        clone.querySelectorAll('tr').forEach(row => {
+            if (row.style.display === 'none') {
+                row.remove();
+                return;
             }
-            if (cell.replace(/[^0-9]/g, '') === "1") {
-                cellData.s = { font: { bold: true }, fill: { fgColor: { rgb: "F3F4F6" } } };
+            const cells = row.children;
+            if (cells.length >= 7) {
+                cells[6].remove(); // Checkbox
+                cells[5].remove(); // Input Ajuste
+                cells[4].remove(); // Botón WhatsApp
             }
-        }
+        });
+
+        const ws = XLSX.utils.table_to_sheet(clone, { raw: false });
 
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Resumen");
-        XLSX.writeFile(wb, "Resumen_Saldo.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "Resumen_Saldos");
+        const fecha = new Date().toISOString().slice(0, 10);
+        XLSX.writeFile(wb, `Resumen_Saldos_${fecha}.xlsx`);
     }
 
     // --- 2. LÓGICA UNIFICADA: BUSCADOR Y WHATSAPP MASIVO ---
