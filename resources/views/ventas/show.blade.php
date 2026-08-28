@@ -90,15 +90,15 @@
                 </table>
 
                 <!-- Resumen de Total -->
-                <div class="flex justify-end border-t border-slate-200 pt-4">
-                    <div class="w-full sm:w-1/2 text-right">
-                        <div class="flex justify-between items-center py-1 text-slate-600 text-sm">
-                            <span>Subtotal:</span>
-                            <span class="font-semibold">${{ number_format($venta->total_venta, 2) }}</span>
+                <div class="flex justify-end border-t border-slate-200 pt-6 mt-4">
+                    <div class="w-full sm:w-80 bg-slate-50 p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+                        <div class="flex justify-between items-center text-slate-600 text-sm">
+                            <span class="font-medium">Subtotal:</span>
+                            <span class="font-semibold text-slate-800 text-base">${{ number_format($venta->total_venta, 2) }}</span>
                         </div>
-                        <div class="flex justify-between items-center py-2.5 text-slate-900 text-lg border-t border-slate-200 mt-2 pt-2">
-                            <span class="font-bold">Total a Cobrar:</span>
-                            <span class="font-black text-emerald-600 text-xl pl-4">${{ number_format($venta->total_venta, 2) }}</span>
+                        <div class="flex justify-between items-center text-slate-900 border-t border-slate-200 pt-3">
+                            <span class="font-bold text-base">Total a Cobrar:</span>
+                            <span class="font-black text-emerald-600 text-2xl">${{ number_format($venta->total_venta, 2) }}</span>
                         </div>
                     </div>
                 </div>
