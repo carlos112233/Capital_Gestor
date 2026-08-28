@@ -53,6 +53,9 @@ Route::middleware('auth')->group(function () {
     Route::post('feedback/{feedback}/status', [\App\Http\Controllers\FeedbackController::class, 'updateStatus'])->name('feedback.status');
 
     Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('api/clientes-lista', function() {
+            return response()->json(\App\Models\User::role('user')->orderBy('name', 'asc')->get(['id', 'name']));
+        })->name('api.clientes');
         Route::resource('clientes', ClienteController::class);
         Route::post('clientes/{cliente}/activar', [ClienteController::class, 'activar'])->name('clientes.activar');
         Route::post('clientes/{cliente}/enviar-whatsapp', [ClienteController::class, 'enviarWhatsAppAccess'])->name('clientes.enviar-whatsapp');

@@ -249,7 +249,7 @@
             }
         });
 
-        btnAgregar.addEventListener('click', () => {
+        btnAgregar.addEventListener('click', async () => {
             const clone = molde.cloneNode(true);
             clone.querySelectorAll('input, textarea, select').forEach(el => {
                 if (el.name) {
@@ -258,6 +258,31 @@
                 if (el.type === 'number') el.value = el.classList.contains('cantidad-input-venta') ? 1 : '';
                 else el.value = '';
             });
+
+            // Consultar lista actualizada de clientes desde el servidor
+            try {
+                const response = await fetch("{{ route('admin.api.clientes') }}", {
+                    headers: { "X-Requested-With": "XMLHttpRequest" }
+                });
+                if (response.ok) {
+                    const clientes = await response.json();
+                    const userSelect = clone.querySelector('.user-select-venta');
+                    if (userSelect) {
+                        const selectedVal = userSelect.value;
+                        userSelect.innerHTML = '<option value="">Seleccione un cliente</option>';
+                        clientes.forEach(c => {
+                            const opt = document.createElement('option');
+                            opt.value = c.id;
+                            opt.textContent = c.name;
+                            if (c.id == selectedVal) opt.selected = true;
+                            userSelect.appendChild(opt);
+                        });
+                    }
+                }
+            } catch(e) {
+                console.error('Error al actualizar la lista de clientes:', e);
+            }
+
             container.appendChild(clone);
             index++;
         });
