@@ -15,3 +15,8 @@ Schedule::command('articulos:reset-disponibilidad')->dailyAt('19:00');
 // Enviar recordatorios masivos los días 15 y el último día del mes a las 6:00 PM
 Schedule::command('whatsapp:recordatorios')->monthlyOn(15, '18:00');
 Schedule::command('whatsapp:recordatorios')->lastDayOfMonth('18:00');
+
+// Limpieza automática cada hora de PDFs temporales antiguos
+Schedule::call(function () {
+    \App\Services\PdfReceiptService::cleanupOldTempPdfs();
+})->hourly();

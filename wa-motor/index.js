@@ -1,4 +1,4 @@
-const { Client, LocalAuth } = require("whatsapp-web.js");
+const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
 const qrcode = require("qrcode-terminal");
 const { Pool } = require("pg");
 const QRCodeImage = require("qrcode");
@@ -667,10 +667,24 @@ function iniciarBucleEnvio() {
                             );
                         }
 
-                        console.log(
-                            `🚀 Enviando mensaje #${msg.id} a ${targetId}...`,
-                        );
-                        await client.sendMessage(targetId, msg.mensaje);
+                        if (msg.pdf_path && fs.existsSync(msg.pdf_path)) {
+                            console.log(`📎 Adjuntando PDF temporal "${msg.pdf_path}" a ${targetId}...`);
+                            const media = MessageMedia.fromFilePath(msg.pdf_path);
+                            await client.sendMessage(targetId, media, { caption: msg.mensaje });
+
+                            // Autolimpieza inmediata del PDF temporal
+                            try {
+                                fs.unlinkSync(msg.pdf_path);
+                                console.log(`🗑️ PDF temporal eliminado con éxito: ${msg.pdf_path}`);
+                            } catch (eUnlink) {
+                                console.error(`⚠️ No se pudo eliminar PDF temporal: ${eUnlink.message}`);
+                            }
+                        } else {
+                            console.log(
+                                `🚀 Enviando mensaje #${msg.id} a ${targetId}...`,
+                            );
+                            await client.sendMessage(targetId, msg.mensaje);
+                        }
 
                         const mxNowSuccess = new Date().toLocaleString(
                             "sv-SE",
@@ -688,6 +702,12 @@ function iniciarBucleEnvio() {
                             `❌ Error procesando el mensaje #${msg.id} para ${msg.numero}:`,
                             err.message,
                         );
+
+                        // Limpieza de PDF temporal en caso de fallar el envío
+                        if (msg.pdf_path && fs.existsSync(msg.pdf_path)) {
+                            try { fs.unlinkSync(msg.pdf_path); } catch (eUnlinkErr) {}
+                        }
+
                         const mxNowErr = new Date().toLocaleString("sv-SE", {
                             timeZone: "America/Mexico_City",
                         });

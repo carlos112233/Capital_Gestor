@@ -140,11 +140,20 @@ class EntradaController extends Controller
                     $telCliente = (strlen($num) == 10) ? '521' . $num : $num;
                     $totalFormatted = number_format($entrada->precio_venta, 2);
                     $reciboUrl = route('admin.entradas.show', $entrada);
-                    $mensajeWa = "💰 ¡Hola {$cliente->name}! Se ha registrado tu Pago por la cantidad de \${$totalFormatted}.\n📄 Puedes ver e imprimir tu Recibo de Pago aquí:\n{$reciboUrl}\n\n¡Gracias por tu pago en El Bajón!";
+                    $mensajeWa = "💰 ¡Hola {$cliente->name}! Se ha registrado tu Pago por la cantidad de \${$totalFormatted}.\n📄 Adjunto encontrarás tu Recibo de Pago en PDF.\n\n¡Gracias por tu pago en El Bajón!";
+
+                    // Generar PDF temporal del recibo
+                    $pdfPath = null;
+                    try {
+                        $pdfPath = \App\Services\PdfReceiptService::generateEntradaPdf($entrada);
+                    } catch (\Exception $ePdf) {
+                        \Illuminate\Support\Facades\Log::error("Error generando PDF para Entrada #{$entrada->id}: " . $ePdf->getMessage());
+                    }
 
                     \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
                         'numero'     => $telCliente,
                         'mensaje'    => $mensajeWa,
+                        'pdf_path'   => $pdfPath,
                         'status'     => 'pendiente',
                         'created_at' => now(),
                         'updated_at' => now(),
