@@ -27,32 +27,43 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="mb-4 flex gap-2">
-                <div class="relative w-full group">
-    <input type="text" name="q" id="q" value="{{ request('q') }}" class="block rounded-t-lg px-3 pb-2 pt-6 w-full text-sm text-slate-800 bg-slate-100 border-0 border-b-2 border-slate-300 appearance-none focus:outline-none focus:ring-0 focus:border-indigo-600 peer pr-10 transition-colors focus:bg-slate-200/50" placeholder=" " autocomplete="off" />
-    <label for="q" class="absolute text-sm text-slate-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-3 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 cursor-text">
-        Buscar artículos por nombre o descripción...
-    </label>
-    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 group-focus-within:text-indigo-600 transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-    </div>
-</div>
-                <form id="form-bulk-enable" action="{{ route('admin.articulos.bulk-disponible') }}" method="POST" class="whitespace-nowrap flex-shrink-0">
-                    @csrf
-                    <input type="hidden" name="status" value="1">
-                    <button type="button" onclick="confirmBulkAction('form-bulk-enable', '¿Seguro que deseas marcar TODOS los artículos con stock como disponibles?')" class="h-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-sm shadow-sm transition-all duration-200">
-                        Activar Todos
-                    </button>
-                </form>
-                <form id="form-bulk-disable" action="{{ route('admin.articulos.bulk-disponible') }}" method="POST" class="whitespace-nowrap flex-shrink-0">
-                    @csrf
-                    <input type="hidden" name="status" value="0">
-                    <button type="button" onclick="confirmBulkAction('form-bulk-disable', '¿Seguro que deseas marcar TODOS los artículos como NO disponibles?')" class="h-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-sm shadow-sm transition-all duration-200">
-                        Desactivar Todos
-                    </button>
-                </form>
+            <div class="mb-5 flex flex-col sm:flex-row items-center gap-3">
+                <div class="relative flex-1 w-full">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input type="text" name="q" id="q" value="{{ request('q') }}"
+                        class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200 shadow-sm"
+                        placeholder="Buscar artículos por nombre o descripción..." autocomplete="off" />
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <form id="form-bulk-enable" action="{{ route('admin.articulos.bulk-disponible') }}" method="POST" class="inline-block">
+                        @csrf
+                        <input type="hidden" name="status" value="1">
+                        <button type="button" onclick="confirmBulkAction('form-bulk-enable', '¿Seguro que deseas marcar TODOS los artículos con stock como disponibles?')"
+                            title="Activar todos los artículos disponible"
+                            class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-xs shadow-sm transition-all duration-200 cursor-pointer">
+                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span>Activar Todos</span>
+                        </button>
+                    </form>
+                    <form id="form-bulk-disable" action="{{ route('admin.articulos.bulk-disponible') }}" method="POST" class="inline-block">
+                        @csrf
+                        <input type="hidden" name="status" value="0">
+                        <button type="button" onclick="confirmBulkAction('form-bulk-disable', '¿Seguro que deseas marcar TODOS los artículos como NO disponibles?')"
+                            title="Desactivar todos los artículos"
+                            class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs shadow-sm transition-all duration-200 cursor-pointer">
+                            <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                            <span>Desactivar Todos</span>
+                        </button>
+                    </form>
+                </div>
             </div>
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="overflow-x-auto">
