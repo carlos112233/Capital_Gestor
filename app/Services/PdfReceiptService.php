@@ -28,8 +28,8 @@ class PdfReceiptService
         $fileName = 'recibo_pago_' . $entrada->id . '_' . time() . '.pdf';
         $filePath = $tempDir . DIRECTORY_SEPARATOR . $fileName;
 
-        // Renderizar la vista a PDF con Dompdf
-        $pdf = Pdf::loadView('admin.entradas.show', compact('entrada'))
+        // Renderizar la vista a PDF con Dompdf usando la plantilla dedicada pdf.recibo_pago
+        $pdf = Pdf::loadView('pdf.recibo_pago', compact('entrada'))
             ->setPaper('a4', 'portrait')
             ->setWarnings(false);
 
