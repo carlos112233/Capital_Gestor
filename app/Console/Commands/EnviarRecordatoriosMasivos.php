@@ -35,6 +35,14 @@ class EnviarRecordatoriosMasivos extends Command
             if ($saldo > 0) {
                 $mensaje = $controller->generarMensajeRecordatorio($user, 0);
 
+                // Generar PDF con el detalle de compras / estado de cuenta
+                $pdfPath = null;
+                try {
+                    $pdfPath = \App\Services\PdfReceiptService::generateEstadoCuentaPdf($user, 0);
+                } catch (\Exception $ePdf) {
+                    \Illuminate\Support\Facades\Log::error("Error generando PDF de estado de cuenta para Usuario #{$user->id}: " . $ePdf->getMessage());
+                }
+
                 // Limpiar número
                 $num = preg_replace('/[^0-9]/', '', $user->telefono);
                 $num = (strlen($num) == 10) ? '521' . $num : $num;
@@ -42,6 +50,7 @@ class EnviarRecordatoriosMasivos extends Command
                 \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
                     'numero' => $num,
                     'mensaje' => $mensaje,
+                    'pdf_path' => $pdfPath,
                     'status' => 'pendiente',
                     'created_at' => now(),
                     'updated_at' => now(),
