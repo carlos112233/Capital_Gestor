@@ -4,32 +4,36 @@
     <meta charset="UTF-8">
     <title>Recibo de Pago #{{ $entrada->id }} - El Bajón</title>
     <style>
-        body {
+        @page {
+            margin: 12mm;
+        }
+        html, body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             color: #1e293b;
             margin: 0;
-            padding: 15px;
+            padding: 0;
+            width: 100%;
             font-size: 13px;
             line-height: 1.4;
+            background-color: #ffffff;
         }
         .container {
             width: 100%;
             border: 1px solid #cbd5e1;
-            border-radius: 12px;
-            padding: 24px;
+            border-radius: 14px;
+            padding: 20px;
             background: #ffffff;
-            box-sizing: border-box;
         }
         .header-table {
             width: 100%;
             background-color: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 10px;
-            padding: 16px;
-            margin-bottom: 20px;
+            padding: 14px;
+            margin-bottom: 18px;
         }
         .brand {
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 900;
             color: #0f172a;
             letter-spacing: 1px;
@@ -45,7 +49,7 @@
             color: #0f172a;
             font-size: 12px;
             font-weight: 800;
-            padding: 4px 12px;
+            padding: 5px 14px;
             border-radius: 20px;
             display: inline-block;
         }
@@ -53,7 +57,7 @@
             font-size: 11px;
             font-weight: 700;
             color: #334155;
-            margin-top: 5px;
+            margin-top: 6px;
         }
         .client-table {
             width: 100%;
@@ -61,7 +65,7 @@
             border: 1px solid #f1f5f9;
             border-radius: 8px;
             padding: 14px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
         .label {
             font-size: 10px;
@@ -78,7 +82,7 @@
         .details-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
         .details-table th {
             background-color: #f1f5f9;
@@ -98,30 +102,30 @@
             color: #065f46;
             font-size: 10px;
             font-weight: 800;
-            padding: 3px 8px;
+            padding: 4px 10px;
             border-radius: 12px;
         }
         .total-table {
-            width: 260px;
+            width: 250px;
             margin-left: auto;
             background-color: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 10px;
-            padding: 14px;
-            margin-bottom: 20px;
+            padding: 12px 16px;
+            margin-bottom: 18px;
         }
         .total-amount {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 900;
             color: #059669;
         }
         .footer {
-            margin-top: 25px;
+            margin-top: 20px;
             text-align: center;
             font-size: 11px;
             color: #64748b;
             border-top: 1px solid #f1f5f9;
-            padding-top: 16px;
+            padding-top: 14px;
         }
     </style>
 </head>
@@ -131,13 +135,13 @@
     @endphp
     <div class="container">
         <!-- Encabezado -->
-        <table class="header-table">
+        <table class="header-table" cellspacing="0" cellpadding="0">
             <tr>
-                <td valign="middle">
+                <td valign="middle" align="left">
                     <div class="brand">EL BAJÓN</div>
                     <div class="subtitle">Comprobante de Pago Saldado / Abono</div>
                 </td>
-                <td align="right" valign="middle">
+                <td valign="middle" align="right">
                     <div class="folio-badge">Folio: #{{ $entrada->id }}</div>
                     <div class="date">Fecha: {{ $entrada->created_at ? $entrada->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A') }}</div>
                 </td>
@@ -145,14 +149,14 @@
         </table>
 
         <!-- Información del Cliente -->
-        <table class="client-table">
+        <table class="client-table" cellspacing="0" cellpadding="0">
             <tr>
-                <td width="50%">
+                <td width="50%" align="left" valign="top">
                     <div class="label">Cliente</div>
                     <div class="value">{{ $clienteObj->name ?? 'Cliente General' }}</div>
                     <div style="font-size: 11px; color: #64748b; margin-top: 2px;">{{ $clienteObj->email ?? '' }}</div>
                 </td>
-                <td width="50%">
+                <td width="50%" align="left" valign="top">
                     <div class="label">Teléfono</div>
                     <div class="value">{{ $clienteObj->telefono ?? 'Sin teléfono' }}</div>
                 </td>
@@ -160,7 +164,7 @@
         </table>
 
         <!-- Detalle de Pago -->
-        <table class="details-table">
+        <table class="details-table" cellspacing="0" cellpadding="0">
             <thead>
                 <tr>
                     <th align="left">Concepto de Pago</th>
@@ -170,7 +174,7 @@
             </thead>
             <tbody>
                 <tr>
-                    <td>
+                    <td align="left">
                         <strong style="font-size: 13px; color: #0f172a;">{{ $entrada->articulo->nombre ?? 'Pago Registrado' }}</strong>
                         @if($entrada->descripcion)
                             <div style="font-size: 11px; color: #64748b; margin-top: 3px;">{{ $entrada->descripcion }}</div>
@@ -187,10 +191,10 @@
         </table>
 
         <!-- Resumen Total -->
-        <table class="total-table">
+        <table class="total-table" cellspacing="0" cellpadding="0">
             <tr>
-                <td><strong style="font-size: 13px;">Monto Recibido:</strong></td>
-                <td align="right" class="total-amount">${{ number_format($entrada->precio_venta, 2) }}</td>
+                <td align="left" valign="middle"><strong style="font-size: 13px;">Monto Recibido:</strong></td>
+                <td align="right" valign="middle" class="total-amount">${{ number_format($entrada->precio_venta, 2) }}</td>
             </tr>
         </table>
 
