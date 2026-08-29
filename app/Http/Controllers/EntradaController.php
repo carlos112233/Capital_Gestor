@@ -132,7 +132,7 @@ class EntradaController extends Controller
 
         \Illuminate\Support\Facades\Log::info("Debug WhatsApp Entrada #{$entrada->id}: enviarWa=" . ($enviarWa ? '1' : '0') . " | requestValue=" . json_encode($request->input('enviar_wa')) . " | isAdmin=" . (Auth::user()->hasRole('admin') ? '1' : '0') . " | clienteId={$clienteId} | authId=" . Auth::id());
 
-        if ($enviarWa && Auth::user()->hasRole('admin') && $clienteId != Auth::id()) {
+        if ($enviarWa && Auth::user()->hasRole('admin')) {
             $cliente = User::find($clienteId);
             if ($cliente && !empty($cliente->telefono)) {
                 try {
