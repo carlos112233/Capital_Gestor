@@ -64,6 +64,7 @@ Route::middleware('auth')->group(function () {
         Route::post('articulos/bulk-disponible', [ArticuloController::class, 'bulkDisponible'])->name('articulos.bulk-disponible');
         Route::post('articulos/{articulo}/toggle-disponible', [ArticuloController::class, 'toggleDisponible'])->name('articulos.toggle');
         Route::resource('entradas', EntradaController::class);
+        Route::post('entradas/{entrada}/reenviar-whatsapp', [EntradaController::class, 'reenviarWhatsApp'])->name('entradas.reenviar-whatsapp');
         Route::resource('pedidos', PedidoController::class);
         Route::get('configuracion', [\App\Http\Controllers\ConfiguracionController::class, 'index'])->name('configuracion.index');
         Route::post('configuracion/logo', [\App\Http\Controllers\ConfiguracionController::class, 'updateLogo'])->name('configuracion.logo');
