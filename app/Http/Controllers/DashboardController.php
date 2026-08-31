@@ -113,10 +113,19 @@ class DashboardController extends Controller
             $montoAjuste = isset($ajustes[$user->id]) ? (float)$ajustes[$user->id] : 0;
             $mensaje = $this->generarMensajeRecordatorio($user, $montoAjuste);
 
+            // Generar PDF con el detalle de compras / estado de cuenta
+            $pdfPath = null;
+            try {
+                $pdfPath = \App\Services\PdfReceiptService::generateEstadoCuentaPdf($user, $montoAjuste);
+            } catch (\Exception $ePdf) {
+                \Illuminate\Support\Facades\Log::error("Error generando PDF de estado de cuenta para Usuario #{$user->id}: " . $ePdf->getMessage());
+            }
+
             // Insertamos en la tabla para que el motor de Node.js lo vea
             DB::table('whatsapp_pending_messages')->insert([
                 'numero' => $this->formatearNumero($user->telefono),
                 'mensaje' => $mensaje,
+                'pdf_path' => $pdfPath,
                 'status' => 'pendiente',
                 'created_at' => now(),
                 'updated_at' => now(),

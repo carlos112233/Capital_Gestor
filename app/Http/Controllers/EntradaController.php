@@ -132,7 +132,7 @@ class EntradaController extends Controller
 
         \Illuminate\Support\Facades\Log::info("Debug WhatsApp Entrada #{$entrada->id}: enviarWa=" . ($enviarWa ? '1' : '0') . " | requestValue=" . json_encode($request->input('enviar_wa')) . " | isAdmin=" . (Auth::user()->hasRole('admin') ? '1' : '0') . " | clienteId={$clienteId} | authId=" . Auth::id());
 
-        if ($enviarWa && Auth::user()->hasRole('admin') && $clienteId != Auth::id()) {
+        if ($enviarWa && Auth::user()->hasRole('admin')) {
             $cliente = User::find($clienteId);
             if ($cliente && !empty($cliente->telefono)) {
                 try {
@@ -240,5 +240,39 @@ class EntradaController extends Controller
 
         return redirect()->route('admin.entradas.index')
             ->with('success', 'Entrada de capital eliminada correctamente.');
+    }
+
+    /**
+     * Reenvía el recibo de pago en PDF por WhatsApp al cliente.
+     */
+    public function reenviarWhatsApp(Entrada $entrada)
+    {
+        $cliente = $entrada->cliente ?? $entrada->user;
+        if (!$cliente || empty($cliente->telefono)) {
+            return redirect()->back()->with('error', 'El cliente no tiene un número de teléfono registrado.');
+        }
+
+        try {
+            $num = preg_replace('/[^0-9]/', '', $cliente->telefono);
+            $telCliente = (strlen($num) == 10) ? '521' . $num : $num;
+            $totalFormatted = number_format($entrada->precio_venta, 2);
+            $mensajeWa = "💰 ¡Hola {$cliente->name}! Se reenvía tu Recibo de Pago por la cantidad de \${$totalFormatted}.\n📄 Adjunto encontrarás tu Recibo de Pago en PDF.\n\n¡Gracias por tu pago en El Bajón!";
+
+            // Generar PDF temporal del recibo
+            $pdfPath = \App\Services\PdfReceiptService::generateEntradaPdf($entrada);
+
+            \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                'numero'     => $telCliente,
+                'mensaje'    => $mensajeWa,
+                'pdf_path'   => $pdfPath,
+                'status'     => 'pendiente',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return redirect()->back()->with('success', "Recibo en PDF encolado exitosamente para WhatsApp a {$cliente->name} ({$telCliente}).");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Error al encolar el PDF para WhatsApp: ' . $e->getMessage());
+        }
     }
 }
