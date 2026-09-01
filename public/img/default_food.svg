@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <linearGradient id="plateGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </linearGradient>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="100" fill="url(#bgGrad)"/>
+  <circle cx="100" cy="100" r="70" fill="url(#plateGrad)" stroke="#cbd5e1" stroke-width="4"/>
+  <circle cx="100" cy="100" r="52" fill="none" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="6,4"/>
+  <g fill="url(#iconGrad)">
+    <!-- Cloche / Food Cover Icon -->
+    <path d="M100 62 C74 62 54 80 50 104 L150 104 C146 80 126 62 100 62 Z"/>
+    <circle cx="100" cy="56" r="6"/>
+    <rect x="44" y="106" width="112" height="8" rx="4"/>
+    <!-- Fork & Knife accent -->
+    <path d="M78 122 C78 128 82 134 88 134 L88 148 C88 150 90 152 92 152 C94 152 96 150 96 148 L96 134 C102 134 106 128 106 122 Z" fill="#94a3b8" opacity="0.6"/>
+  </g>
+</svg>

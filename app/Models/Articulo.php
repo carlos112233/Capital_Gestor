@@ -40,4 +40,16 @@ class Articulo extends Model
     {
         return $query->whereNotIn('nombre', ['Pago saldado', 'Abono', 'pago saldado', 'abono']);
     }
+
+    /**
+     * Obtiene la fuente de la imagen (Base64 o imagen por defecto).
+     */
+    public function getImagenSrcAttribute(): string
+    {
+        if (!empty($this->img_base64) && strlen($this->img_base64) > 100) {
+            $tipo = $this->imagen_tipo ?: 'image/jpeg';
+            return "data:{$tipo};base64,{$this->img_base64}";
+        }
+        return asset('img/default_food.svg');
+    }
 }

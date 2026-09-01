@@ -7,15 +7,13 @@
                     <h3 class="text-lg font-bold">{{ $articulo->nombre }}</h3>
                     <p class="mt-2 text-gray-600">{{ $articulo->descripcion }}</p>
                 </div>
-                @if ($articulo->img_base64)
-                    <div class="p-6 bg-gray-50 text-center border-t border-gray-200 flex justify-center">
-                        <div class="w-40 h-40 overflow-hidden rounded-full"> <!-- Contenedor cuadrado -->
-                            <img class="w-full h-full object-cover"
-                                src="data:{{ $articulo->imagen_tipo }};base64,{{ $articulo->img_base64 }}"
-                                alt="Imagen del artículo">
-                        </div>
+                <div class="p-6 bg-gray-50 text-center border-t border-gray-200 flex justify-center">
+                    <div class="w-40 h-40 overflow-hidden rounded-full shadow-inner bg-slate-100 flex items-center justify-center border border-slate-200">
+                        <img class="w-full h-full object-cover"
+                            src="{{ $articulo->imagen_src }}"
+                            alt="{{ $articulo->nombre }}">
                     </div>
-                @endif
+                </div>
                 <div class="p-6 bg-gray-50 border-t border-gray-200">
                     <div class="flex justify-between items-center mb-4">
                         <span class="text-xl font-semibold">$ {{ number_format($articulo->precio, 2) }}
