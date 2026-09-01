@@ -33,8 +33,6 @@ class EnviarRecordatoriosMasivos extends Command
 
             // Solo enviar a los que tengan deuda mayor a 0
             if ($saldo > 0) {
-                $mensaje = $controller->generarMensajeRecordatorio($user, 0);
-
                 // Generar PDF con el detalle de compras / estado de cuenta
                 $pdfPath = null;
                 try {
@@ -42,6 +40,9 @@ class EnviarRecordatoriosMasivos extends Command
                 } catch (\Exception $ePdf) {
                     \Illuminate\Support\Facades\Log::error("Error generando PDF de estado de cuenta para Usuario #{$user->id}: " . $ePdf->getMessage());
                 }
+
+                $saldoFormat = number_format($saldo, 2);
+                $mensaje = "Hola *{$user->name}*, te compartimos tu Estado de Cuenta adjunto con el saldo a cubrir de *\${$saldoFormat}*.\n\nFavor de enviar tu comprobante de pago a este número de WhatsApp. ¡Gracias!";
 
                 // Limpiar número
                 $num = preg_replace('/[^0-9]/', '', $user->telefono);

@@ -111,7 +111,6 @@ class DashboardController extends Controller
             if (!$user->telefono) continue;
 
             $montoAjuste = isset($ajustes[$user->id]) ? (float)$ajustes[$user->id] : 0;
-            $mensaje = $this->generarMensajeRecordatorio($user, $montoAjuste);
 
             // Generar PDF con el detalle de compras / estado de cuenta
             $pdfPath = null;
@@ -119,6 +118,14 @@ class DashboardController extends Controller
                 $pdfPath = \App\Services\PdfReceiptService::generateEstadoCuentaPdf($user, $montoAjuste);
             } catch (\Exception $ePdf) {
                 \Illuminate\Support\Facades\Log::error("Error generando PDF de estado de cuenta para Usuario #{$user->id}: " . $ePdf->getMessage());
+            }
+
+            if ($pdfPath) {
+                $saldo = $user->saldo_pendiente - $montoAjuste;
+                $saldoFormat = number_format($saldo, 2);
+                $mensaje = "Hola *{$user->name}*, te compartimos tu Estado de Cuenta adjunto con el saldo a cubrir de *\${$saldoFormat}*.\n\nFavor de enviar tu comprobante de pago a este número de WhatsApp. ¡Gracias!";
+            } else {
+                $mensaje = $this->generarMensajeRecordatorio($user, $montoAjuste);
             }
 
             // Insertamos en la tabla para que el motor de Node.js lo vea
