@@ -65,20 +65,27 @@ class ProfileController extends Controller
     }
 
     /**
-     * Show the user profile image
+     * Show the user profile image or default avatar
      */
     public function showImage($id)
     {
-        $user = \App\Models\User::select('image', 'image_tipo')->findOrFail($id);
+        $user = \App\Models\User::select('image', 'image_tipo')->find($id);
 
-        if (!$user->image) {
-            abort(404);
+        if ($user && !empty($user->image) && strlen($user->image) > 100) {
+            $image = base64_decode($user->image);
+            return response($image, 200)
+                ->header('Content-Type', $user->image_tipo ?? 'image/jpeg')
+                ->header('Cache-Control', 'max-age=86400, public');
         }
 
-        $image = base64_decode($user->image);
+        $defaultPath = public_path('img/default_user.svg');
+        if (file_exists($defaultPath)) {
+            return response()->file($defaultPath, [
+                'Content-Type' => 'image/svg+xml',
+                'Cache-Control' => 'max-age=86400, public'
+            ]);
+        }
 
-        return response($image, 200)
-            ->header('Content-Type', $user->image_tipo ?? 'image/jpeg')
-            ->header('Cache-Control', 'max-age=86400, public');
+        abort(404);
     }
 }

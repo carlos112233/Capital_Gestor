@@ -183,5 +183,14 @@ class User extends Authenticatable
         return false;
     }
 
-
+    /**
+     * Obtiene la URL de la imagen del usuario (Foto de perfil o avatar SVG por defecto).
+     */
+    public function getImagenSrcAttribute(): string
+    {
+        if (!empty($this->image) && strlen($this->image) > 100) {
+            return route('user.image', $this->id);
+        }
+        return asset('img/default_user.svg');
+    }
 }

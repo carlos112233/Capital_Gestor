@@ -14,7 +14,10 @@
                 <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                     {{ $cliente->id }}</td>
                 <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
-                    {{ $cliente->name }}
+                    <div class="flex items-center justify-center gap-2">
+                        <img src="{{ route('user.image', $cliente->id) }}?v={{ $cliente->updated_at ? $cliente->updated_at->timestamp : '' }}" class="w-7 h-7 rounded-full object-cover border border-slate-200 shadow-sm" alt="Foto">
+                        <span class="font-medium text-slate-800">{{ $cliente->name }}</span>
+                    </div>
                     @if($cliente->trashed())
                         <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
                             Inactivo
