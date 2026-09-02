@@ -22,7 +22,7 @@
 
             <div class="relative">
                 <x-text-input id="password" class="block mt-1 w-full pr-10"
-                                :type="show ? 'text' : 'password'"
+                                x-bind:type="show ? 'text' : 'password'"
                                 name="password"
                                 required autocomplete="new-password" />
                 <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none">
@@ -40,7 +40,7 @@
 
             <div class="relative">
                 <x-text-input id="password_confirmation" class="block mt-1 w-full pr-10"
-                                :type="show ? 'text' : 'password'"
+                                x-bind:type="show ? 'text' : 'password'"
                                 name="password_confirmation" required autocomplete="new-password" />
                 <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none">
                     <svg x-show="!show" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
