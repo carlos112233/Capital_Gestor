@@ -209,13 +209,16 @@
                                                             $telefonoFinal = $soloNumeros;
                                                         }
 
+                                                        $pdfUrl = route('clientes.estado-cuenta.pdf', $r->id);
+
                                                         // 3. Creamos el mensaje (puedes editarlo a tu gusto)
                                                         $mensaje =
                                                             'Hola ' .
                                                             $r->name .
                                                             ", solo para informarte que tu saldo actual a cubrir es de $" .
                                                             number_format($r->saldo, 2) .
-                                                            "\n si deseas más informacion el cobro de tu saldo, mandanos un mensaje.\n" .
+                                                            "\n\n📄 *Estado de Cuenta PDF:* " . $pdfUrl .
+                                                            "\n\nsi deseas más informacion el cobro de tu saldo, mandanos un mensaje.\n" .
                                                             "--------------------------\n" .
                                                             "*DATOS PARA PAGO:*\n\n" .
                                                             "*BBVA:*\n" .

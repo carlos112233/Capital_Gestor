@@ -124,12 +124,12 @@ class DashboardController extends Controller
             if ($pdfPath) {
                 $saldo = $user->saldo_pendiente - $montoAjuste;
                 $saldoFormat = number_format($saldo, 2);
-                $mensaje = "Hola *{$user->name}*, te compartimos tu Estado de Cuenta adjunto con el saldo a cubrir de *\${$saldoFormat}*.\n\nFavor de enviar tu comprobante de pago a este número de WhatsApp. ¡Gracias!";
-            } else {
-                $mensaje = $this->generarMensajeRecordatorio($user, $montoAjuste);
             }
+            
+            // Garantizamos que SIEMPRE se incluya el mensaje completo con detalle de compras, cuentas bancarias y link al PDF
+            $mensaje = $this->generarMensajeRecordatorio($user, $montoAjuste);
 
-            // Insertamos en la tabla para que el motor de Node.js lo vea
+            // Insertamos en la tabla para que el motor de Node.js de WhatsApp adjunte el PDF y envíe el texto completo
             DB::table('whatsapp_pending_messages')->insert([
                 'numero' => $this->formatearNumero($user->telefono),
                 'mensaje' => $mensaje,
@@ -184,10 +184,21 @@ class DashboardController extends Controller
             $desgloseTexto .= "--------------------------\n";
         }
 
+        $pdfLink = "";
+        if (!empty($user->id)) {
+            try {
+                $pdfUrl = route('admin.clientes.estado-cuenta.pdf', $user->id);
+                $pdfLink = "📄 *Estado de Cuenta PDF:* " . $pdfUrl . "\n\n";
+            } catch (\Throwable $eUrl) {
+                $pdfLink = "";
+            }
+        }
+
         return "Hola excelente tarde,  " . $user->name . ", solo es para informarte de tu saldo actual a cubrir es de *$" .
             number_format($saldo, 2) .
             "*\n\n" .
             $desgloseTexto .
+            $pdfLink .
             "tienes dudas o deseas más informacion sobre el monto a cobrar de tu saldo, mandame un mensaje.\n\n" .
             "--------------------------\n" .
             "*DATOS PARA PAGO:*\n\n" .
