@@ -82,7 +82,7 @@
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="flex items-center gap-3">
-                                                    @if($r->has_image)
+                                                    
                                                         <div x-data="{ openTablePhoto: false }">
                                                             <button @click="openTablePhoto = true" class="focus:outline-none cursor-pointer transform hover:scale-110 transition-transform">
                                                                 <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}" class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm" alt="Foto">
@@ -97,11 +97,7 @@
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    @else
-                                                        <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs shadow-sm border border-indigo-200">
-                                                            {{ strtoupper(substr($r->name, 0, 1)) }}
-                                                        </div>
-                                                    @endif
+                                                    
                                                     <span class="font-medium text-slate-800">{{ $r->name }}</span>
                                                 </div>
                                             </td>
@@ -210,7 +206,7 @@
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="flex items-center gap-3">
-                                                    @if($r->has_image)
+                                                    
                                                         <div x-data="{ openTablePhoto: false }">
                                                             <button @click="openTablePhoto = true" class="focus:outline-none cursor-pointer transform hover:scale-110 transition-transform">
                                                                 <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}" class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm" alt="Foto">
