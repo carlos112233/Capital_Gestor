@@ -278,9 +278,9 @@
                             <thead>
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">Cliente</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">Fecha</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">Estatus / Fecha</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">Monto</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">Notas</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">Datos OCR / Notas</th>
                                     <th class="px-6 py-3 text-center text-xs font-medium text-amber-700 uppercase tracking-wider">Comprobante</th>
                                     <th class="px-6 py-3 text-center text-xs font-medium text-amber-700 uppercase tracking-wider">Acciones</th>
                                 </tr>
@@ -289,9 +289,29 @@
                                 @foreach($comprobantesPendientes as $comp)
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap font-bold">{{ $comp->user->name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">{{ $comp->created_at->format('d/m/Y h:i A') }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">${{ number_format($comp->monto, 2) }}</td>
-                                    <td class="px-6 py-4 text-sm">{{ $comp->notas ?: '-' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 mb-1">
+                                            {{ $comp->status === 'procesando_pago' ? 'Procesando Pago ⏳' : 'Pendiente' }}
+                                        </span>
+                                        <div class="text-xs text-slate-500">{{ $comp->created_at->format('d/m/Y h:i A') }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">
+                                        ${{ number_format($comp->monto, 2) }}
+                                        @if($comp->monto_extraido)
+                                            <div class="text-xs text-slate-500 font-normal">Detectado OCR: ${{ number_format($comp->monto_extraido, 2) }}</div>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        @if($comp->banco || $comp->clave_rastreo)
+                                            <div class="text-xs font-semibold text-indigo-700 bg-indigo-50 p-1.5 rounded mb-1">
+                                                <span>🏦 {{ $comp->banco ?? 'Banco N/D' }}</span>
+                                                @if($comp->clave_rastreo)
+                                                    <span class="ml-2">| 🔑 Folio: {{ $comp->clave_rastreo }}</span>
+                                                @endif
+                                            </div>
+                                        @endif
+                                        <div class="text-xs text-slate-700 whitespace-pre-line">{{ $comp->notas ?: '-' }}</div>
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         <a href="{{ Storage::url($comp->imagen) }}" target="_blank" class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 hover:underline">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
@@ -306,9 +326,9 @@
                                                     Aprobar
                                                 </button>
                                             </form>
-                                            <form action="{{ route('admin.comprobantes.rechazar', $comp->id) }}" method="POST">
+                                            <form id="form-rechazar-{{ $comp->id }}" action="{{ route('admin.comprobantes.rechazar', $comp->id) }}" method="POST">
                                                 @csrf
-                                                <button type="submit" onclick="return confirm('¿Rechazar comprobante?')" class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-bold transition-colors">
+                                                <button type="button" onclick="confirmRechazarComprobante('form-rechazar-{{ $comp->id }}', '{{ $comp->user->name }}', '{{ number_format($comp->monto, 2) }}')" class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-bold transition-colors">
                                                     Rechazar
                                                 </button>
                                             </form>
@@ -319,6 +339,42 @@
                             </tbody>
                         </table>
                     </div>
+                    <script>
+                        function confirmRechazarComprobante(formId, clienteNombre, monto) {
+                            const form = document.getElementById(formId);
+                            Swal.fire({
+                                title: '¿Rechazar comprobante?',
+                                html: `
+                                    <p class="text-sm text-slate-600 mb-2">El comprobante de <b>${clienteNombre}</b> por <b>$${monto}</b> no será aprobado.</p>
+                                    <div class="mt-4 text-left border-t border-slate-200 pt-3">
+                                        <label class="inline-flex items-center text-sm text-slate-700 font-medium cursor-pointer">
+                                            <input type="checkbox" id="swal-enviar-wa-rechazo" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 mr-2">
+                                            <span>Enviar notificación por WhatsApp al cliente informando que su pago fue rechazado</span>
+                                        </label>
+                                    </div>
+                                `,
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: '#ef4444',
+                                cancelButtonColor: '#6b7280',
+                                confirmButtonText: 'Sí, rechazar',
+                                cancelButtonText: 'Cancelar'
+                            }).then((result) => {
+                                if (result.isConfirmed && form) {
+                                    const waCheckbox = document.getElementById('swal-enviar-wa-rechazo');
+                                    let hiddenWaInput = form.querySelector('input[name="enviar_wa"]');
+                                    if (!hiddenWaInput) {
+                                        hiddenWaInput = document.createElement('input');
+                                        hiddenWaInput.type = 'hidden';
+                                        hiddenWaInput.name = 'enviar_wa';
+                                        form.appendChild(hiddenWaInput);
+                                    }
+                                    hiddenWaInput.value = (waCheckbox && waCheckbox.checked) ? '1' : '0';
+                                    form.submit();
+                                }
+                            });
+                        }
+                    </script>
                 </div>
             </div>
             @endif

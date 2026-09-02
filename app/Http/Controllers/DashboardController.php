@@ -49,7 +49,7 @@ class DashboardController extends Controller
         $users = User::select('id', 'name')->orderBy('name', 'asc')->get();
 
         $comprobantesPendientes = \App\Models\Comprobante::with('user')
-            ->where('status', 'pendiente')
+            ->whereIn('status', ['procesando_pago', 'pendiente'])
             ->orderBy('created_at', 'asc')
             ->get();
 

@@ -6,11 +6,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Comprobante;
 use App\Models\Entrada;
+use App\Services\ReceiptOcrService;
+use App\Services\PushNotificationService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class ComprobanteController extends Controller
 {
-    // Función para que el cliente suba su comprobante
+    /**
+     * Permite al cliente subir su comprobante de pago con procesamiento OCR e IA.
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -23,86 +29,54 @@ class ComprobanteController extends Controller
         $path = $request->file('imagen')->store('comprobantes', 'public');
         $fullPath = storage_path('app/public/' . $path);
 
+        // Procesamiento OCR e IA del comprobante
+        $ocrResult = ReceiptOcrService::processImage($fullPath);
         $notasAdicionales = "";
 
-        try {
-            if (!class_exists('\Google\Cloud\Vision\V1\ImageAnnotatorClient')) {
-                throw new \Exception("La librería de Google Vision no está instalada en este servidor.");
+        if (!$ocrResult['is_valid_receipt']) {
+            Log::warning("Comprobante subido por usuario " . Auth::id() . " no pasó la validación estricta de palabras clave OCR.");
+            $notasAdicionales .= "\n[⚠️ ALERTA OCR/IA: La imagen no contiene palabras clave claras de un comprobante bancario.]";
+        } else {
+            $bancoDetectado = $ocrResult['banco'] ?? 'No identificado';
+            $montoExtraido = $ocrResult['monto_extraido'];
+
+            $notasAdicionales .= "\n[🤖 OCR/IA: Banco: {$bancoDetectado}";
+            if ($montoExtraido) {
+                $notasAdicionales .= " | Monto Detectado: $" . number_format($montoExtraido, 2);
             }
-            if (!env('GOOGLE_APPLICATION_CREDENTIALS') || !file_exists(base_path(env('GOOGLE_APPLICATION_CREDENTIALS')))) {
-                // Si falta la key json
-                throw new \Exception("Falta el archivo de credenciales de Google Vision (google-credentials.json).");
+            if (!empty($ocrResult['clave_rastreo'])) {
+                $notasAdicionales .= " | Folio/Rastreo: " . $ocrResult['clave_rastreo'];
             }
+            $notasAdicionales .= "]";
 
-            // Inicializar cliente de Google Vision
-            $imageAnnotator = new \Google\Cloud\Vision\V1\ImageAnnotatorClient();
-
-            // Leer la imagen guardada
-            $imageContent = file_get_contents($fullPath);
-
-            // Hacer la petición de detección de texto
-            $response = $imageAnnotator->textDetection($imageContent);
-            $texts = $response->getTextAnnotations();
-
-            if (count($texts) > 0) {
-                // El primer elemento contiene todo el texto detectado
-                $fullText = strtolower($texts[0]->getDescription());
-
-                // 1. Comprobar si parece un ticket bancario (buscar palabras clave)
-                $keywords = ['bbva', 'mercado pago', 'transferencia', 'spei', 'pago', 'exitoso', 'autorización', 'folio', 'importe', 'monto', 'clabe', 'santander', 'banorte', 'stp'];
-                $isTicket = false;
-                foreach ($keywords as $kw) {
-                    if (strpos($fullText, $kw) !== false) {
-                        $isTicket = true;
-                        break;
-                    }
+            if ($request->monto && $montoExtraido) {
+                if (abs((float)$request->monto - (float)$montoExtraido) < 0.01) {
+                    $notasAdicionales .= "\n[✅ Verificado por IA: El monto ingresado coincide exactamente con la imagen.]";
+                } else {
+                    $notasAdicionales .= "\n[⚠️ ALERTA IA: El monto reportado ($" . number_format($request->monto, 2) . ") difiere del detectado en imagen ($" . number_format($montoExtraido, 2) . ").]";
                 }
-
-                if (!$isTicket) {
-                    // Borrar el archivo porque no es un ticket
-                    Storage::disk('public')->delete($path);
-                    $imageAnnotator->close();
-                    return back()->with('error', 'La imagen subida no parece ser un comprobante bancario válido (no se detectaron palabras clave).');
-                }
-
-                // 2. Comprobar si el monto escrito por el cliente aparece en la imagen
-                if ($request->monto) {
-                    $montoBuscado1 = number_format($request->monto, 2, '.', ','); // ej: 1,500.00
-                    $montoBuscado2 = number_format($request->monto, 2, '.', '');  // ej: 1500.00
-                    $montoBuscado3 = (string) floatval($request->monto);          // ej: 1500
-
-                    if (
-                        strpos($fullText, $montoBuscado1) !== false ||
-                        strpos($fullText, $montoBuscado2) !== false ||
-                        strpos($fullText, $montoBuscado3) !== false
-                    ) {
-                        $notasAdicionales = "\n[✅ Verificado por IA: Monto encontrado en la imagen]";
-                    } else {
-                        $notasAdicionales = "\n[⚠️ ALERTA IA: El monto de $" . $request->monto . " no se detectó claramente en la imagen. Favor de revisar manual.]";
-                    }
-                }
-            } else {
-                $notasAdicionales = "\n[⚠️ ALERTA IA: No se pudo detectar ningún texto en la imagen.]";
             }
-
-            $imageAnnotator->close();
-        } catch (\Throwable $e) {
-            \Log::error('Error de Google Vision: ' . $e->getMessage());
-            $notasAdicionales = "\n[⚠️ IA fuera de línea o sin configurar. Revisión manual requerida.]";
         }
 
-        // Concatenar notas del usuario con las notas del sistema
         $notasFinales = $request->notas ? $request->notas . $notasAdicionales : ltrim($notasAdicionales);
+        $montoFinal = $request->monto ?: ($ocrResult['monto_extraido'] ?? 0.00);
 
+        // Crear el registro con estado 'procesando_pago'
         $comprobante = Comprobante::create([
             'user_id' => Auth::id(),
-            'monto' => $request->monto,
+            'monto' => $montoFinal,
             'imagen' => $path,
             'notas' => $notasFinales,
-            'status' => 'pendiente'
+            'status' => 'procesando_pago',
+            'banco' => $ocrResult['banco'] ?? null,
+            'clave_rastreo' => $ocrResult['clave_rastreo'] ?? null,
+            'fecha_transferencia' => $ocrResult['fecha_transferencia'] ?? null,
+            'clabe_cuenta' => $ocrResult['clabe_cuenta'] ?? null,
+            'monto_extraido' => $ocrResult['monto_extraido'] ?? null,
+            'datos_ocr_json' => json_encode($ocrResult),
         ]);
 
-        // Notificar a los administradores por WhatsApp
+        // Notificar a administradores por WhatsApp
         $adminPhones = \App\Models\User::whereHas('roles', function ($q) {
             $q->where('name', 'admin');
         })
@@ -116,21 +90,21 @@ class ComprobanteController extends Controller
             ->toArray();
 
         if (empty($adminPhones)) {
-            // Número por defecto en caso de no encontrar admins con teléfono
             $adminPhones = ['5212222153410'];
         }
 
         $clienteNombre = Auth::user()->name;
-        $montoNotif = number_format($request->monto, 2);
+        $montoNotif = number_format($montoFinal, 2);
         
-        $mensajeAdmin = "*🔔 NUEVO COMPROBANTE DE PAGO*\n\n" .
+        $mensajeAdmin = "*🔔 NUEVO COMPROBANTE EN REVISIÓN (procesando_pago)*\n\n" .
                         "• *Cliente:* {$clienteNombre}\n" .
-                        "• *Monto reportado:* \${$montoNotif}\n" .
-                        "• *Notas:* " . ($request->notas ?: 'Sin notas') . "\n\n" .
-                        "Ingresa al panel de administrador para revisar la imagen y aprobar el pago.";
+                        "• *Monto:* \${$montoNotif}\n" .
+                        "• *Banco OCR:* " . ($ocrResult['banco'] ?? 'Por verificar') . "\n" .
+                        "• *Folio/Rastreo:* " . ($ocrResult['clave_rastreo'] ?? 'No detectado') . "\n\n" .
+                        "Ingresa al panel para aprobar o rechazar esta conciliación.";
 
         foreach ($adminPhones as $telAdmin) {
-            \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+            DB::table('whatsapp_pending_messages')->insert([
                 'numero'     => $telAdmin,
                 'mensaje'    => $mensajeAdmin,
                 'status'     => 'pendiente',
@@ -140,52 +114,53 @@ class ComprobanteController extends Controller
         }
 
         // Notificar Push al cliente (Recepción formal)
-        \App\Services\PushNotificationService::notifyUser(
+        PushNotificationService::notifyUser(
             Auth::user(),
             "Comprobante en Revisión ⏳",
-            "Su pago se encuentra en proceso de revisión. En un momento le informaremos el resultado de la validación. Gracias por su preferencia.",
+            "Está en proceso de revisión su pago; en un momento le informaremos si fue aceptado o rechazado su pago. Gracias por su preferencia.",
             route('dashboard')
         );
 
         // Notificar Push a administradores
-        \App\Services\PushNotificationService::notifyAdmins(
+        PushNotificationService::notifyAdmins(
             "Nuevo Comprobante 💳",
-            "El usuario {$clienteNombre} subió un comprobante por \${$montoNotif}. Toca para revisar.",
+            "El usuario {$clienteNombre} subió un comprobante por \${$montoNotif}. Toca para revisar y conciliar.",
             route('cobros.index')
         );
 
-        return back()->with('success', 'Comprobante subido exitosamente. Espera a que un administrador lo verifique.');
+        return back()->with('success', 'Comprobante recibido exitosamente. Su pago está en proceso de revisión.');
     }
 
-    // Función para que el admin apruebe el comprobante
+    /**
+     * Aprueba el comprobante y genera la entrada de capital en la base de datos.
+     */
     public function aprobar($id)
     {
         $comprobante = Comprobante::findOrFail($id);
 
-        if ($comprobante->status !== 'pendiente') {
-            return back()->with('error', 'El comprobante ya fue procesado.');
+        if ($comprobante->status === 'aprobado') {
+            return back()->with('error', 'El comprobante ya fue aprobado anteriormente.');
         }
 
-        // Buscar el artículo "Pago saldado" o similar para asociarlo al cobro
+        // Buscar el artículo "Pago saldado" o similar
         $articulo = \App\Models\Articulo::where('nombre', 'like', '%pago saldado%')->first();
         $articuloId = $articulo ? $articulo->id : null;
 
-        // Registrar la entrada de capital en la tabla `entradas`
+        // Registrar la entrada de capital
         Entrada::create([
-            'user_id' => $comprobante->user_id, // El cliente (para mantener consistencia en la vista de Entradas)
-            'cliente_id' => $comprobante->user_id, // Cliente
+            'user_id' => $comprobante->user_id,
+            'cliente_id' => $comprobante->user_id,
             'articulo_id' => $articuloId,
             'precio_venta' => $comprobante->monto,
-            'descripcion' => 'Aprobación de comprobante #' . $comprobante->id . ($comprobante->notas ? ' - ' . $comprobante->notas : ''),
+            'descripcion' => 'Aprobación de comprobante #' . $comprobante->id . ($comprobante->clave_rastreo ? ' [Folio: ' . $comprobante->clave_rastreo . ']' : '') . ($comprobante->banco ? ' [Banco: ' . $comprobante->banco . ']' : ''),
             'fecha_generado' => now()
         ]);
 
         $comprobante->update(['status' => 'aprobado']);
 
-        // Enviar notificación por WhatsApp al cliente si tiene teléfono
+        // Notificar por WhatsApp al cliente
         if ($comprobante->user && $comprobante->user->telefono) {
             $telefonoCliente = $comprobante->user->telefono;
-            // Limpiar y formatear número (ej. agregar 521 si es de 10 dígitos)
             $telefonoCliente = preg_replace('/[^0-9]/', '', $telefonoCliente);
             if (strlen($telefonoCliente) == 10) {
                 $telefonoCliente = '521' . $telefonoCliente;
@@ -199,7 +174,7 @@ class ComprobanteController extends Controller
                 "¡Gracias por tu pago!\n" .
                 "_Mensaje automático de El bajón_";
 
-            \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+            DB::table('whatsapp_pending_messages')->insert([
                 'numero'     => $telefonoCliente,
                 'mensaje'    => $mensajeWa,
                 'status'     => 'pendiente',
@@ -208,10 +183,10 @@ class ComprobanteController extends Controller
             ]);
         }
 
-        // Notificar Push de Aprobación al cliente
+        // Notificar Push al cliente
         if ($comprobante->user) {
             $montoFormateado = number_format($comprobante->monto, 2);
-            \App\Services\PushNotificationService::notifyUser(
+            PushNotificationService::notifyUser(
                 $comprobante->user,
                 "Pago Aprobado 🟢",
                 "Su pago por \${$montoFormateado} ha sido acreditado exitosamente. ¡Gracias por su preferencia!",
@@ -219,22 +194,26 @@ class ComprobanteController extends Controller
             );
         }
 
-        return back()->with('success', 'Comprobante aprobado, saldo actualizado y notificación enviada al cliente.');
+        return back()->with('success', 'Comprobante aprobado, entrada de capital registrada y notificación enviada al cliente.');
     }
 
-    // Función para que el admin rechace el comprobante
-    public function rechazar($id)
+    /**
+     * Rechaza el comprobante y opcionalmente notifica por WhatsApp si el admin lo requiere.
+     */
+    public function rechazar(Request $request, $id)
     {
         $comprobante = Comprobante::findOrFail($id);
 
-        if ($comprobante->status !== 'pendiente') {
-            return back()->with('error', 'El comprobante ya fue procesado.');
+        if ($comprobante->status === 'aprobado') {
+            return back()->with('error', 'No se puede rechazar un comprobante que ya fue aprobado.');
         }
 
         $comprobante->update(['status' => 'rechazado']);
 
-        // Enviar notificación por WhatsApp al cliente sobre el rechazo
-        if ($comprobante->user && $comprobante->user->telefono) {
+        // WhatsApp Opcional si el admin activó el checkbox (desactivado por defecto)
+        $enviarWa = filter_var($request->input('enviar_wa', 0), FILTER_VALIDATE_BOOLEAN);
+
+        if ($enviarWa && $comprobante->user && $comprobante->user->telefono) {
             $telefonoCliente = $comprobante->user->telefono;
             $telefonoCliente = preg_replace('/[^0-9]/', '', $telefonoCliente);
             if (strlen($telefonoCliente) == 10) {
@@ -243,14 +222,12 @@ class ComprobanteController extends Controller
 
             $montoFormateado = number_format($comprobante->monto, 2);
 
-            $mensajeWa = "*❌ COMPROBANTE RECHAZADO - El bajón*\n\n" .
-                "Hola *" . $comprobante->user->name . "*, te informamos que tu comprobante de pago por *\${$montoFormateado}* no pudo ser validado y ha sido *rechazado*.\n\n" .
-                "Esto puede suceder si la imagen no es legible, el monto no coincide, o el pago aún no se refleja en nuestra cuenta.\n" .
-                "Por favor, revisa tu comprobante e intenta subir uno nuevo desde tu panel de usuario.\n\n" .
-                "Si tienes dudas, contáctanos.\n" .
+            $mensajeWa = "*❌ COMPROBANTE NO APROBADO - El bajón*\n\n" .
+                "Hola *" . $comprobante->user->name . "*, te informamos que tu comprobante de pago por *\${$montoFormateado}* no fue aprobado / fue rechazado tras la revisión.\n\n" .
+                "Por favor, revisa tu comprobante e intenta subir uno nuevo desde tu panel de usuario o comunícate con administración.\n\n" .
                 "_Mensaje automático de El bajón_";
 
-            \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+            DB::table('whatsapp_pending_messages')->insert([
                 'numero'     => $telefonoCliente,
                 'mensaje'    => $mensajeWa,
                 'status'     => 'pendiente',
@@ -259,10 +236,10 @@ class ComprobanteController extends Controller
             ]);
         }
 
-        // Notificar Push de Rechazo al cliente
+        // Notificación Push SIEMPRE al cliente sobre actualización de pago
         if ($comprobante->user) {
             $montoFormateado = number_format($comprobante->monto, 2);
-            \App\Services\PushNotificationService::notifyUser(
+            PushNotificationService::notifyUser(
                 $comprobante->user,
                 "Actualización de Pago ⚠️",
                 "Su pago por \${$montoFormateado} no fue aprobado / fue revertido. Favor de consultar los detalles con administración.",
@@ -270,6 +247,6 @@ class ComprobanteController extends Controller
             );
         }
 
-        return back()->with('success', 'Comprobante rechazado correctamente y notificación enviada.');
+        return back()->with('success', 'Comprobante rechazado correctamente y notificación Push enviada.');
     }
 }
