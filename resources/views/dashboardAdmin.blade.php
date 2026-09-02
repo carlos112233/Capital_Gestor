@@ -209,7 +209,7 @@
                                                             $telefonoFinal = $soloNumeros;
                                                         }
 
-                                                        $pdfUrl = route('clientes.estado-cuenta.pdf', $r->id);
+                                                        $pdfUrl = route('admin.clientes.estado-cuenta.pdf', $r->id);
 
                                                         // 3. Creamos el mensaje (puedes editarlo a tu gusto)
                                                         $mensaje =
