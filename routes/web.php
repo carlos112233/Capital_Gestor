@@ -66,6 +66,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('entradas', EntradaController::class);
         Route::post('entradas/{entrada}/reenviar-whatsapp', [EntradaController::class, 'reenviarWhatsApp'])->name('entradas.reenviar-whatsapp');
         Route::resource('pedidos', PedidoController::class);
+        Route::post('pedidos/{id}/status', [PedidoController::class, 'updateStatus'])->name('pedidos.status');
         Route::get('configuracion', [\App\Http\Controllers\ConfiguracionController::class, 'index'])->name('configuracion.index');
         Route::post('configuracion/logo', [\App\Http\Controllers\ConfiguracionController::class, 'updateLogo'])->name('configuracion.logo');
         Route::get('configuracion/wa-status', [\App\Http\Controllers\ConfiguracionController::class, 'getWaStatus'])->name('configuracion.wa-status');

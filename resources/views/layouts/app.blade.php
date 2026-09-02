@@ -143,10 +143,23 @@
 
             function confirmDelete(formOrId, itemName = 'este registro') {
                 const form = typeof formOrId === 'string' ? document.getElementById(formOrId) : formOrId;
+                const isEntrada = itemName.toLowerCase().includes('entrada') || (form && form.action && form.action.includes('entradas'));
+
+                let htmlContent = `Se eliminará ${itemName}. ¡Esta acción no se puede deshacer!`;
+                if (isEntrada) {
+                    htmlContent += `
+                        <div class="mt-4 text-left border-t border-slate-200 pt-3">
+                            <label class="inline-flex items-center text-sm text-slate-700 font-medium cursor-pointer">
+                                <input type="checkbox" id="swal-enviar-wa" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 mr-2">
+                                <span>Enviar notificación por WhatsApp al cliente informando que su pago fue revertido</span>
+                            </label>
+                        </div>
+                    `;
+                }
 
                 Swal.fire({
                     title: '¿Estás seguro?',
-                    text: `Se eliminará ${itemName}. ¡Esta acción no se puede deshacer!`,
+                    html: htmlContent,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#ef4444',
@@ -156,6 +169,19 @@
                 }).then((result) => {
                     if (result.isConfirmed && form) {
                         delete form.dataset.submitting;
+                        
+                        if (isEntrada) {
+                            const waCheckbox = document.getElementById('swal-enviar-wa');
+                            let hiddenWaInput = form.querySelector('input[name="enviar_wa"]');
+                            if (!hiddenWaInput) {
+                                hiddenWaInput = document.createElement('input');
+                                hiddenWaInput.type = 'hidden';
+                                hiddenWaInput.name = 'enviar_wa';
+                                form.appendChild(hiddenWaInput);
+                            }
+                            hiddenWaInput.value = (waCheckbox && waCheckbox.checked) ? '1' : '0';
+                        }
+
                         const submitBtns = form.querySelectorAll('button[type="submit"], input[type="submit"]');
                         submitBtns.forEach(btn => {
                             btn.disabled = false;

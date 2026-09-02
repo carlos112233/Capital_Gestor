@@ -276,6 +276,15 @@ class PedidoController extends Controller
             }
         }
 
+        // Enviar Notificación Push al Administrador al crear pedido
+        if (!$isAdmin) {
+            \App\Services\PushNotificationService::notifyAdmins(
+                "Nuevo Pedido Recibido 📦",
+                "El usuario {$clienteNombreResumen} ha realizado un nuevo pedido. Toca para cambiar el estado.",
+                route('pedidos.index')
+            );
+        }
+
         return redirect()->route('pedidos.index')->with('success', 'Todos los pedidos fueron creados correctamente.');
     }
 
@@ -481,5 +490,56 @@ class PedidoController extends Controller
         return redirect()
             ->route('pedidos.index')
             ->with('success', 'Pedido eliminado correctamente.');
+    }
+
+    /**
+     * Actualiza el estado de un pedido en 1 solo clic y notifica al cliente vía Push.
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|string|in:realizado,en_preparacion,entregado,En preparación,Entregado',
+        ]);
+
+        $pedido = Pedido::with('user')->findOrFail($id);
+        $rawStatus = strtolower($request->status);
+
+        $statusNormalized = match (true) {
+            str_contains($rawStatus, 'preparac') => 'en_preparacion',
+            str_contains($rawStatus, 'entregad') => 'entregado',
+            default => 'realizado',
+        };
+
+        $pedido->status = $statusNormalized;
+        $pedido->save();
+
+        // Notificar Push al cliente
+        if ($pedido->user) {
+            if ($statusNormalized === 'en_preparacion') {
+                \App\Services\PushNotificationService::notifyUser(
+                    $pedido->user,
+                    "Estado de Pedido ⏳",
+                    "Su pedido #{$pedido->id} se encuentra en proceso de preparación. Gracias por su preferencia.",
+                    route('pedidos.index')
+                );
+            } elseif ($statusNormalized === 'entregado') {
+                \App\Services\PushNotificationService::notifyUser(
+                    $pedido->user,
+                    "Pedido Entregado 🟢",
+                    "Su pedido #{$pedido->id} ha sido entregado exitosamente. ¡Gracias por su preferencia!",
+                    route('pedidos.index')
+                );
+            }
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Estado del pedido actualizado correctamente.',
+                'status' => $statusNormalized,
+            ]);
+        }
+
+        return back()->with('success', 'Estado del pedido actualizado correctamente.');
     }
 }

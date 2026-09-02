@@ -139,6 +139,21 @@ class ComprobanteController extends Controller
             ]);
         }
 
+        // Notificar Push al cliente (Recepción formal)
+        \App\Services\PushNotificationService::notifyUser(
+            Auth::user(),
+            "Comprobante en Revisión ⏳",
+            "Su pago se encuentra en proceso de revisión. En un momento le informaremos el resultado de la validación. Gracias por su preferencia.",
+            route('dashboard')
+        );
+
+        // Notificar Push a administradores
+        \App\Services\PushNotificationService::notifyAdmins(
+            "Nuevo Comprobante 💳",
+            "El usuario {$clienteNombre} subió un comprobante por \${$montoNotif}. Toca para revisar.",
+            route('cobros.index')
+        );
+
         return back()->with('success', 'Comprobante subido exitosamente. Espera a que un administrador lo verifique.');
     }
 
@@ -193,6 +208,17 @@ class ComprobanteController extends Controller
             ]);
         }
 
+        // Notificar Push de Aprobación al cliente
+        if ($comprobante->user) {
+            $montoFormateado = number_format($comprobante->monto, 2);
+            \App\Services\PushNotificationService::notifyUser(
+                $comprobante->user,
+                "Pago Aprobado 🟢",
+                "Su pago por \${$montoFormateado} ha sido acreditado exitosamente. ¡Gracias por su preferencia!",
+                route('dashboard')
+            );
+        }
+
         return back()->with('success', 'Comprobante aprobado, saldo actualizado y notificación enviada al cliente.');
     }
 
@@ -231,6 +257,17 @@ class ComprobanteController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+        }
+
+        // Notificar Push de Rechazo al cliente
+        if ($comprobante->user) {
+            $montoFormateado = number_format($comprobante->monto, 2);
+            \App\Services\PushNotificationService::notifyUser(
+                $comprobante->user,
+                "Actualización de Pago ⚠️",
+                "Su pago por \${$montoFormateado} no fue aprobado / fue revertido. Favor de consultar los detalles con administración.",
+                route('dashboard')
+            );
         }
 
         return back()->with('success', 'Comprobante rechazado correctamente y notificación enviada.');

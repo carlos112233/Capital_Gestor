@@ -20,3 +20,22 @@ Schedule::command('whatsapp:recordatorios')->lastDayOfMonth('18:00');
 Schedule::call(function () {
     \App\Services\PdfReceiptService::cleanupOldTempPdfs();
 })->hourly();
+
+// Recordatorios Push de entregas matutinas (8:30 AM, 9:15 AM, 9:55 AM) para pedidos "En preparación"
+Schedule::call(function () {
+    \App\Services\PushNotificationService::sendScheduledDeliveryReminders();
+})->dailyAt('08:30')->timezone('America/Mexico_City');
+
+Schedule::call(function () {
+    \App\Services\PushNotificationService::sendScheduledDeliveryReminders();
+})->dailyAt('09:15')->timezone('America/Mexico_City');
+
+Schedule::call(function () {
+    \App\Services\PushNotificationService::sendScheduledDeliveryReminders();
+})->dailyAt('09:55')->timezone('America/Mexico_City');
+
+Artisan::command('push:reminders-matutinos', function () {
+    $this->info("Ejecutando alertas Push matutinas de entregas...");
+    $count = \App\Services\PushNotificationService::sendScheduledDeliveryReminders();
+    $this->info("Proceso completado. Notificaciones enviadas: {$count}");
+})->purpose('Enviar las alertas Push de pedidos en preparación pendientes de entrega');

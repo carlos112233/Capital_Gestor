@@ -12,7 +12,8 @@ class Pedido extends Model
         'descripcion',
         'costo',
         'cantidad',
-        'venta_id'
+        'venta_id',
+        'status',
     ];
 
     public function user()

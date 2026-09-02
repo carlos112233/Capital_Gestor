@@ -234,8 +234,36 @@ class EntradaController extends Controller
         return redirect()->route('admin.entradas.index')->with('success', 'Entrada de capital actualizada correctamente.');
     }
 
-    public function destroy(Entrada $entrada)
+    public function destroy(Request $request, Entrada $entrada)
     {
+        $cliente = $entrada->cliente ?? $entrada->user;
+        $monto = number_format($entrada->precio_venta, 2);
+
+        // Si el admin activó el checkbox opcional de WhatsApp en SweetAlert
+        if ($request->filled('enviar_wa') && filter_var($request->enviar_wa, FILTER_VALIDATE_BOOLEAN) && $cliente && !empty($cliente->telefono)) {
+            $num = preg_replace('/[^0-9]/', '', $cliente->telefono);
+            $telCliente = (strlen($num) == 10) ? '521' . $num : $num;
+            $mensajeWa = "⚠️ *ACTUALIZACIÓN DE PAGO - El bajón*\n\nHola *{$cliente->name}*, te informamos que tu registro de pago por *\${$monto}* ha sido revertido o no fue aprobado.\n\nFavor de comunicarte con administración si tienes alguna duda.";
+
+            \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                'numero'     => $telCliente,
+                'mensaje'    => $mensajeWa,
+                'status'     => 'pendiente',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        // Enviar Notificación Push al cliente informando la reversión del pago
+        if ($cliente) {
+            \App\Services\PushNotificationService::notifyUser(
+                $cliente,
+                "Actualización de Pago ⚠️",
+                "Su pago por \${$monto} no fue aprobado / fue revertido. Favor de consultar los detalles con administración.",
+                route('dashboard')
+            );
+        }
+
         $entrada->delete();
 
         return redirect()->route('admin.entradas.index')
