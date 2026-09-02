@@ -121,13 +121,13 @@ class DashboardController extends Controller
                 \Illuminate\Support\Facades\Log::error("Error generando PDF de estado de cuenta para Usuario #{$user->id}: " . $ePdf->getMessage());
             }
 
-            if ($pdfPath) {
+            if ($pdfPath && file_exists($pdfPath)) {
                 $saldo = $user->saldo_pendiente - $montoAjuste;
                 $saldoFormat = number_format($saldo, 2);
+                $mensaje = "Hola *{$user->name}*, te compartimos tu Estado de Cuenta adjunto con el saldo a cubrir de *\${$saldoFormat}*.\n\nFavor de enviar tu comprobante de pago a este número de WhatsApp. ¡Gracias!";
+            } else {
+                $mensaje = $this->generarMensajeRecordatorio($user, $montoAjuste);
             }
-            
-            // Garantizamos que SIEMPRE se incluya el mensaje completo con detalle de compras, cuentas bancarias y link al PDF
-            $mensaje = $this->generarMensajeRecordatorio($user, $montoAjuste);
 
             // Insertamos en la tabla para que el motor de Node.js de WhatsApp adjunte el PDF y envíe el texto completo
             DB::table('whatsapp_pending_messages')->insert([
