@@ -4,7 +4,6 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Resumen semanal') }}
             </h2>
-            @if(Auth::user()->image)
                 <div x-data="{ openDashboardPhoto: false }" class="flex items-center">
                     <button @click="openDashboardPhoto = true" class="focus:outline-none cursor-pointer transform hover:scale-105 transition-transform" title="Ver foto de perfil">
                         <img src="{{ route('user.image', Auth::user()->id) }}?v={{ Auth::user()->updated_at?->timestamp }}" class="w-10 h-10 rounded-full object-cover shadow-sm border-2 border-indigo-200" alt="Foto de perfil">
@@ -19,7 +18,6 @@
                         </div>
                     </div>
                 </div>
-            @endif
         </div>
     </x-slot>
 

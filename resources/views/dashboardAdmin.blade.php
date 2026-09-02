@@ -82,26 +82,20 @@
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="flex items-center gap-3">
-                                                    @if($r->has_image)
-                                                        <div x-data="{ openTablePhoto: false }">
-                                                            <button @click="openTablePhoto = true" class="focus:outline-none cursor-pointer transform hover:scale-110 transition-transform">
-                                                                <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}" class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm" alt="Foto">
-                                                            </button>
-                                                            <!-- Modal Foto de Perfil (Tabla) -->
-                                                            <div x-show="openTablePhoto" style="display: none;" x-transition class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
-                                                                <div @click.away="openTablePhoto = false" class="relative w-full max-w-3xl flex justify-center items-center">
-                                                                    <button @click="openTablePhoto = false" class="absolute -top-12 right-0 md:-right-8 md:-top-8 text-white hover:text-slate-300 focus:outline-none bg-white/10 p-2 rounded-full backdrop-blur-md">
-                                                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                                                    </button>
-                                                                    <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}" class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-white/10">
-                                                                </div>
+                                                    <div x-data="{ openTablePhoto: false }">
+                                                        <button @click="openTablePhoto = true" class="focus:outline-none cursor-pointer transform hover:scale-110 transition-transform">
+                                                            <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}" class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm" alt="Foto">
+                                                        </button>
+                                                        <!-- Modal Foto de Perfil (Tabla) -->
+                                                        <div x-show="openTablePhoto" style="display: none;" x-transition class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+                                                            <div @click.away="openTablePhoto = false" class="relative w-full max-w-3xl flex justify-center items-center">
+                                                                <button @click="openTablePhoto = false" class="absolute -top-12 right-0 md:-right-8 md:-top-8 text-white hover:text-slate-300 focus:outline-none bg-white/10 p-2 rounded-full backdrop-blur-md">
+                                                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                                </button>
+                                                                <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}" class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-white/10">
                                                             </div>
                                                         </div>
-                                                    @else
-                                                        <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs shadow-sm border border-indigo-200">
-                                                            {{ strtoupper(substr($r->name, 0, 1)) }}
-                                                        </div>
-                                                    @endif
+                                                    </div>
                                                     <span class="font-medium text-slate-800">{{ $r->name }}</span>
                                                 </div>
                                             </td>
@@ -210,26 +204,20 @@
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="flex items-center gap-3">
-                                                    @if($r->has_image)
-                                                        <div x-data="{ openTablePhoto: false }">
-                                                            <button @click="openTablePhoto = true" class="focus:outline-none cursor-pointer transform hover:scale-110 transition-transform">
-                                                                <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}" class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm" alt="Foto">
-                                                            </button>
-                                                            <!-- Modal Foto de Perfil (Tabla) -->
-                                                            <div x-show="openTablePhoto" style="display: none;" x-transition class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
-                                                                <div @click.away="openTablePhoto = false" class="relative w-full max-w-3xl flex justify-center items-center">
-                                                                    <button @click="openTablePhoto = false" class="absolute -top-12 right-0 md:-right-8 md:-top-8 text-white hover:text-slate-300 focus:outline-none bg-white/10 p-2 rounded-full backdrop-blur-md">
-                                                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                                                    </button>
-                                                                    <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}" class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-white/10">
-                                                                </div>
+                                                    <div x-data="{ openTablePhoto: false }">
+                                                        <button @click="openTablePhoto = true" class="focus:outline-none cursor-pointer transform hover:scale-110 transition-transform">
+                                                            <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}" class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm" alt="Foto">
+                                                        </button>
+                                                        <!-- Modal Foto de Perfil (Tabla) -->
+                                                        <div x-show="openTablePhoto" style="display: none;" x-transition class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+                                                            <div @click.away="openTablePhoto = false" class="relative w-full max-w-3xl flex justify-center items-center">
+                                                                <button @click="openTablePhoto = false" class="absolute -top-12 right-0 md:-right-8 md:-top-8 text-white hover:text-slate-300 focus:outline-none bg-white/10 p-2 rounded-full backdrop-blur-md">
+                                                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                                </button>
+                                                                <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}" class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-white/10">
                                                             </div>
                                                         </div>
-                                                    @else
-                                                        <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs shadow-sm border border-indigo-200">
-                                                            {{ strtoupper(substr($r->name, 0, 1)) }}
-                                                        </div>
-                                                    @endif
+                                                    </div>
                                                     <span class="font-medium text-slate-800">{{ $r->name }}</span>
                                                 </div>
                                             </td>
