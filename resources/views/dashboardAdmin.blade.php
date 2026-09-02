@@ -8,7 +8,66 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-12" style="padding:  0px 35px">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
+                <div class="p-6 text-slate-900">
+
+                    <!-- Panel Analítico Ejecutivo & Scoring Crediticio -->
+                    <div class="mb-8 bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-5 border-b border-slate-800 gap-4">
+                            <div>
+                                <h3 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                                    <span>📊</span> Panel Analítico Ejecutivo y Scoring
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-1">Métricas en tiempo real, comportamiento de cobros y evaluación crediticia de clientes</p>
+                            </div>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                🔒 Exclusivo Administrador
+                            </span>
+                        </div>
+
+                        <!-- 4 KPI Summary Cards -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+                            <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-sm">
+                                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Cobrado</div>
+                                <div class="text-2xl font-black text-emerald-400 mt-1" id="kpi-total-cobrado">$0.00</div>
+                                <div class="text-[11px] text-emerald-500/80 mt-1 flex items-center gap-1">
+                                    <span>↑</span> Entradas acreditadas
+                                </div>
+                            </div>
+                            <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-sm">
+                                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Saldo Pendiente</div>
+                                <div class="text-2xl font-black text-amber-400 mt-1" id="kpi-saldo-pendiente">$0.00</div>
+                                <div class="text-[11px] text-amber-500/80 mt-1 flex items-center gap-1">
+                                    <span>⏳</span> Cartera viva en riesgo
+                                </div>
+                            </div>
+                            <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-sm">
+                                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Clientes VIP / Platino</div>
+                                <div class="text-2xl font-black text-indigo-400 mt-1" id="kpi-count-vip">0</div>
+                                <div class="text-[11px] text-indigo-400/80 mt-1">Score $\ge 80$ pts</div>
+                            </div>
+                            <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-sm">
+                                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Clientes en Riesgo</div>
+                                <div class="text-2xl font-black text-red-400 mt-1" id="kpi-count-riesgo">0</div>
+                                <div class="text-[11px] text-red-400/80 mt-1">Score $< 50$ pts</div>
+                            </div>
+                        </div>
+
+                        <!-- Gráficos ApexCharts -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                            <div class="lg:col-span-2 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+                                <h4 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                                    <span>📈</span> Tendencia de Cobros vs Ventas
+                                </h4>
+                                <div id="chart-ingresos-deuda" class="min-h-[250px]"></div>
+                            </div>
+                            <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+                                <h4 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                                    <span>🍩</span> Estatus de Comprobantes
+                                </h4>
+                                <div id="chart-estatus-pagos" class="min-h-[250px] flex items-center justify-center"></div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="mb-5 flex flex-col sm:flex-row items-center gap-3">
                         <div class="relative flex-1 w-full">
@@ -44,6 +103,9 @@
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Cliente</th>
+                                    <th
+                                        class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Score Crédito</th>
                                     <th
                                         class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Corte Anterior</th>
@@ -98,6 +160,23 @@
                                                     </div>
                                                     <span class="font-medium text-slate-800">{{ $r->name }}</span>
                                                 </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                @if(isset($r->scoring))
+                                                    <div class="inline-flex items-center gap-1.5">
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs {{ $r->scoring['badge_bg'] }}">
+                                                            {{ $r->scoring['label'] }} ({{ $r->scoring['score'] }}/100)
+                                                        </span>
+                                                        <button type="button" 
+                                                                onclick="confirmModificarScoring({{ $r->id }}, '{{ addslashes($r->name) }}', {{ $r->scoring['score'] }}, {{ $r->scoring['is_override'] ? 'true' : 'false' }}, '{{ addslashes($r->scoring['notas'] ?? '') }}')" 
+                                                                class="p-1 rounded-md text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition-colors" 
+                                                                title="Modificar Scoring Manualmente">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                                        </button>
+                                                    </div>
+                                                @else
+                                                    <span class="text-xs text-slate-400">N/D</span>
+                                                @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right">
                                                 @if($r->saldo_corte_anterior > 0)
@@ -221,6 +300,23 @@
                                                     <span class="font-medium text-slate-800">{{ $r->name }}</span>
                                                 </div>
                                             </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                @if(isset($r->scoring))
+                                                    <div class="inline-flex items-center gap-1.5">
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs {{ $r->scoring['badge_bg'] }}">
+                                                            {{ $r->scoring['label'] }} ({{ $r->scoring['score'] }}/100)
+                                                        </span>
+                                                        <button type="button" 
+                                                                onclick="confirmModificarScoring({{ $r->id }}, '{{ addslashes($r->name) }}', {{ $r->scoring['score'] }}, {{ $r->scoring['is_override'] ? 'true' : 'false' }}, '{{ addslashes($r->scoring['notas'] ?? '') }}')" 
+                                                                class="p-1 rounded-md text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition-colors" 
+                                                                title="Modificar Scoring Manualmente">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                                        </button>
+                                                    </div>
+                                                @else
+                                                    <span class="text-xs text-slate-400">N/D</span>
+                                                @endif
+                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-gray-400">$0.00</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-gray-400">$0.00</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right">
@@ -252,11 +348,11 @@
                             {{-- Fila de sumatoria --}}
                             <tfoot class="bg-gray-100 font-bold">
                                 <tr>
-                                    <td colspan="3" class="px-6 py-4 text-right">Sumatoria a favor:</td>
+                                    <td colspan="4" class="px-6 py-4 text-right">Sumatoria a favor:</td>
                                     <td class="px-6 py-4 text-right text-green-600">
                                         ${{ number_format($totalSaldo, 2) }}
                                     </td>
-                                    <td colspan="5" class="px-6 py-4 text-right"></td>
+                                    <td colspan="4" class="px-6 py-4 text-right"></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -609,5 +705,131 @@
                 }
             });
         });
+
+        // -----------------------------------------------------------------
+        // E. Cargar Analítica de ApexCharts y Scoring Crediticio
+        // -----------------------------------------------------------------
+        fetch("{{ route('admin.scoring.analytics') }}")
+            .then(res => res.json())
+            .then(data => {
+                // Actualizar KPIs
+                document.getElementById('kpi-total-cobrado').innerText = '$' + Number(data.kpi.total_cobrado).toLocaleString('es-MX', { minimumFractionDigits: 2 });
+                document.getElementById('kpi-saldo-pendiente').innerText = '$' + Number(data.kpi.saldo_pendiente).toLocaleString('es-MX', { minimumFractionDigits: 2 });
+                document.getElementById('kpi-count-vip').innerText = data.kpi.count_vip;
+                document.getElementById('kpi-count-riesgo').innerText = data.kpi.count_riesgo;
+
+                // 1. Gráfico de Tendencias Mensuales (Ingresos vs Ventas)
+                const optionsTrend = {
+                    series: [
+                        { name: 'Ventas Totales', type: 'column', data: data.trend.ventas },
+                        { name: 'Cobros (Entradas)', type: 'line', data: data.trend.entradas }
+                    ],
+                    chart: { height: 260, type: 'line', toolbar: { show: false }, background: 'transparent' },
+                    stroke: { width: [0, 3], curve: 'smooth' },
+                    plotOptions: { bar: { columnWidth: '45%', borderRadius: 6 } },
+                    colors: ['#6366f1', '#10b981'],
+                    labels: data.trend.categories,
+                    theme: { mode: 'dark' },
+                    xaxis: { labels: { style: { colors: '#94a3b8' } } },
+                    yaxis: { labels: { style: { colors: '#94a3b8' }, formatter: (val) => '$' + Number(val).toLocaleString() } },
+                    tooltip: { theme: 'dark' }
+                };
+                new ApexCharts(document.querySelector("#chart-ingresos-deuda"), optionsTrend).render();
+
+                // 2. Donut Chart de Estatus de Comprobantes
+                const optionsDonut = {
+                    series: [
+                        data.donut.aprobado || 0,
+                        data.donut.procesando_pago || 0,
+                        data.donut.rechazado || 0,
+                        data.donut.pendiente || 0
+                    ],
+                    labels: ['Aprobados', 'Procesando Pago', 'Rechazados', 'Pendientes'],
+                    chart: { type: 'donut', height: 260, background: 'transparent' },
+                    colors: ['#10b981', '#f59e0b', '#ef4444', '#64748b'],
+                    theme: { mode: 'dark' },
+                    legend: { position: 'bottom', labels: { colors: '#94a3b8' } },
+                    dataLabels: { enabled: true }
+                };
+                new ApexCharts(document.querySelector("#chart-estatus-pagos"), optionsDonut).render();
+            })
+            .catch(err => console.error("Error al cargar analítica ApexCharts:", err));
+
+        // Function para modificar scoring manualmente con SweetAlert
+        window.confirmModificarScoring = function(userId, userName, currentScore, isOverride, currentNotes) {
+            Swal.fire({
+                title: `Scoring de Crédito: ${userName}`,
+                html: `
+                    <div class="text-left space-y-4 text-sm text-slate-700">
+                        <p class="text-slate-600">Puntaje actual: <b>${currentScore} / 100 pts</b> ${isOverride ? '<span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold ml-1">Manual</span>' : '<span class="text-xs bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded font-bold ml-1">Automático</span>'}</p>
+                        
+                        <div class="border-t border-slate-200 pt-3">
+                            <label class="block font-semibold mb-1 text-slate-800">Modo de Evaluación:</label>
+                            <div class="flex gap-4">
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="radio" name="swal-override-mode" value="0" ${!isOverride ? 'checked' : ''} onchange="document.getElementById('swal-manual-input-box').classList.add('hidden')" class="text-indigo-600 focus:ring-indigo-500">
+                                    <span class="ml-1.5 font-medium">Cálculo Automático</span>
+                                </label>
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="radio" name="swal-override-mode" value="1" ${isOverride ? 'checked' : ''} onchange="document.getElementById('swal-manual-input-box').classList.remove('hidden')" class="text-indigo-600 focus:ring-indigo-500">
+                                    <span class="ml-1.5 font-medium text-amber-700">Sobreescritura Manual</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="swal-manual-input-box" class="${!isOverride ? 'hidden' : ''} bg-amber-50 p-3 rounded-lg border border-amber-200">
+                            <label class="block font-semibold mb-1 text-amber-900">Puntaje Manual Asignado (0 a 100):</label>
+                            <input type="number" id="swal-score-manual" min="0" max="100" value="${currentScore}" class="w-full px-3 py-1.5 border border-amber-300 rounded-md shadow-xs focus:ring-2 focus:ring-amber-500 text-amber-900 font-bold">
+                            <div class="text-[11px] text-amber-700 mt-1">80-100 = Platino VIP | 50-79 = Regular | <50 = En Riesgo</div>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold mb-1 text-slate-800">Notas / Justificación del Administrador:</label>
+                            <textarea id="swal-notas-scoring" rows="2" class="w-full px-3 py-1.5 border border-slate-300 rounded-md text-xs" placeholder="Motivo de la modificación...">${currentNotes || ''}</textarea>
+                        </div>
+                    </div>
+                `,
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonColor: '#4f46e5',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Guardar Scoring',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const isOverrideVal = document.querySelector('input[name="swal-override-mode"]:checked')?.value === '1';
+                    const scoreManualVal = document.getElementById('swal-score-manual')?.value;
+                    const notasVal = document.getElementById('swal-notas-scoring')?.value;
+
+                    fetch(`/admin/scoring/update/${userId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            override_score: isOverrideVal ? 1 : 0,
+                            score_manual: isOverrideVal ? parseInt(scoreManualVal) : null,
+                            notas_scoring: notasVal
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Scoring Actualizado',
+                                text: data.message,
+                                confirmButtonColor: '#10b981'
+                            }).then(() => location.reload());
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error:', err);
+                        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar el scoring.' });
+                    });
+                }
+            });
+        };
     });
 </script>

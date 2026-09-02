@@ -28,7 +28,11 @@ class User extends Authenticatable
         'password',
         'image',
         'image_tipo',
-        'telefono', // Agregado para el Base64
+        'telefono',
+        'score_calculado',
+        'score_manual',
+        'override_score',
+        'notas_scoring',
     ];
 
     /**

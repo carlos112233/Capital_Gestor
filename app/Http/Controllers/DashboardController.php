@@ -37,6 +37,7 @@ class DashboardController extends Controller
                 $User->saldo = $saldo;
                 $User->saldo_corte_anterior = $saldoAnterior;
                 $User->saldo_corte_actual = $saldoActual;
+                $User->scoring = \App\Services\ClientScoringService::getScoring($User, $saldo);
 
                 return $User;
             });

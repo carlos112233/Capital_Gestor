@@ -78,11 +78,21 @@ Route::middleware('auth')->group(function () {
         // Comprobantes Admin
         Route::post('comprobantes/{id}/aprobar', [\App\Http\Controllers\ComprobanteController::class, 'aprobar'])->name('comprobantes.aprobar');
         Route::post('comprobantes/{id}/rechazar', [\App\Http\Controllers\ComprobanteController::class, 'rechazar'])->name('comprobantes.rechazar');
+
+        // Scoring & Analítica Admin
+        Route::get('scoring/analytics', [\App\Http\Controllers\ClientScoringController::class, 'getAnalyticsData'])->name('scoring.analytics');
+        Route::post('scoring/update/{userId}', [\App\Http\Controllers\ClientScoringController::class, 'updateManualScore'])->name('scoring.update');
+
+        // Estado de Cuenta PDF Admin
+        Route::get('clientes/{cliente}/estado-cuenta/pdf', [\App\Http\Controllers\EstadoCuentaController::class, 'descargarPdfAdmin'])->name('clientes.estado-cuenta.pdf');
     });
 
     // Comprobantes Usuario
     Route::post('comprobantes', [\App\Http\Controllers\ComprobanteController::class, 'store'])->name('comprobantes.store');
     
+    // Estado de Cuenta PDF con QR
+    Route::get('estado-cuenta/pdf', [\App\Http\Controllers\EstadoCuentaController::class, 'descargarPdfCliente'])->name('estado-cuenta.pdf');
+
     // -------------------------------------------------------------
     // Notificaciones Web Push y DB
     // -------------------------------------------------------------
