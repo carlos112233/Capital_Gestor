@@ -38,7 +38,7 @@
 
             <!-- Buscador (GET) -->
             <form method="GET" action="{{ route('catalogo.index') }}" class="mb-6 flex gap-2">
-                <div class="relative w-full group">
+                <div class="relative w-full group" id="tour-buscador-catalogo">
     <input type="text" name="q" id="q" value="{{ request('q') }}" class="block rounded-t-lg px-3 pb-2 pt-6 w-full text-sm text-slate-800 bg-slate-100 border-0 border-b-2 border-slate-300 appearance-none focus:outline-none focus:ring-0 focus:border-indigo-600 peer pr-10 transition-colors focus:bg-slate-200/50" placeholder=" " autocomplete="off" />
     <label for="q" class="absolute text-sm text-slate-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-3 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 cursor-text">
         Buscar por nombre…
@@ -324,5 +324,67 @@
                 }
             });
         })();
+    </script>
+
+    @php
+        $hasSeenTutorial = Auth::check() && Auth::user()->tutorials()->where('tutorial_name', 'catalogo')->exists();
+    @endphp
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const forceTutorial = new URLSearchParams(window.location.search).get('tutorial') === 'true';
+            const hasSeenTutorial = @json($hasSeenTutorial);
+
+            if (forceTutorial || !hasSeenTutorial) {
+                const driverObj = window.driver.js.driver({
+                    showProgress: true,
+                    nextBtnText: 'Siguiente ➔',
+                    prevBtnText: '⬅ Anterior',
+                    doneBtnText: '¡Entendido!',
+                    progressText: 'Paso {{current}} de {{total}}',
+                    steps: [
+                        {
+                            element: '#tour-buscador-catalogo',
+                            popover: {
+                                title: 'Busca tu producto',
+                                description: 'Puedes usar este buscador para encontrar rápidamente el artículo que deseas adquirir.',
+                                side: "bottom",
+                                align: 'start'
+                            }
+                        },
+                        {
+                            element: '#catalogo-content',
+                            popover: {
+                                title: 'Explora nuestro Catálogo',
+                                description: 'Aquí verás todos los artículos disponibles. Puedes hacer clic en "Agregar al Carrito" para ir armando tu compra.',
+                                side: "top",
+                                align: 'start'
+                            }
+                        }
+                    ],
+                    onDestroyStarted: () => {
+                        if (!driverObj.hasNextStep() || confirm("¿Seguro que quieres saltar el tutorial?")) {
+                            driverObj.destroy();
+                            fetch('{{ route("tutorial.marcar-visto") }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                },
+                                body: JSON.stringify({ tutorial_name: 'catalogo' })
+                            });
+                        }
+                    }
+                });
+
+                if (forceTutorial) {
+                    const url = new URL(window.location);
+                    url.searchParams.delete('tutorial');
+                    window.history.replaceState({}, '', url);
+                }
+
+                driverObj.drive();
+            }
+        });
     </script>
 </x-app-layout>

@@ -89,6 +89,30 @@
                             </a>
                         </div>
 
+                        <!-- Tarjeta: Carrito de Compras -->
+                        <div class="bg-slate-50 rounded-xl border border-slate-200 p-6 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300">
+                            <div>
+                                <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center text-2xl mb-4">🛒</div>
+                                <h4 class="text-xl font-bold text-slate-800 mb-2">Carrito de Compras</h4>
+                                <p class="text-sm text-slate-500 mb-6">Descubre cómo usar tu carrito para revisar los productos que estás a punto de solicitar y finalizar la compra.</p>
+                            </div>
+                            <a href="{{ route('dashboard') }}?tutorial=carrito" class="w-full text-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm transition-colors">
+                                Iniciar Recorrido
+                            </a>
+                        </div>
+
+                        <!-- Tarjeta: Notificaciones -->
+                        <div class="bg-slate-50 rounded-xl border border-slate-200 p-6 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300">
+                            <div>
+                                <div class="w-12 h-12 bg-cyan-100 text-cyan-600 rounded-lg flex items-center justify-center text-2xl mb-4">🔔</div>
+                                <h4 class="text-xl font-bold text-slate-800 mb-2">Notificaciones</h4>
+                                <p class="text-sm text-slate-500 mb-6">Aprende a revisar las alertas del sistema para estar siempre al día con tus pagos y novedades.</p>
+                            </div>
+                            <a href="{{ route('dashboard') }}?tutorial=notificaciones" class="w-full text-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm transition-colors">
+                                Iniciar Recorrido
+                            </a>
+                        </div>
+
                     </div>
                 </div>
             </div>

@@ -79,7 +79,7 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
             <!-- Carrito de Compras -->
             @if(!Auth::user()->hasRole('admin'))
             <div class="relative" x-data="shoppingCart()" @add-to-cart.window="addItem($event.detail)">
-                <button @click="cartOpen = !cartOpen" @click.away="cartOpen = false"
+                <button id="tour-btn-carrito" @click="cartOpen = !cartOpen" @click.away="cartOpen = false"
                     class="relative p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
                     title="Carrito de Compras">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -158,7 +158,7 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
                 @php
                     $unreadCount = Auth::user()->unreadNotifications->count();
                 @endphp
-                <button @click="notifOpen = !notifOpen" @click.away="notifOpen = false"
+                <button id="tour-btn-notificaciones" @click="notifOpen = !notifOpen" @click.away="notifOpen = false"
                     class="relative p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
                     title="Notificaciones">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -445,4 +445,93 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
             }
         }
     }
+
+    @php
+        $hasSeenCarrito = Auth::check() && Auth::user()->tutorials()->where('tutorial_name', 'carrito')->exists();
+        $hasSeenNotif = Auth::check() && Auth::user()->tutorials()->where('tutorial_name', 'notificaciones')->exists();
+    @endphp
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const forceTutorial = urlParams.get('tutorial');
+        const hasSeenCarrito = @json($hasSeenCarrito);
+        const hasSeenNotif = @json($hasSeenNotif);
+
+        // Si se pide explícitamente el tutorial del carrito o si estamos en una página y nunca lo ha visto
+        if (forceTutorial === 'carrito' || (forceTutorial === 'true' && !hasSeenCarrito)) {
+            const driverObj = window.driver.js.driver({
+                showProgress: true,
+                nextBtnText: 'Siguiente ➔',
+                prevBtnText: '⬅ Anterior',
+                doneBtnText: '¡Entendido!',
+                steps: [
+                    {
+                        element: '#tour-btn-carrito',
+                        popover: {
+                            title: 'Carrito de Compras',
+                            description: 'Todos los artículos que agregues al carrito aparecerán aquí. Haz clic para revisar tus productos y proceder al pago.',
+                            side: "bottom",
+                            align: 'end'
+                        }
+                    }
+                ],
+                onDestroyStarted: () => {
+                    driverObj.destroy();
+                    fetch('{{ route("tutorial.marcar-visto") ?? "#" }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({ tutorial_name: 'carrito' })
+                    });
+                }
+            });
+            if (forceTutorial === 'carrito') {
+                const url = new URL(window.location);
+                url.searchParams.delete('tutorial');
+                window.history.replaceState({}, '', url);
+            }
+            // Pequeño delay para asegurar que Driver.js esté listo
+            setTimeout(() => { if(document.getElementById('tour-btn-carrito')) driverObj.drive(); }, 500);
+        }
+
+        // Si se pide explícitamente el tutorial de notificaciones
+        if (forceTutorial === 'notificaciones' || (forceTutorial === 'true' && !hasSeenNotif && window.location.pathname === '/dashboard')) {
+            const driverObj = window.driver.js.driver({
+                showProgress: true,
+                nextBtnText: 'Siguiente ➔',
+                prevBtnText: '⬅ Anterior',
+                doneBtnText: '¡Entendido!',
+                steps: [
+                    {
+                        element: '#tour-btn-notificaciones',
+                        popover: {
+                            title: 'Tus Notificaciones',
+                            description: 'Aquí te avisaremos cuando haya actualizaciones sobre tus pagos, pedidos o mensajes importantes.',
+                            side: "bottom",
+                            align: 'end'
+                        }
+                    }
+                ],
+                onDestroyStarted: () => {
+                    driverObj.destroy();
+                    fetch('{{ route("tutorial.marcar-visto") ?? "#" }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({ tutorial_name: 'notificaciones' })
+                    });
+                }
+            });
+            if (forceTutorial === 'notificaciones') {
+                const url = new URL(window.location);
+                url.searchParams.delete('tutorial');
+                window.history.replaceState({}, '', url);
+            }
+            setTimeout(() => { if(document.getElementById('tour-btn-notificaciones')) driverObj.drive(); }, 500);
+        }
+    });
 </script>

@@ -16,14 +16,14 @@
 
     <div class="py-6 space-y-6">
         <!-- Información Personal -->
-        <div class="p-6 sm:p-8 bg-white border border-slate-200/80 shadow-xs sm:rounded-2xl">
+        <div class="p-6 sm:p-8 bg-white border border-slate-200/80 shadow-xs sm:rounded-2xl" id="tour-perfil-info">
             <div class="max-w-xl">
                 @include('profile.partials.update-profile-information-form')
             </div>
         </div>
 
         <!-- Seguridad y Contraseña -->
-        <div class="p-6 sm:p-8 bg-white border border-slate-200/80 shadow-xs sm:rounded-2xl">
+        <div class="p-6 sm:p-8 bg-white border border-slate-200/80 shadow-xs sm:rounded-2xl" id="tour-perfil-password">
             <div class="max-w-xl">
                 @include('profile.partials.update-password-form')
             </div>
@@ -67,4 +67,66 @@
             });
         </script>
     @endif
+
+    @php
+        $hasSeenTutorial = Auth::check() && Auth::user()->tutorials()->where('tutorial_name', 'perfil')->exists();
+    @endphp
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const forceTutorial = new URLSearchParams(window.location.search).get('tutorial') === 'true';
+            const hasSeenTutorial = @json($hasSeenTutorial);
+
+            if (forceTutorial || !hasSeenTutorial) {
+                const driverObj = window.driver.js.driver({
+                    showProgress: true,
+                    nextBtnText: 'Siguiente ➔',
+                    prevBtnText: '⬅ Anterior',
+                    doneBtnText: '¡Entendido!',
+                    progressText: 'Paso {{current}} de {{total}}',
+                    steps: [
+                        {
+                            element: '#tour-perfil-info',
+                            popover: {
+                                title: 'Información Personal',
+                                description: 'Actualiza aquí tu nombre, correo y, muy importante, tu foto de perfil.',
+                                side: "top",
+                                align: 'start'
+                            }
+                        },
+                        {
+                            element: '#tour-perfil-password',
+                            popover: {
+                                title: 'Seguridad',
+                                description: 'Te recomendamos cambiar tu contraseña periódicamente para mantener tu cuenta segura.',
+                                side: "top",
+                                align: 'start'
+                            }
+                        }
+                    ],
+                    onDestroyStarted: () => {
+                        if (!driverObj.hasNextStep() || confirm("¿Seguro que quieres saltar el tutorial?")) {
+                            driverObj.destroy();
+                            fetch('{{ route("tutorial.marcar-visto") }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                },
+                                body: JSON.stringify({ tutorial_name: 'perfil' })
+                            });
+                        }
+                    }
+                });
+
+                if (forceTutorial) {
+                    const url = new URL(window.location);
+                    url.searchParams.delete('tutorial');
+                    window.history.replaceState({}, '', url);
+                }
+
+                driverObj.drive();
+            }
+        });
+    </script>
 </x-app-layout>

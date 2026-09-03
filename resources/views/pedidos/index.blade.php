@@ -6,7 +6,7 @@
                 {{ __('Pedidos') }}
             </h2>
             @if($articulos->isEmpty())
-                <button type="button" onclick="Swal.fire({title: 'Atención', text: 'No hay artículos disponibles para realizar un pedido en este momento.', icon: 'info', confirmButtonColor: '#4f46e5'})"
+                <button id="tour-btn-nuevo-pedido" type="button" onclick="Swal.fire({title: 'Atención', text: 'No hay artículos disponibles para realizar un pedido en este momento.', icon: 'info', confirmButtonColor: '#4f46e5'})"
                     class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-indigo-500/35 transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none cursor-pointer opacity-75">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
@@ -14,7 +14,7 @@
                     {{ __('Nuevo Pedido') }}
                 </button>
             @else
-                <button type="button" onclick="openModal('create-pedido')"
+                <button id="tour-btn-nuevo-pedido" type="button" onclick="openModal('create-pedido')"
                     class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-indigo-500/35 transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
@@ -28,7 +28,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <form method="GET" action="{{ route('pedidos.index') }}" class="mb-4 flex gap-2">
-                <div class="relative w-full group">
+                <div class="relative w-full group" id="tour-buscador">
     <input type="text" name="q" id="search" value="{{ request('q') }}" class="block rounded-t-lg px-3 pb-2 pt-6 w-full text-sm text-slate-800 bg-slate-100 border-0 border-b-2 border-slate-300 appearance-none focus:outline-none focus:ring-0 focus:border-indigo-600 peer pr-10 transition-colors focus:bg-slate-200/50" placeholder=" " autocomplete="off" />
     <label for="search" class="absolute text-sm text-slate-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-3 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 cursor-text">
         Buscar pedidos por artículo, descripción o usuario...
@@ -41,7 +41,7 @@
 </div>
             </form>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg" id="tour-tabla-pedidos">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -161,6 +161,77 @@
                     }
                 });
             });
+        }
+    });
+</script>
+
+@php
+    $hasSeenTutorial = Auth::check() && Auth::user()->tutorials()->where('tutorial_name', 'pedidos')->exists();
+@endphp
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const forceTutorial = new URLSearchParams(window.location.search).get('tutorial') === 'true';
+        const hasSeenTutorial = @json($hasSeenTutorial);
+
+        if (forceTutorial || !hasSeenTutorial) {
+            const driverObj = window.driver.js.driver({
+                showProgress: true,
+                nextBtnText: 'Siguiente ➔',
+                prevBtnText: '⬅ Anterior',
+                doneBtnText: '¡Entendido!',
+                progressText: 'Paso {{current}} de {{total}}',
+                steps: [
+                    {
+                        element: '#tour-btn-nuevo-pedido',
+                        popover: {
+                            title: 'Crea un Pedido',
+                            description: 'Haz clic aquí para solicitar nuevos productos que necesites.',
+                            side: "bottom",
+                            align: 'end'
+                        }
+                    },
+                    {
+                        element: '#tour-buscador',
+                        popover: {
+                            title: 'Búsqueda Rápida',
+                            description: 'Puedes escribir aquí el nombre del producto para filtrarlo al instante.',
+                            side: "bottom",
+                            align: 'start'
+                        }
+                    },
+                    {
+                        element: '#tour-tabla-pedidos',
+                        popover: {
+                            title: 'Listado de Pedidos',
+                            description: 'Aquí aparecerán todos los pedidos que has realizado y su detalle.',
+                            side: "top",
+                            align: 'start'
+                        }
+                    }
+                ],
+                onDestroyStarted: () => {
+                    if (!driverObj.hasNextStep() || confirm("¿Seguro que quieres saltar el tutorial?")) {
+                        driverObj.destroy();
+                        fetch('{{ route("tutorial.marcar-visto") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            },
+                            body: JSON.stringify({ tutorial_name: 'pedidos' })
+                        });
+                    }
+                }
+            });
+
+            if (forceTutorial) {
+                const url = new URL(window.location);
+                url.searchParams.delete('tutorial');
+                window.history.replaceState({}, '', url);
+            }
+
+            driverObj.drive();
         }
     });
 </script>

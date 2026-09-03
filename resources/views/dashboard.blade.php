@@ -28,7 +28,7 @@
                     
                     <h3 class="text-lg font-semibold mb-4">Estado de cuenta semanal</h3>
 
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto" id="tour-tabla-saldos">
                         <table class="min-w-full divide-y divide-gray-200 border">
                             <thead class="bg-gray-50">
                                 <tr>
@@ -95,7 +95,7 @@
                     
                     <div class="mt-8 flex justify-between items-center border-t pt-6">
                         <h3 class="text-lg font-semibold text-slate-800">Mis Comprobantes de Pago</h3>
-                        <button onclick="openModal('upload-comprobante-modal')" class="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <button id="tour-btn-subir-comprobante" onclick="openModal('upload-comprobante-modal')" class="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             Subir Comprobante
                         </button>
                     </div>
@@ -107,7 +107,7 @@
                     @endif
 
                     @if(isset($comprobantes) && count($comprobantes) > 0)
-                        <div class="mt-4 overflow-x-auto">
+                        <div class="mt-4 overflow-x-auto" id="tour-historial-comprobantes">
                             <table class="min-w-full divide-y divide-gray-200 border">
                                 <thead class="bg-gray-50">
                                     <tr>
@@ -184,5 +184,78 @@
             </form>
         </div>
     </x-modal>
+
+    @php
+        $hasSeenTutorial = Auth::check() && Auth::user()->tutorials()->where('tutorial_name', 'dashboard')->exists();
+    @endphp
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const forceTutorial = new URLSearchParams(window.location.search).get('tutorial') === 'true';
+            const hasSeenTutorial = @json($hasSeenTutorial);
+
+            if (forceTutorial || !hasSeenTutorial) {
+                const driverObj = window.driver.js.driver({
+                    showProgress: true,
+                    nextBtnText: 'Siguiente ➔',
+                    prevBtnText: '⬅ Anterior',
+                    doneBtnText: '¡Entendido!',
+                    progressText: 'Paso {{current}} de {{total}}',
+                    steps: [
+                        {
+                            element: '#tour-tabla-saldos',
+                            popover: {
+                                title: 'Tu Estado de Cuenta',
+                                description: 'Aquí puedes ver exactamente cuánto debes de cortes pasados y de tus consumos actuales.',
+                                side: "top",
+                                align: 'start'
+                            }
+                        },
+                        {
+                            element: '#tour-btn-subir-comprobante',
+                            popover: {
+                                title: 'Reporta tus pagos',
+                                description: 'Cuando nos hagas una transferencia, haz clic aquí para enviarnos la foto de tu comprobante y aplicarlo a tu saldo.',
+                                side: "bottom",
+                                align: 'end'
+                            }
+                        },
+                        {
+                            element: '#tour-historial-comprobantes',
+                            popover: {
+                                title: 'Historial de Comprobantes',
+                                description: 'Lleva un control de todos los comprobantes que has subido y revisa si ya fueron aprobados por nosotros.',
+                                side: "top",
+                                align: 'start'
+                            }
+                        }
+                    ],
+                    onDestroyStarted: () => {
+                        if (!driverObj.hasNextStep() || confirm("¿Seguro que quieres saltar el tutorial?")) {
+                            driverObj.destroy();
+                            // Marcar como visto en la base de datos
+                            fetch('{{ route("tutorial.marcar-visto") }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                },
+                                body: JSON.stringify({ tutorial_name: 'dashboard' })
+                            });
+                        }
+                    }
+                });
+
+                // Remover el parámetro tutorial de la URL sin recargar para mantener limpio el historial
+                if (forceTutorial) {
+                    const url = new URL(window.location);
+                    url.searchParams.delete('tutorial');
+                    window.history.replaceState({}, '', url);
+                }
+
+                driverObj.drive();
+            }
+        });
+    </script>
 </x-app-layout>
 

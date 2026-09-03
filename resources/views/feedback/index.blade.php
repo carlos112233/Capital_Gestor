@@ -4,7 +4,7 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight flex items-center gap-2">
                 <span>💬</span> {{ __('Quejas, Comentarios y Sugerencias') }}
             </h2>
-            <button onclick="openFeedbackModal()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-medium px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition flex items-center gap-2">
+            <button id="tour-btn-nuevo-feedback" onclick="openFeedbackModal()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-medium px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition flex items-center gap-2">
                 <span>📢</span>
                 <span>Nuevo Comentario / Queja</span>
             </button>
@@ -39,7 +39,7 @@
             @endif
 
             <!-- KPI Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" id="tour-feedback-stats">
                 <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100 flex items-center justify-between">
                     <div>
                         <p class="text-xs font-semibold text-gray-500 uppercase">Total Registros</p>
@@ -82,7 +82,7 @@
             </div>
 
             <!-- Barra de Búsqueda y Filtros -->
-            <form method="GET" action="{{ route('feedback.index') }}" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-wrap gap-4 items-center justify-between">
+            <form method="GET" action="{{ route('feedback.index') }}" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-wrap gap-4 items-center justify-between" id="tour-feedback-filtros">
                 <div class="flex flex-wrap gap-3 flex-1">
                     <div class="flex-1 min-w-[200px]">
                         <div class="relative w-full group">
@@ -127,7 +127,7 @@
             </form>
 
             <!-- Lista de Feedbacks -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-xl border border-gray-100">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-xl border border-gray-100" id="tour-feedback-lista">
                 @if($feedbacks->isEmpty())
                     <div class="p-12 text-center">
                         <div class="text-5xl mb-4">📭</div>
@@ -313,5 +313,85 @@
         function closeFeedbackModal() {
             document.getElementById('feedbackModal').classList.add('hidden');
         }
+    </script>
+
+    @php
+        $hasSeenTutorial = Auth::check() && Auth::user()->tutorials()->where('tutorial_name', 'feedback')->exists();
+    @endphp
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const forceTutorial = new URLSearchParams(window.location.search).get('tutorial') === 'true';
+            const hasSeenTutorial = @json($hasSeenTutorial);
+
+            if (forceTutorial || !hasSeenTutorial) {
+                const driverObj = window.driver.js.driver({
+                    showProgress: true,
+                    nextBtnText: 'Siguiente ➔',
+                    prevBtnText: '⬅ Anterior',
+                    doneBtnText: '¡Entendido!',
+                    progressText: 'Paso {{current}} de {{total}}',
+                    steps: [
+                        {
+                            element: '#tour-btn-nuevo-feedback',
+                            popover: {
+                                title: 'Cuéntanos qué piensas',
+                                description: 'Si tienes alguna queja, sugerencia o comentario, presiona este botón para hacérnoslo saber.',
+                                side: "bottom",
+                                align: 'end'
+                            }
+                        },
+                        {
+                            element: '#tour-feedback-stats',
+                            popover: {
+                                title: 'Estado de tus Reportes',
+                                description: 'Estos indicadores te muestran rápidamente si tus mensajes ya fueron leídos o están en revisión.',
+                                side: "bottom",
+                                align: 'start'
+                            }
+                        },
+                        {
+                            element: '#tour-feedback-filtros',
+                            popover: {
+                                title: 'Filtra tus tickets',
+                                description: 'Si has enviado muchos reportes, puedes filtrarlos por tipo (Queja, Sugerencia, etc.) o por estado.',
+                                side: "bottom",
+                                align: 'start'
+                            }
+                        },
+                        {
+                            element: '#tour-feedback-lista',
+                            popover: {
+                                title: 'Tus Mensajes',
+                                description: 'Haz clic en cualquier ticket de esta lista para ver nuestra respuesta y darle seguimiento.',
+                                side: "top",
+                                align: 'start'
+                            }
+                        }
+                    ],
+                    onDestroyStarted: () => {
+                        if (!driverObj.hasNextStep() || confirm("¿Seguro que quieres saltar el tutorial?")) {
+                            driverObj.destroy();
+                            fetch('{{ route("tutorial.marcar-visto") }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                },
+                                body: JSON.stringify({ tutorial_name: 'feedback' })
+                            });
+                        }
+                    }
+                });
+
+                if (forceTutorial) {
+                    const url = new URL(window.location);
+                    url.searchParams.delete('tutorial');
+                    window.history.replaceState({}, '', url);
+                }
+
+                driverObj.drive();
+            }
+        });
     </script>
 </x-app-layout>
