@@ -103,6 +103,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/push/subscribe', [\App\Http\Controllers\PushSubscriptionController::class, 'store'])->name('push.subscribe');
     Route::post('/push/unsubscribe', [\App\Http\Controllers\PushSubscriptionController::class, 'destroy'])->name('push.unsubscribe');
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\PushSubscriptionController::class, 'markAllRead'])->name('notifications.markAllRead');
+
+    // -------------------------------------------------------------
+    // Sistema de Tutoriales Interactivos
+    // -------------------------------------------------------------
+    Route::get('/manual-usuario', [\App\Http\Controllers\TutorialController::class, 'index'])->name('tutorial.index');
+    Route::post('/tutorial/marcar-visto', [\App\Http\Controllers\TutorialController::class, 'markAsSeen'])->name('tutorial.marcar-visto');
 });
 
 require __DIR__ . '/auth.php';

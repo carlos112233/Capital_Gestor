@@ -79,6 +79,11 @@ class User extends Authenticatable
         return $this->hasMany(Venta::class);
     }
 
+    public function tutorials(): HasMany
+    {
+        return $this->hasMany(UserTutorial::class);
+    }
+
     /**
      * Total acumulado de deuda por compras del cliente.
      */
