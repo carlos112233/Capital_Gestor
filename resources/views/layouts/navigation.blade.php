@@ -533,5 +533,41 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
             }
             setTimeout(() => { if(document.getElementById('tour-btn-notificaciones')) driverObj.drive(); }, 500);
         }
+
+        // Si se pide explícitamente el tutorial de instalar app
+        if (forceTutorial === 'instalar') {
+            // Forzar que el botón sea visible temporalmente para el tutorial
+            const pwaBtn = document.getElementById('pwa-install-btn');
+            if (pwaBtn) {
+                const wasHidden = pwaBtn.style.display === 'none';
+                if (wasHidden) pwaBtn.style.display = 'inline-flex';
+
+                const driverObj = window.driver.js.driver({
+                    showProgress: false,
+                    doneBtnText: '¡Entendido!',
+                    steps: [
+                        {
+                            element: '#pwa-install-btn',
+                            popover: {
+                                title: 'Instalar Aplicación',
+                                description: 'Si ves este botón, puedes hacer clic aquí para instalar nuestra plataforma en tu dispositivo y acceder más rápido como si fuera una app nativa.',
+                                side: "bottom",
+                                align: 'end'
+                            }
+                        }
+                    ],
+                    onDestroyStarted: () => {
+                        if (wasHidden) pwaBtn.style.display = 'none';
+                        driverObj.destroy();
+                    }
+                });
+
+                const url = new URL(window.location);
+                url.searchParams.delete('tutorial');
+                window.history.replaceState({}, '', url);
+
+                setTimeout(() => { driverObj.drive(); }, 500);
+            }
+        }
     });
 </script>

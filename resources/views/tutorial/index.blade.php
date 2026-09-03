@@ -113,6 +113,18 @@
                             </a>
                         </div>
 
+                        <!-- Tarjeta: Instalar App -->
+                        <div class="bg-slate-50 rounded-xl border border-slate-200 p-6 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300">
+                            <div>
+                                <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center text-2xl mb-4">📱</div>
+                                <h4 class="text-xl font-bold text-slate-800 mb-2">Instalar Aplicación</h4>
+                                <p class="text-sm text-slate-500 mb-6">Descubre cómo instalar la plataforma en tu dispositivo móvil o computadora para acceso rápido.</p>
+                            </div>
+                            <a href="{{ route('dashboard') }}?tutorial=instalar" class="w-full text-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm transition-colors">
+                                Iniciar Recorrido
+                            </a>
+                        </div>
+
                     </div>
                 </div>
             </div>
