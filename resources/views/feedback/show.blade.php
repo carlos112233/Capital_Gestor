@@ -212,8 +212,8 @@
                             @if($isAdmin)
                                 <!-- Permite al admin elegir si marcar como leído/resuelto al responder -->
                                 <select name="estatus" class="text-xs border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                    <option value="leido" selected>🟢 Responder y Marcar como Leído / Resuelto</option>
-                                    <option value="leyendo">🟠 Responder y Dejar en Revisión</option>
+                                    <option value="leyendo" selected>🟠 Responder y Dejar en Revisión</option>
+                                    <option value="leido">🟢 Responder y Marcar como Leído / Resuelto</option>
                                 </select>
                             @endif
                             <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2 rounded-lg text-sm shadow-md transition">

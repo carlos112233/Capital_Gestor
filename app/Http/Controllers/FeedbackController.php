@@ -191,8 +191,8 @@ class FeedbackController extends Controller
 
         // Gestión de estatus según quién responde
         if ($isAdmin) {
-            // El administrador puede elegir marcarlo como 'leido' o dejarlo en 'leyendo' / 'leido'
-            $nuevoEstatus = $request->input('estatus', 'leido'); // Por defecto verde 🟢 al responder
+            // El administrador puede elegir marcarlo como 'leido' o dejarlo en 'leyendo'
+            $nuevoEstatus = $request->input('estatus', 'leyendo'); // Por defecto naranja 🟠 al responder
             $feedback->update(['estatus' => $nuevoEstatus]);
             
             // Notificar al usuario normal
