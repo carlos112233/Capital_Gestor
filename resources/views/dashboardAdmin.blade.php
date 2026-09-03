@@ -703,8 +703,7 @@
             .then(res => res.json())
             .then(data => {
                 // Actualizar KPIs
-                document.getElementById('kpi-total-cobrado').innerText = '$' + Number(data.kpi.total_cobrado).toLocaleString('es-MX', { minimumFractionDigits: 2 });
-                document.getElementById('kpi-saldo-pendiente').innerText = '$' + Number(data.kpi.saldo_pendiente).toLocaleString('es-MX', { minimumFractionDigits: 2 });
+
                 document.getElementById('kpi-count-vip').innerText = data.kpi.count_vip;
                 document.getElementById('kpi-count-riesgo').innerText = data.kpi.count_riesgo;
 
