@@ -78,6 +78,14 @@
                     </svg>
                     <span x-show="sidebarOpen" x-transition class="ml-3 whitespace-nowrap">Quejas y Sugerencias</span>
                 </a>
+
+                <a href="{{ route('tutorial.index') }}"
+                   class="flex items-center px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group {{ request()->routeIs('tutorial.*') ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                    <svg class="w-5 h-5 flex-shrink-0 {{ request()->routeIs('tutorial.*') ? 'text-white' : 'text-orange-400 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    <span x-show="sidebarOpen" x-transition class="ml-3 whitespace-nowrap">Manual de Usuario</span>
+                </a>
             </nav>
         </div>
 
@@ -274,6 +282,14 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                     </svg>
                     <span>Quejas y Sugerencias</span>
+                </a>
+
+                <a href="{{ route('tutorial.index') }}"
+                   class="flex items-center px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group {{ request()->routeIs('tutorial.*') ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                    <svg class="w-5 h-5 flex-shrink-0 mr-3 {{ request()->routeIs('tutorial.*') ? 'text-white' : 'text-orange-400 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    <span>Manual de Usuario</span>
                 </a>
             </nav>
         </div>
