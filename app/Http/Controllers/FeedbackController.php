@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use App\Models\User;
+use App\Notifications\AppNotification;
+use Illuminate\Support\Facades\Notification;
 
 class FeedbackController extends Controller
 {
@@ -98,6 +101,16 @@ class FeedbackController extends Controller
         // Enviar notificación instantánea por WhatsApp al Administrador
         Feedback::notificarAdminWhatsApp($feedback);
 
+        // Notificación Push a los Administradores
+        $admins = User::whereHas('roles', function($q) { $q->where('name', 'admin'); })->get();
+        if ($admins->count() > 0) {
+            Notification::send($admins, new AppNotification(
+                'Nueva ' . ucfirst($validated['tipo']),
+                Auth::user()->name . ' ha enviado un(a) ' . $validated['tipo'] . '.',
+                route('feedback.show', $feedback->id)
+            ));
+        }
+
         return redirect()->route('feedback.index')->with('success', '¡Tu ' . $validated['tipo'] . ' se ha enviado correctamente! El Administrador la revisará pronto.');
     }
 
@@ -119,6 +132,14 @@ class FeedbackController extends Controller
         // se cambia automáticamente a 'leyendo' (naranja 🟠)
         if ($isAdmin && $feedback->estatus === 'enviado') {
             $feedback->update(['estatus' => 'leyendo']);
+            
+            if ($feedback->user) {
+                $feedback->user->notify(new AppNotification(
+                    'Ticket en revisión',
+                    'El Administrador está revisando tu ' . $feedback->tipo . '.',
+                    route('feedback.show', $feedback->id)
+                ));
+            }
         }
 
         $feedback->load(['user', 'mensajes.user']);
@@ -164,10 +185,29 @@ class FeedbackController extends Controller
             // El administrador puede elegir marcarlo como 'leido' o dejarlo en 'leyendo' / 'leido'
             $nuevoEstatus = $request->input('estatus', 'leido'); // Por defecto verde 🟢 al responder
             $feedback->update(['estatus' => $nuevoEstatus]);
+            
+            // Notificar al usuario normal
+            if ($feedback->user) {
+                $feedback->user->notify(new AppNotification(
+                    'Respuesta en tu ticket',
+                    'El Administrador ha respondido a tu ' . $feedback->tipo . '.',
+                    route('feedback.show', $feedback->id)
+                ));
+            }
         } else {
             // Si el usuario vuelve a responder y estaba cerrado o leído, lo pasamos a 'enviado' para notificar
             if ($feedback->estatus === 'leido') {
                 $feedback->update(['estatus' => 'enviado']);
+            }
+            
+            // Notificar a los administradores
+            $admins = User::whereHas('roles', function($q) { $q->where('name', 'admin'); })->get();
+            if ($admins->count() > 0) {
+                Notification::send($admins, new AppNotification(
+                    'Nueva respuesta de ' . Auth::user()->name,
+                    Auth::user()->name . ' ha respondido en el ticket #' . $feedback->id,
+                    route('feedback.show', $feedback->id)
+                ));
             }
         }
 
@@ -189,6 +229,15 @@ class FeedbackController extends Controller
         ]);
 
         $feedback->update(['estatus' => $validated['estatus']]);
+        
+        // Notificar al usuario sobre el cambio de estado
+        if ($feedback->user) {
+            $feedback->user->notify(new AppNotification(
+                'Actualización de tu ticket',
+                'El estado de tu ' . $feedback->tipo . ' ha cambiado a: ' . $feedback->estatus_label,
+                route('feedback.show', $feedback->id)
+            ));
+        }
 
         $label = $feedback->estatus_label;
         return redirect()->back()->with('success', "Estado actualizado a: {$label}");
