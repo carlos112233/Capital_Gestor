@@ -25,65 +25,15 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css"/>
         <script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
         <style>
-            /* Tema Personalizado para Driver.js (Onboarding) */
-            .driver-popover {
-                border-radius: 1rem !important;
-                padding: 1.5rem !important;
-                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
-                border: 1px solid #e2e8f0 !important;
-                font-family: inherit !important;
-            }
-            .driver-popover-title {
-                font-size: 1.125rem !important;
-                font-weight: 800 !important;
-                color: #1e293b !important;
-                margin-bottom: 0.5rem !important;
-            }
-            .driver-popover-description {
-                font-size: 0.875rem !important;
-                color: #475569 !important;
-                line-height: 1.5 !important;
-            }
-            .driver-popover-footer {
-                margin-top: 1.25rem !important;
-            }
-            .driver-popover-progress-text {
-                font-size: 0.75rem !important;
-                color: #64748b !important;
-                font-weight: 600 !important;
-            }
-            .driver-popover-footer button {
-                border-radius: 0.5rem !important;
-                padding: 0.4rem 0.875rem !important;
-                font-size: 0.875rem !important;
-                font-weight: 700 !important;
-                text-shadow: none !important;
-                transition: all 0.2s !important;
-            }
+            /* Tema Personalizado para Driver.js (Onboarding) - Solo colores de botones */
             .driver-popover-next-btn {
                 background: linear-gradient(to right, #4f46e5, #7c3aed) !important; /* from-indigo-600 to-violet-600 */
                 color: white !important;
                 border: none !important;
-                box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3) !important;
+                text-shadow: none !important;
             }
             .driver-popover-next-btn:hover {
                 background: linear-gradient(to right, #4338ca, #6d28d9) !important;
-                box-shadow: 0 6px 8px -1px rgba(79, 70, 229, 0.4) !important;
-            }
-            .driver-popover-prev-btn {
-                background-color: white !important;
-                color: #475569 !important;
-                border: 1px solid #cbd5e1 !important;
-            }
-            .driver-popover-prev-btn:hover {
-                background-color: #f8fafc !important;
-                color: #1e293b !important;
-            }
-            .driver-popover-close-btn {
-                color: #94a3b8 !important;
-            }
-            .driver-popover-close-btn:hover {
-                color: #475569 !important;
             }
         </style>
         <!-- Scripts -->
