@@ -255,20 +255,26 @@
                         <div class="mb-4">
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Selecciona el tipo de mensaje</label>
                             <div class="grid grid-cols-3 gap-3">
-                                <label class="border-2 border-gray-200 rounded-xl p-3 text-center cursor-pointer hover:border-rose-500 focus-within:border-rose-500 transition">
+                                <label class="block cursor-pointer group">
                                     <input type="radio" name="tipo" value="queja" class="sr-only peer" required>
-                                    <div class="text-xl mb-1">🚨</div>
-                                    <div class="text-xs font-bold text-gray-700 peer-checked:text-rose-600">Queja</div>
+                                    <div class="border-2 border-gray-200 rounded-xl p-3 text-center transition group-hover:border-rose-500 peer-checked:border-rose-500 peer-checked:bg-rose-50/50">
+                                        <div class="text-xl mb-1">🚨</div>
+                                        <div class="text-xs font-bold text-gray-700 peer-checked:text-rose-600">Queja</div>
+                                    </div>
                                 </label>
-                                <label class="border-2 border-gray-200 rounded-xl p-3 text-center cursor-pointer hover:border-blue-500 focus-within:border-blue-500 transition">
+                                <label class="block cursor-pointer group">
                                     <input type="radio" name="tipo" value="comentario" class="sr-only peer" required checked>
-                                    <div class="text-xl mb-1">💬</div>
-                                    <div class="text-xs font-bold text-gray-700 peer-checked:text-blue-600">Comentario</div>
+                                    <div class="border-2 border-gray-200 rounded-xl p-3 text-center transition group-hover:border-blue-500 peer-checked:border-blue-500 peer-checked:bg-blue-50/50">
+                                        <div class="text-xl mb-1">💬</div>
+                                        <div class="text-xs font-bold text-gray-700 peer-checked:text-blue-600">Comentario</div>
+                                    </div>
                                 </label>
-                                <label class="border-2 border-gray-200 rounded-xl p-3 text-center cursor-pointer hover:border-purple-500 focus-within:border-purple-500 transition">
+                                <label class="block cursor-pointer group">
                                     <input type="radio" name="tipo" value="sugerencia" class="sr-only peer" required>
-                                    <div class="text-xl mb-1">💡</div>
-                                    <div class="text-xs font-bold text-gray-700 peer-checked:text-purple-600">Sugerencia</div>
+                                    <div class="border-2 border-gray-200 rounded-xl p-3 text-center transition group-hover:border-purple-500 peer-checked:border-purple-500 peer-checked:bg-purple-50/50">
+                                        <div class="text-xl mb-1">💡</div>
+                                        <div class="text-xs font-bold text-gray-700 peer-checked:text-purple-600">Sugerencia</div>
+                                    </div>
                                 </label>
                             </div>
                         </div>
