@@ -89,7 +89,6 @@ Route::middleware('auth')->group(function () {
         Route::get('clientes/{cliente}/estado-cuenta/pdf', [\App\Http\Controllers\EstadoCuentaController::class, 'descargarPdfAdmin'])->name('clientes.estado-cuenta.pdf');
     });
 
-    Route::get('admin/clientes/{cliente}/estado-cuenta/pdf', [\App\Http\Controllers\EstadoCuentaController::class, 'descargarPdfAdmin'])->name('clientes.estado-cuenta.pdf');
 
     // Comprobantes Usuario
     Route::post('comprobantes', [\App\Http\Controllers\ComprobanteController::class, 'store'])->name('comprobantes.store');
