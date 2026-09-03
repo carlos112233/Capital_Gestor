@@ -7,7 +7,9 @@ use Illuminate\Notifications\Notification;
 use NotificationChannels\WebPush\WebPushMessage;
 use NotificationChannels\WebPush\WebPushChannel;
 
-class AppNotification extends Notification
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+
+class AppNotification extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
 
@@ -32,7 +34,7 @@ class AppNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database', WebPushChannel::class];
+        return ['database', WebPushChannel::class, 'broadcast'];
     }
 
     /**
@@ -59,5 +61,18 @@ class AppNotification extends Notification
             ->body($this->message)
             ->action('Abrir app', 'open_app')
             ->data(['url' => $this->actionUrl]);
+    }
+
+    /**
+     * Get the broadcastable representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): \Illuminate\Notifications\Messages\BroadcastMessage
+    {
+        return new \Illuminate\Notifications\Messages\BroadcastMessage([
+            'title' => $this->title,
+            'message' => $this->message,
+            'action_url' => $this->actionUrl,
+            'icon_url' => $this->iconUrl,
+        ]);
     }
 }
