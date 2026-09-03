@@ -10,64 +10,6 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-slate-900">
 
-                    <!-- Panel Analítico Ejecutivo & Scoring Crediticio -->
-                    <div class="mb-8 bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800">
-                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-5 border-b border-slate-800 gap-4">
-                            <div>
-                                <h3 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                                    <span>📊</span> Panel Analítico Ejecutivo y Scoring
-                                </h3>
-                                <p class="text-xs text-slate-400 mt-1">Métricas en tiempo real, comportamiento de cobros y evaluación crediticia de clientes</p>
-                            </div>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                                🔒 Exclusivo Administrador
-                            </span>
-                        </div>
-
-                        <!-- 4 KPI Summary Cards -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-                            <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-sm">
-                                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Cobrado</div>
-                                <div class="text-2xl font-black text-emerald-400 mt-1" id="kpi-total-cobrado">$0.00</div>
-                                <div class="text-[11px] text-emerald-500/80 mt-1 flex items-center gap-1">
-                                    <span>↑</span> Entradas acreditadas
-                                </div>
-                            </div>
-                            <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-sm">
-                                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Saldo Pendiente</div>
-                                <div class="text-2xl font-black text-amber-400 mt-1" id="kpi-saldo-pendiente">$0.00</div>
-                                <div class="text-[11px] text-amber-500/80 mt-1 flex items-center gap-1">
-                                    <span>⏳</span> Cartera viva en riesgo
-                                </div>
-                            </div>
-                            <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-sm">
-                                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Clientes VIP / Platino</div>
-                                <div class="text-2xl font-black text-indigo-400 mt-1" id="kpi-count-vip">0</div>
-                                <div class="text-[11px] text-indigo-400/80 mt-1">Score $\ge 80$ pts</div>
-                            </div>
-                            <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-sm">
-                                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Clientes en Riesgo</div>
-                                <div class="text-2xl font-black text-red-400 mt-1" id="kpi-count-riesgo">0</div>
-                                <div class="text-[11px] text-red-400/80 mt-1">Score $< 50$ pts</div>
-                            </div>
-                        </div>
-
-                        <!-- Gráficos ApexCharts -->
-                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-                            <div class="lg:col-span-2 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-                                <h4 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
-                                    <span>📈</span> Tendencia de Cobros vs Ventas
-                                </h4>
-                                <div id="chart-ingresos-deuda" class="min-h-[250px]"></div>
-                            </div>
-                            <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-                                <h4 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
-                                    <span>🍩</span> Estatus de Comprobantes
-                                </h4>
-                                <div id="chart-estatus-pagos" class="min-h-[250px] flex items-center justify-center"></div>
-                            </div>
-                        </div>
-                    </div>
 
                     <div class="mb-5 flex flex-col sm:flex-row items-center gap-3">
                         <div class="relative flex-1 w-full">
@@ -477,6 +419,51 @@
                 </div>
             </div>
             @endif
+
+            <!-- Panel Analítico Ejecutivo & Scoring Crediticio -->
+            <div class="mt-8 mb-8 bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-5 border-b border-slate-800 gap-4">
+                    <div>
+                        <h3 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                            <span>📊</span> Panel Analítico Ejecutivo y Scoring
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-1">Métricas en tiempo real, comportamiento de cobros y evaluación crediticia de clientes</p>
+                    </div>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                        🔒 Exclusivo Administrador
+                    </span>
+                </div>
+
+                <!-- 2 KPI Summary Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                    <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-sm">
+                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Clientes VIP / Platino</div>
+                        <div class="text-2xl font-black text-indigo-400 mt-1" id="kpi-count-vip">0</div>
+                        <div class="text-[11px] text-indigo-400/80 mt-1">Score $\ge 80$ pts</div>
+                    </div>
+                    <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-sm">
+                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Clientes en Riesgo</div>
+                        <div class="text-2xl font-black text-red-400 mt-1" id="kpi-count-riesgo">0</div>
+                        <div class="text-[11px] text-red-400/80 mt-1">Score $< 50$ pts</div>
+                    </div>
+                </div>
+
+                <!-- Gráficos ApexCharts -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                    <div class="lg:col-span-2 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+                        <h4 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                            <span>📈</span> Tendencia de Cobros vs Ventas
+                        </h4>
+                        <div id="chart-ingresos-deuda" class="min-h-[250px]"></div>
+                    </div>
+                    <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+                        <h4 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                            <span>🍩</span> Estatus de Comprobantes
+                        </h4>
+                        <div id="chart-estatus-pagos" class="min-h-[250px] flex items-center justify-center"></div>
+                    </div>
+                </div>
+            </div>
 
         </div>
     </div>
