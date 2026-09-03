@@ -66,7 +66,7 @@
                         <span class="text-2xl">🟢</span>
                         <div>
                             <p class="font-bold text-sm">Sugerencia / Queja respondida y cerrada</p>
-                            <p class="text-xs opacity-90">El Administrador ha respondido o cerrado este comentario. Puedes enviar un nuevo mensaje abajo si deseas continuar.</p>
+                            <p class="text-xs opacity-90">El Administrador ha respondido o cerrado este comentario. Esta conversación ha finalizado.</p>
                         </div>
                     @endif
                 </div>
@@ -188,6 +188,7 @@
             @endif
 
             <!-- CAJA PARA ENVIAR NUEVA RESPUESTA -->
+            @if($feedback->estatus !== 'leido')
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h4 class="font-bold text-gray-800 text-base mb-3 flex items-center gap-2">
                     <span>💬</span> Agregar un comentario o respuesta
@@ -222,6 +223,7 @@
                     </div>
                 </form>
             </div>
+            @endif
 
         </div>
     </div>
