@@ -34,7 +34,7 @@ class AppNotification extends Notification implements ShouldBroadcastNow
      */
     public function via(object $notifiable): array
     {
-        return ['database', WebPushChannel::class, 'broadcast'];
+        return ['database', 'broadcast', WebPushChannel::class];
     }
 
     /**
