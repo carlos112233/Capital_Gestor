@@ -330,7 +330,7 @@
                     nextBtnText: 'Siguiente ➔',
                     prevBtnText: '⬅ Anterior',
                     doneBtnText: '¡Entendido!',
-                    progressText: 'Paso {{current}} de {{total}}',
+                    progressText: 'Paso @{{current}} de @{{total}}',
                     steps: [
                         {
                             element: '#tour-btn-nuevo-feedback',
