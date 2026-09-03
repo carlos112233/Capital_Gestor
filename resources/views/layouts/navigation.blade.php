@@ -571,3 +571,42 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
         }
     });
 </script>
+
+@auth
+<script type="module">
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.Echo) {
+            window.Echo.private('App.Models.User.{{ Auth::id() }}')
+                .notification((notification) => {
+                    // Mostrar alerta visual (Toast)
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'info',
+                            title: notification.title || 'Nueva Notificación',
+                            text: notification.message || '',
+                            showConfirmButton: false,
+                            timer: 5000,
+                            timerProgressBar: true,
+                        });
+                    }
+                    
+                    // Actualizar el contador de la campanita dinámicamente
+                    const btn = document.getElementById('tour-btn-notificaciones');
+                    if (btn) {
+                        let badge = btn.querySelector('span.absolute');
+                        if (badge) {
+                            badge.innerText = parseInt(badge.innerText || '0') + 1;
+                        } else {
+                            badge = document.createElement('span');
+                            badge.className = 'absolute top-1 right-1 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-[10px] font-bold text-white border border-white shadow-sm';
+                            badge.innerText = '1';
+                            btn.appendChild(badge);
+                        }
+                    }
+                });
+        }
+    });
+</script>
+@endauth
