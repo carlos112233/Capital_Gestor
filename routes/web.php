@@ -55,7 +55,7 @@ Route::middleware('auth')->group(function () {
     Route::post('feedback/{feedback}/status', [\App\Http\Controllers\FeedbackController::class, 'updateStatus'])->name('feedback.status');
 
     Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-        Route::get('api/clientes-lista', function() {
+        Route::get('api/clientes-lista', function () {
             return response()->json(\App\Models\User::orderBy('name', 'asc')->get(['id', 'name']));
         })->name('api.clientes');
         Route::resource('clientes', ClienteController::class);
@@ -76,7 +76,7 @@ Route::middleware('auth')->group(function () {
         Route::post('configuracion/wa-mark-sent/{id}', [\App\Http\Controllers\ConfiguracionController::class, 'markMessageAsSent'])->name('configuracion.wa-mark-sent');
         Route::post('configuracion/wa-mark-pending/{id}', [\App\Http\Controllers\ConfiguracionController::class, 'markMessageAsPending'])->name('configuracion.wa-mark-pending');
         Route::post('enviar-masivo', [DashboardController::class, 'enviarRecordatoriosMasivos'])->name('enviar.masivo');
-        
+
         // Comprobantes Admin
         Route::post('comprobantes/{id}/aprobar', [\App\Http\Controllers\ComprobanteController::class, 'aprobar'])->name('comprobantes.aprobar');
         Route::post('comprobantes/{id}/rechazar', [\App\Http\Controllers\ComprobanteController::class, 'rechazar'])->name('comprobantes.rechazar');
@@ -93,7 +93,7 @@ Route::middleware('auth')->group(function () {
 
     // Comprobantes Usuario
     Route::post('comprobantes', [\App\Http\Controllers\ComprobanteController::class, 'store'])->name('comprobantes.store');
-    
+
     // Estado de Cuenta PDF con QR
     Route::get('estado-cuenta/pdf', [\App\Http\Controllers\EstadoCuentaController::class, 'descargarPdfCliente'])->name('estado-cuenta.pdf');
 
@@ -125,7 +125,7 @@ Route::get('/enviar-alerta', function () {
 });
 
 Route::get('/test-notif', function () {
-    $topic = "canal_marcos_123"; 
+    $topic = "canal_marcos_123";
 
     $response = Http::withHeaders([
         'Title' => 'Prueba Local',
