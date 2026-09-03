@@ -1,4 +1,8 @@
 <x-app-layout>
+    @php
+        $isAdminUser = Auth::user() && Auth::user()->hasRole('admin');
+    @endphp
+
     <!-- Header de la Vista -->
     <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -6,6 +10,7 @@
             <p class="text-sm text-slate-500 font-medium">Supervisa los cobros de ventas y pedidos, entradas de capital y gestiona los ingresos del negocio.</p>
         </div>
         
+        @if($isAdminUser)
         <div>
             <button onclick="openModal('modal-nuevo-cobro')" 
                     class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-indigo-500/35 transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none cursor-pointer">
@@ -15,11 +20,8 @@
                 Nuevo Cobro Manual
             </button>
         </div>
+        @endif
     </div>
-
-    @php
-        $isAdminUser = Auth::user() && Auth::user()->hasRole('admin');
-    @endphp
 
     <!-- Tarjetas de Métricas KPI -->
     <div class="grid grid-cols-1 sm:grid-cols-2 {{ $isAdminUser ? 'lg:grid-cols-4' : 'lg:grid-cols-3' }} gap-4 mb-6">
@@ -198,6 +200,7 @@
         </div>
     </div>
 
+    @if($isAdminUser)
     <!-- Modal para Nuevo Cobro Manual -->
     <x-modal name="modal-nuevo-cobro" focusable>
         <div class="p-6">
@@ -241,4 +244,5 @@
             </form>
         </div>
     </x-modal>
+    @endif
 </x-app-layout>
