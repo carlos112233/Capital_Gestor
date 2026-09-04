@@ -46,27 +46,44 @@ class EstadoCuentaController extends Controller
         $scoreCrediticio = $scoringData['score'];
         $scoreCategoria = $scoringData;
 
-        // 2. Historial de Movimientos / Consumos
-        $movimientos = Venta::where('user_id', $cliente->id)
+        // 2. Historial de Movimientos (Ventas y Entradas) para calcular el punto de quiebre (saldo 0)
+        $ventasHistory = Venta::where('user_id', $cliente->id)
             ->with(['articulo'])
-            ->orderBy('created_at', 'desc')
+            ->orderBy('created_at', 'asc')
             ->get();
+            
+        $entradasHistory = \App\Models\Entrada::where('user_id', $cliente->id)
+            ->orderBy('created_at', 'asc')
+            ->get();
+            
+        $todosHistory = $ventasHistory->concat($entradasHistory)->sortBy('created_at')->values();
+        
+        $saldoRunning = 0;
+        $fechaUltimoCero = null;
+        
+        foreach ($todosHistory as $mov) {
+            if (isset($mov->total_venta)) { // Es Venta
+                $saldoRunning += (float) ($mov->total_venta ?? $mov->precio_venta);
+            } else { // Es Entrada
+                $saldoRunning -= (float) $mov->precio_venta;
+            }
+            
+            if ($saldoRunning <= 0.01) {
+                $fechaUltimoCero = $mov->created_at;
+            }
+        }
+
+        // Filtrar Ventas para el PDF: Solo las ventas posteriores al último saldo en cero, o máximo 15 días si lo prefieren
+        $fechaFiltro = $fechaUltimoCero ? $fechaUltimoCero : now()->subDays(15);
+        $movimientos = $ventasHistory->filter(function($venta) use ($fechaFiltro) {
+            return $venta->created_at > $fechaFiltro;
+        })->sortByDesc('created_at')->values();
 
         // 3. Cálculo de Consumo (Total de Adeudo)
-        $totalAdeudo = floatval($cliente->saldo ?? $movimientos->sum('precio_venta'));
+        $totalAdeudo = floatval($cliente->saldo ?? $ventasHistory->sum('precio_venta') - $entradasHistory->sum('precio_venta'));
         if ($totalAdeudo <= 0 && $movimientos->count() === 0) {
             $totalAdeudo = 4250.00;
         }
-
-        // Filtrar los movimientos para mostrar únicamente los que conforman el adeudo actual
-        $saldoRestante = $totalAdeudo;
-        $movimientosAdeudados = collect();
-        foreach ($movimientos as $mov) {
-            if ($saldoRestante <= 0.001) break;
-            $movimientosAdeudados->push($mov);
-            $saldoRestante -= floatval($mov->precio_venta);
-        }
-        $movimientos = $movimientosAdeudados;
 
         // 4. Logo Principal Base64
         $logoBase64 = '';
