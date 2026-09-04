@@ -96,7 +96,7 @@ class PdfReceiptService
         })->sortByDesc('created_at')->values();
 
         // 3. Cálculo de Consumo (Total de Adeudo)
-        $totalAdeudo = floatval($user->saldo ?? $ventasHistory->sum('precio_venta') - $entradasHistory->sum('precio_venta'));
+        $totalAdeudo = floatval($user->saldo ?? $ventasHistory->sum('total_venta') - $entradasHistory->sum('precio_venta'));
         if ($totalAdeudo <= 0 && $movimientos->count() === 0) {
             $totalAdeudo = 4250.00;
         }

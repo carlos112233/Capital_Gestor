@@ -265,10 +265,10 @@
             @forelse($movimientos as $mov)
                 <tr>
                     <td style="text-align: left;">{{ \Carbon\Carbon::parse($mov->fecha ?? $mov->created_at)->format('d/m/Y') }}</td>
-                    <td style="text-align: left;">{{ $mov->concepto ?? $mov->descripcion ?? 'Consumo Restaurante' }}</td>
+                    <td style="text-align: left;">{{ $mov->concepto ?? $mov->descripcion ?? 'Consumo Restaurante' }}{{ isset($mov->cantidad) && $mov->cantidad > 1 ? " (x{$mov->cantidad})" : '' }}</td>
                     <td style="text-align: center;">#{{ $mov->id }}</td>
                     <td style="text-align: right; font-weight: 600;">
-                        ${{ number_format($mov->monto ?? $mov->precio_venta, 2) }}
+                        ${{ number_format($mov->monto ?? $mov->total_venta ?? $mov->precio_venta, 2) }}
                     </td>
                 </tr>
             @empty
