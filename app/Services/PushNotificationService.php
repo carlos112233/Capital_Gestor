@@ -53,9 +53,10 @@ class PushNotificationService
      */
     public static function sendScheduledDeliveryReminders(): int
     {
-        // Buscar pedidos en estado 'En preparación' (o 'en_preparacion')
+        // Buscar pedidos en estado 'En preparación' creados exclusivamente el día anterior
         $pedidosEnPreparacion = Pedido::with('user')
             ->whereIn('status', ['En preparación', 'preparacion', 'Preparación', 'En preparacion', 'en_preparacion'])
+            ->whereDate('created_at', now()->subDay()->toDateString())
             ->get();
 
         // Si no hay pedidos en preparación, no se envía nada
