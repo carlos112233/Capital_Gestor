@@ -48,9 +48,14 @@ class PushSubscriptionController extends Controller
     /**
      * Marcar todas las notificaciones de base de datos como leídas.
      */
-    public function markAllRead()
+    public function markAllRead(Request $request)
     {
         Auth::user()->unreadNotifications()->update(['read_at' => now()]);
+        
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Notificaciones leídas.']);
+        }
+        
         return back()->with('success', 'Todas las notificaciones marcadas como leídas.');
     }
 }

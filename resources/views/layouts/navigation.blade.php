@@ -216,7 +216,7 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
                         <button id="enable-push-btn" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-800" style="display: none;">
                             Activar Alertas Push
                         </button>
-                        <form method="POST" action="{{ route('notifications.markAllRead') ?? '#' }}" class="inline">
+                        <form method="POST" action="{{ route('notifications.markAllRead') ?? '#' }}" class="inline" onsubmit="event.preventDefault(); markNotificationsAsRead(this);">
                             @csrf
                             <button type="submit" class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800">
                                 Marcar como leídas
@@ -570,6 +570,54 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
             }
         }
     });
+</script>
+
+<script>
+    function markNotificationsAsRead(form) {
+        const url = form.action;
+        const csrf = form.querySelector('input[name="_token"]').value;
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrf
+            },
+            body: JSON.stringify({})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: data.message,
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+                
+                // Ocultar la campanita badge
+                const badge = document.querySelector('#tour-btn-notificaciones span.absolute');
+                if (badge) badge.remove();
+
+                // Limpiar la lista de notificaciones en el UI
+                const container = document.querySelector('.max-h-72.overflow-y-auto');
+                if (container) {
+                    container.innerHTML = '<div class="p-4 text-center text-slate-500">No tienes notificaciones nuevas.</div>';
+                }
+                
+                // Actualizar el texto del encabezado "N Nuevas" a "Al día"
+                const headerBadge = document.querySelector('.bg-indigo-50.text-indigo-600');
+                if (headerBadge) {
+                    headerBadge.innerText = 'Al día';
+                }
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
 </script>
 
 @auth
