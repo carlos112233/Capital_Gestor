@@ -50,7 +50,7 @@ class PushSubscriptionController extends Controller
      */
     public function markAllRead()
     {
-        Auth::user()->unreadNotifications->markAsRead();
+        Auth::user()->unreadNotifications()->update(['read_at' => now()]);
         return back()->with('success', 'Todas las notificaciones marcadas como leídas.');
     }
 }
