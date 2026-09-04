@@ -50,6 +50,7 @@ class EstadoCuentaController extends Controller
         $movimientos = Venta::where('user_id', $cliente->id)
             ->with(['articulo'])
             ->orderBy('created_at', 'desc')
+            ->take(1)
             ->get();
 
         // 3. Cálculo de Consumo (Total de Adeudo)

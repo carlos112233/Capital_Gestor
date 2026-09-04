@@ -66,6 +66,7 @@ class PdfReceiptService
         $movimientos = \App\Models\Venta::where('user_id', $user->id)
             ->with(['articulo'])
             ->orderBy('created_at', 'desc')
+            ->take(1)
             ->get();
 
         // 3. Cálculo de Consumo (Total de Adeudo)
