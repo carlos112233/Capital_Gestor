@@ -50,7 +50,6 @@ class EstadoCuentaController extends Controller
         $movimientos = Venta::where('user_id', $cliente->id)
             ->with(['articulo'])
             ->orderBy('created_at', 'desc')
-            ->take(1)
             ->get();
 
         // 3. Cálculo de Consumo (Total de Adeudo)
@@ -58,6 +57,16 @@ class EstadoCuentaController extends Controller
         if ($totalAdeudo <= 0 && $movimientos->count() === 0) {
             $totalAdeudo = 4250.00;
         }
+
+        // Filtrar los movimientos para mostrar únicamente los que conforman el adeudo actual
+        $saldoRestante = $totalAdeudo;
+        $movimientosAdeudados = collect();
+        foreach ($movimientos as $mov) {
+            if ($saldoRestante <= 0.001) break;
+            $movimientosAdeudados->push($mov);
+            $saldoRestante -= floatval($mov->precio_venta);
+        }
+        $movimientos = $movimientosAdeudados;
 
         // 4. Logo Principal Base64
         $logoBase64 = '';
