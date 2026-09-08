@@ -106,7 +106,7 @@
                                                     @method('DELETE')
                                                     <button type="submit"
                                                         class="inline-flex items-center justify-center text-red-600 hover:text-red-900 font-semibold cursor-pointer">
-                                                        <svg xmlns="http://w3.org" fill="none" viewBox="0 0 21 21"
+                                                        <svg xmlns="http://w3.org" fill="none" viewBox="0 0 20 20"
                                                             stroke-width="2" stroke="currentColor" class="w-6 h-6">
                                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                                 d="M6 18 18 6M6 6l12 12" />
