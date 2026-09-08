@@ -3,7 +3,7 @@
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Resumen semanal') }}
         </h2>
-    </x-slot>   
+    </x-slot>
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-12" style="padding:  0px 35px">
@@ -13,9 +13,11 @@
 
                     <div class="mb-5 flex flex-col sm:flex-row items-center gap-3">
                         <div class="relative flex-1 w-full">
-                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <div
+                                class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
                             <input type="text" id="search"
@@ -25,14 +27,18 @@
                         <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
                             <button type="button" onclick="exportarExcel()" title="Exportar Resumen a Excel"
                                 class="inline-flex items-center justify-center p-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-sm shadow-emerald-500/20 transition-all duration-200 hover:scale-105 focus:outline-none cursor-pointer">
-                                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                             </button>
-                            <button type="button" id="btn-envio-masivo" title="Enviar WhatsApp Masivo a Clientes Seleccionados"
+                            <button type="button" id="btn-envio-masivo"
+                                title="Enviar WhatsApp Masivo a Clientes Seleccionados"
                                 class="inline-flex items-center justify-center p-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white shadow-sm shadow-green-500/20 transition-all duration-200 hover:scale-105 focus:outline-none cursor-pointer">
                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                                    <path
+                                        d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
                                 </svg>
                             </button>
                         </div>
@@ -45,17 +51,17 @@
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Cliente</th>
+                                    <!--  <th
+                                        class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Score Crédito</th>-->
                                     <th
                                         class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Score Crédito</th>
-                                    <th
-                                        class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Corte Anterior</th>
                                     <th
-                                        class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Corte Actual</th>
                                     <th
-                                        class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Saldo Total</th>
                                     <th
                                         class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -87,24 +93,37 @@
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="flex items-center gap-3">
                                                     <div x-data="{ openTablePhoto: false }">
-                                                        <button @click="openTablePhoto = true" class="focus:outline-none cursor-pointer transform hover:scale-110 transition-transform">
-                                                            <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}" class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm" alt="Foto">
+                                                        <button @click="openTablePhoto = true"
+                                                            class="focus:outline-none cursor-pointer transform hover:scale-110 transition-transform">
+                                                            <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}"
+                                                                class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm"
+                                                                alt="Foto">
                                                         </button>
                                                         <!-- Modal Foto de Perfil (Tabla) -->
-                                                        <div x-show="openTablePhoto" style="display: none;" x-transition class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
-                                                            <div @click.away="openTablePhoto = false" class="relative w-full max-w-3xl flex justify-center items-center">
-                                                                <button @click="openTablePhoto = false" class="absolute -top-12 right-0 md:-right-8 md:-top-8 text-white hover:text-slate-300 focus:outline-none bg-white/10 p-2 rounded-full backdrop-blur-md">
-                                                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                        <div x-show="openTablePhoto" style="display: none;" x-transition
+                                                            class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+                                                            <div @click.away="openTablePhoto = false"
+                                                                class="relative w-full max-w-3xl flex justify-center items-center">
+                                                                <button @click="openTablePhoto = false"
+                                                                    class="absolute -top-12 right-0 md:-right-8 md:-top-8 text-white hover:text-slate-300 focus:outline-none bg-white/10 p-2 rounded-full backdrop-blur-md">
+                                                                    <svg class="w-6 h-6" fill="none"
+                                                                        stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round"
+                                                                            stroke-linejoin="round" stroke-width="2"
+                                                                            d="M6 18L18 6M6 6l12 12" />
+                                                                    </svg>
                                                                 </button>
-                                                                <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}" class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-white/10">
+                                                                <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}"
+                                                                    class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-white/10">
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <span class="font-medium text-slate-800">{{ $r->name }}</span>
                                                 </div>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                                @if(isset($r->scoring))
+                                            <!--  <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            {{--
+                                                @if (isset($r->scoring))
                                                     <div class="inline-flex items-center gap-1.5">
                                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs {{ $r->scoring['badge_bg'] }}">
                                                             {{ $r->scoring['label'] }} ({{ $r->scoring['score'] }}/100)
@@ -119,18 +138,21 @@
                                                 @else
                                                     <span class="text-xs text-slate-400">N/D</span>
                                                 @endif
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-right">
-                                                @if($r->saldo_corte_anterior > 0)
-                                                    <span class="text-red-600 font-bold">${{ number_format($r->saldo_corte_anterior, 2) }}</span>
+                                                --}}
+                                            </td>-->
+                                            <td class="px-6 py-4 text-center whitespace-nowrap">
+                                                @if ($r->saldo_corte_anterior > 0)
+                                                    <span
+                                                        class="text-red-600 font-bold">${{ number_format($r->saldo_corte_anterior, 2) }}</span>
                                                 @else
                                                     <span class="text-gray-400">$0.00</span>
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-right">
-                                                <span class="text-gray-700">${{ number_format($r->saldo_corte_actual, 2) }}</span>
+                                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                <span
+                                                    class="text-gray-700">${{ number_format($r->saldo_corte_actual, 2) }}</span>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-right">
+                                            <td class="px-6 py-4 whitespace-nowrap text-center">
                                                 <span
                                                     class="text-green-600 font-bold">${{ number_format($r->saldo, 2) }}</span>
                                             </td>
@@ -138,7 +160,7 @@
                                                 @php  $urlWa = '#'; @endphp
                                                 @if ($r->telefono)
                                                     @php
-                                                      
+
                                                         // 1. Quitamos espacios, guiones o paréntesis que pueda tener el número
                                                         $soloNumeros = preg_replace('/[^0-9]/', '', $r->telefono);
 
@@ -159,7 +181,8 @@
                                                             $r->name .
                                                             ", solo para informarte que tu saldo actual a cubrir es de $" .
                                                             number_format($r->saldo, 2) .
-                                                            "\n\n📄 *Estado de Cuenta PDF:* " . $pdfUrl .
+                                                            "\n\n📄 *Estado de Cuenta PDF:* " .
+                                                            $pdfUrl .
                                                             "\n\nsi deseas más informacion el cobro de tu saldo, mandanos un mensaje.\n" .
                                                             "--------------------------\n" .
                                                             "*DATOS PARA PAGO:*\n\n" .
@@ -210,17 +233,27 @@
                                                     <span class="text-gray-500 mr-1">$</span>
                                                     <input type="number"
                                                         class="input-ajuste w-20 h-8 text-sm border-gray-300 rounded-md focus:ring-indigo-500"
-                                                        placeholder="0.00" step="0.01" data-id="{{ $r->id }}">
+                                                        placeholder="0.00" step="0.01"
+                                                        data-id="{{ $r->id }}">
                                                 </div>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-center"> <input type="checkbox"
+                                            <td class="px-3 py-2 whitespace-nowrap text-center"> <input
+                                                    type="checkbox"
                                                     class="cliente-checkbox  rounded border-gray-300 text-indigo-600 shadow-sm"
-                                                    data-id="{{ $r->id }}" data-url="{{ $urlWa }}"></td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                    data-id="{{ $r->id }}" data-url="{{ $urlWa }}">
+                                            </td>
+                                            <td class="px-3 py-2 whitespace-nowrap text-center">
                                                 <button type="button"
                                                     onclick="openPagoSaldadoModal({{ $r->id }}, '{{ addslashes($r->name) }}', {{ $r->saldo }})"
                                                     class="btn-whatsapp text-indigo-600 hover:text-indigo-900 font-semibold cursor-pointer">
-                                                    Pago saldado
+                                                    <svg class="w-[35px] h-[35px] text-indigo-600 dark:text-white"
+                                                        aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                                        width="24" height="24" fill="none"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke="currentColor" stroke-linecap="round"
+                                                            stroke-linejoin="round" stroke-width="2.8"
+                                                            d="M8 17.345a4.76 4.76 0 0 0 2.558 1.618c2.274.589 4.512-.446 4.999-2.31.487-1.866-1.273-3.9-3.546-4.49-2.273-.59-4.034-2.623-3.547-4.488.486-1.865 2.724-2.899 4.998-2.31.982.236 1.87.793 2.538 1.592m-3.879 12.171V21m0-18v2.2" />
+                                                    </svg>
                                                 </button>
                                             </td>
                                         </tr>
@@ -229,24 +262,39 @@
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="flex items-center gap-3">
                                                     <div x-data="{ openTablePhoto: false }">
-                                                        <button @click="openTablePhoto = true" class="focus:outline-none cursor-pointer transform hover:scale-110 transition-transform">
-                                                            <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}" class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm" alt="Foto">
+                                                        <button @click="openTablePhoto = true"
+                                                            class="focus:outline-none cursor-pointer transform hover:scale-110 transition-transform">
+                                                            <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}"
+                                                                class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm"
+                                                                alt="Foto">
                                                         </button>
                                                         <!-- Modal Foto de Perfil (Tabla) -->
-                                                        <div x-show="openTablePhoto" style="display: none;" x-transition class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
-                                                            <div @click.away="openTablePhoto = false" class="relative w-full max-w-3xl flex justify-center items-center">
-                                                                <button @click="openTablePhoto = false" class="absolute -top-12 right-0 md:-right-8 md:-top-8 text-white hover:text-slate-300 focus:outline-none bg-white/10 p-2 rounded-full backdrop-blur-md">
-                                                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                        <div x-show="openTablePhoto" style="display: none;"
+                                                            x-transition
+                                                            class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+                                                            <div @click.away="openTablePhoto = false"
+                                                                class="relative w-full max-w-3xl flex justify-center items-center">
+                                                                <button @click="openTablePhoto = false"
+                                                                    class="absolute -top-12 right-0 md:-right-8 md:-top-8 text-white hover:text-slate-300 focus:outline-none bg-white/10 p-2 rounded-full backdrop-blur-md">
+                                                                    <svg class="w-6 h-6" fill="none"
+                                                                        stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round"
+                                                                            stroke-linejoin="round" stroke-width="2"
+                                                                            d="M6 18L18 6M6 6l12 12" />
+                                                                    </svg>
                                                                 </button>
-                                                                <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}" class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-white/10">
+                                                                <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}"
+                                                                    class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-white/10">
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <span class="font-medium text-slate-800">{{ $r->name }}</span>
+                                                    <span
+                                                        class="font-medium text-slate-800">{{ $r->name }}</span>
                                                 </div>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                                @if(isset($r->scoring))
+                                            <!--<td class="px-6 py-4 whitespace-nowrap text-center">
+                                                {{--
+                                                @if (isset($r->scoring))
                                                     <div class="inline-flex items-center gap-1.5">
                                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs {{ $r->scoring['badge_bg'] }}">
                                                             {{ $r->scoring['label'] }} ({{ $r->scoring['score'] }}/100)
@@ -261,10 +309,13 @@
                                                 @else
                                                     <span class="text-xs text-slate-400">N/D</span>
                                                 @endif
+                                                --}}
+                                            </td>-->
+                                            <td class="px-6 py-4 whitespace-nowrap text-center text-gray-400">$0.00
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-right text-gray-400">$0.00</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-right text-gray-400">$0.00</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-right">
+                                            <td class="px-6 py-4 whitespace-nowrap text-center text-gray-400">$0.00
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-center">
                                                 <span
                                                     class="text-red-600 font-bold">${{ number_format($r->saldo, 2) }}</span>
                                             </td>
@@ -275,7 +326,14 @@
                                                 <button type="button"
                                                     onclick="openPagoSaldadoModal({{ $r->id }}, '{{ addslashes($r->name) }}', {{ $r->saldo }})"
                                                     class="btn-whatsapp text-indigo-600 hover:text-indigo-900 font-semibold cursor-pointer">
-                                                    Pago saldado
+                                                     <svg class="w-[35px] h-[35px] text-indigo-600 dark:text-white"
+                                                        aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                                        width="24" height="24" fill="none"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke="currentColor" stroke-linecap="round"
+                                                            stroke-linejoin="round" stroke-width="2.8"
+                                                            d="M8 17.345a4.76 4.76 0 0 0 2.558 1.618c2.274.589 4.512-.446 4.999-2.31.487-1.866-1.273-3.9-3.546-4.49-2.273-.59-4.034-2.623-3.547-4.488.486-1.865 2.724-2.899 4.998-2.31.982.236 1.87.793 2.538 1.592m-3.879 12.171V21m0-18v2.2" />
+                                                    </svg>
                                                 </button>
                                             </td>
                                         </tr>
@@ -293,11 +351,11 @@
                             {{-- Fila de sumatoria --}}
                             <tfoot class="bg-gray-100 font-bold">
                                 <tr>
-                                    <td colspan="4" class="px-6 py-4 text-right">Sumatoria a favor:</td>
-                                    <td class="px-6 py-4 text-right text-green-600">
+                                    <td colspan="4" class="px-6 py-4 text-center">Sumatoria a favor:</td>
+                                    <td class="px-6 py-4 text-center text-green-600">
                                         ${{ number_format($totalSaldo, 2) }}
                                     </td>
-                                    <td colspan="4" class="px-6 py-4 text-right"></td>
+                                    <td colspan="4" class="px-6 py-4 text-center"></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -306,86 +364,127 @@
                 </div>
             </div>
 
-            @if(isset($comprobantesPendientes) && count($comprobantesPendientes) > 0)
-            <div class="mt-8 bg-white overflow-hidden shadow-sm sm:rounded-lg border border-amber-200">
-                <div class="p-6 text-gray-900 bg-amber-50/50">
-                    <h3 class="text-lg font-bold text-amber-800 flex items-center gap-2 mb-4">
-                        <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Comprobantes Pendientes de Aprobación ({{ count($comprobantesPendientes) }})
-                    </h3>
-                    
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-amber-200">
-                            <thead>
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">Cliente</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">Estatus / Fecha</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">Monto</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">Datos OCR / Notas</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-amber-700 uppercase tracking-wider">Comprobante</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-amber-700 uppercase tracking-wider">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-amber-200">
-                                @foreach($comprobantesPendientes as $comp)
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap font-bold">{{ $comp->user->name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 mb-1">
-                                            {{ $comp->status === 'procesando_pago' ? 'Procesando Pago ⏳' : 'Pendiente' }}
-                                        </span>
-                                        <div class="text-xs text-slate-500">{{ $comp->created_at->format('d/m/Y h:i A') }}</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">
-                                        ${{ number_format($comp->monto, 2) }}
-                                        @if($comp->monto_extraido)
-                                            <div class="text-xs text-slate-500 font-normal">Detectado OCR: ${{ number_format($comp->monto_extraido, 2) }}</div>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 text-sm">
-                                        @if($comp->banco || $comp->clave_rastreo)
-                                            <div class="text-xs font-semibold text-indigo-700 bg-indigo-50 p-1.5 rounded mb-1">
-                                                <span>🏦 {{ $comp->banco ?? 'Banco N/D' }}</span>
-                                                @if($comp->clave_rastreo)
-                                                    <span class="ml-2">| 🔑 Folio: {{ $comp->clave_rastreo }}</span>
+            @if (isset($comprobantesPendientes) && count($comprobantesPendientes) > 0)
+                <div class="mt-8 bg-white overflow-hidden shadow-sm sm:rounded-lg border border-amber-200">
+                    <div class="p-6 text-gray-900 bg-amber-50/50">
+                        <h3 class="text-lg font-bold text-amber-800 flex items-center gap-2 mb-4">
+                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Comprobantes Pendientes de Aprobación ({{ count($comprobantesPendientes) }})
+                        </h3>
+
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-amber-200">
+                                <thead>
+                                    <tr>
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">
+                                            Cliente</th>
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">
+                                            Estatus / Fecha</th>
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">
+                                            Monto</th>
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">
+                                            Datos OCR / Notas</th>
+                                        <th
+                                            class="px-6 py-3 text-center text-xs font-medium text-amber-700 uppercase tracking-wider">
+                                            Comprobante</th>
+                                        <th
+                                            class="px-6 py-3 text-center text-xs font-medium text-amber-700 uppercase tracking-wider">
+                                            Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-amber-200">
+                                    @foreach ($comprobantesPendientes as $comp)
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap font-bold">{{ $comp->user->name }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                                <span
+                                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 mb-1">
+                                                    {{ $comp->status === 'procesando_pago' ? 'Procesando Pago ⏳' : 'Pendiente' }}
+                                                </span>
+                                                <div class="text-xs text-slate-500">
+                                                    {{ $comp->created_at->format('d/m/Y h:i A') }}</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">
+                                                ${{ number_format($comp->monto, 2) }}
+                                                @if ($comp->monto_extraido)
+                                                    <div class="text-xs text-slate-500 font-normal">Detectado OCR:
+                                                        ${{ number_format($comp->monto_extraido, 2) }}</div>
                                                 @endif
-                                            </div>
-                                        @endif
-                                        <div class="text-xs text-slate-700 whitespace-pre-line">{{ $comp->notas ?: '-' }}</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
-                                        <a href="{{ Storage::url($comp->imagen) }}" target="_blank" class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 hover:underline">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                            Ver Imagen
-                                        </a>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
-                                        <div class="flex items-center justify-center gap-2">
-                                            <form action="{{ route('admin.comprobantes.aprobar', $comp->id) }}" method="POST">
-                                                @csrf
-                                                <button type="submit" onclick="return confirm('¿Aprobar comprobante y registrar como entrada de capital?')" class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-bold transition-colors">
-                                                    Aprobar
-                                                </button>
-                                            </form>
-                                            <form id="form-rechazar-{{ $comp->id }}" action="{{ route('admin.comprobantes.rechazar', $comp->id) }}" method="POST">
-                                                @csrf
-                                                <button type="button" onclick="confirmRechazarComprobante('form-rechazar-{{ $comp->id }}', '{{ $comp->user->name }}', '{{ number_format($comp->monto, 2) }}')" class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-bold transition-colors">
-                                                    Rechazar
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    <script>
-                        function confirmRechazarComprobante(formId, clienteNombre, monto) {
-                            const form = document.getElementById(formId);
-                            Swal.fire({
-                                title: '¿Rechazar comprobante?',
-                                html: `
+                                            </td>
+                                            <td class="px-6 py-4 text-sm">
+                                                @if ($comp->banco || $comp->clave_rastreo)
+                                                    <div
+                                                        class="text-xs font-semibold text-indigo-700 bg-indigo-50 p-1.5 rounded mb-1">
+                                                        <span>🏦 {{ $comp->banco ?? 'Banco N/D' }}</span>
+                                                        @if ($comp->clave_rastreo)
+                                                            <span class="ml-2">| 🔑 Folio:
+                                                                {{ $comp->clave_rastreo }}</span>
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                                <div class="text-xs text-slate-700 whitespace-pre-line">
+                                                    {{ $comp->notas ?: '-' }}</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                <a href="{{ Storage::url($comp->imagen) }}" target="_blank"
+                                                    class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 hover:underline">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z">
+                                                        </path>
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                                        </path>
+                                                    </svg>
+                                                    Ver Imagen
+                                                </a>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                <div class="flex items-center justify-center gap-2">
+                                                    <form
+                                                        action="{{ route('admin.comprobantes.aprobar', $comp->id) }}"
+                                                        method="POST">
+                                                        @csrf
+                                                        <button type="submit"
+                                                            onclick="return confirm('¿Aprobar comprobante y registrar como entrada de capital?')"
+                                                            class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-bold transition-colors">
+                                                            Aprobar
+                                                        </button>
+                                                    </form>
+                                                    <form id="form-rechazar-{{ $comp->id }}"
+                                                        action="{{ route('admin.comprobantes.rechazar', $comp->id) }}"
+                                                        method="POST">
+                                                        @csrf
+                                                        <button type="button"
+                                                            onclick="confirmRechazarComprobante('form-rechazar-{{ $comp->id }}', '{{ $comp->user->name }}', '{{ number_format($comp->monto, 2) }}')"
+                                                            class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-bold transition-colors">
+                                                            Rechazar
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <script>
+                            function confirmRechazarComprobante(formId, clienteNombre, monto) {
+                                const form = document.getElementById(formId);
+                                Swal.fire({
+                                    title: '¿Rechazar comprobante?',
+                                    html: `
                                     <p class="text-sm text-slate-600 mb-2">El comprobante de <b>${clienteNombre}</b> por <b>$${monto}</b> no será aprobado.</p>
                                     <div class="mt-4 text-left border-t border-slate-200 pt-3">
                                         <label class="inline-flex items-center text-sm text-slate-700 font-medium cursor-pointer">
@@ -394,42 +493,45 @@
                                         </label>
                                     </div>
                                 `,
-                                icon: 'warning',
-                                showCancelButton: true,
-                                confirmButtonColor: '#ef4444',
-                                cancelButtonColor: '#6b7280',
-                                confirmButtonText: 'Sí, rechazar',
-                                cancelButtonText: 'Cancelar'
-                            }).then((result) => {
-                                if (result.isConfirmed && form) {
-                                    const waCheckbox = document.getElementById('swal-enviar-wa-rechazo');
-                                    let hiddenWaInput = form.querySelector('input[name="enviar_wa"]');
-                                    if (!hiddenWaInput) {
-                                        hiddenWaInput = document.createElement('input');
-                                        hiddenWaInput.type = 'hidden';
-                                        hiddenWaInput.name = 'enviar_wa';
-                                        form.appendChild(hiddenWaInput);
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#ef4444',
+                                    cancelButtonColor: '#6b7280',
+                                    confirmButtonText: 'Sí, rechazar',
+                                    cancelButtonText: 'Cancelar'
+                                }).then((result) => {
+                                    if (result.isConfirmed && form) {
+                                        const waCheckbox = document.getElementById('swal-enviar-wa-rechazo');
+                                        let hiddenWaInput = form.querySelector('input[name="enviar_wa"]');
+                                        if (!hiddenWaInput) {
+                                            hiddenWaInput = document.createElement('input');
+                                            hiddenWaInput.type = 'hidden';
+                                            hiddenWaInput.name = 'enviar_wa';
+                                            form.appendChild(hiddenWaInput);
+                                        }
+                                        hiddenWaInput.value = (waCheckbox && waCheckbox.checked) ? '1' : '0';
+                                        form.submit();
                                     }
-                                    hiddenWaInput.value = (waCheckbox && waCheckbox.checked) ? '1' : '0';
-                                    form.submit();
-                                }
-                            });
-                        }
-                    </script>
+                                });
+                            }
+                        </script>
+                    </div>
                 </div>
-            </div>
             @endif
 
             <!-- Panel Analítico Ejecutivo & Scoring Crediticio -->
             <div class="mt-8 mb-8 bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800">
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-5 border-b border-slate-800 gap-4">
+                <div
+                    class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-5 border-b border-slate-800 gap-4">
                     <div>
                         <h3 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
                             <span>📊</span> Panel Analítico Ejecutivo y Scoring
                         </h3>
-                        <p class="text-xs text-slate-400 mt-1">Métricas en tiempo real, comportamiento de cobros y evaluación crediticia de clientes</p>
+                        <p class="text-xs text-slate-400 mt-1">Métricas en tiempo real, comportamiento de cobros y
+                            evaluación crediticia de clientes</p>
                     </div>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                    <span
+                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                         🔒 Exclusivo Administrador
                     </span>
                 </div>
@@ -437,98 +539,109 @@
                 <!-- 2 KPI Summary Cards -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
                     <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-sm">
-                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Clientes VIP / Platino</div>
+                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Clientes VIP /
+                            Platino</div>
                         <div class="text-2xl font-black text-indigo-400 mt-1" id="kpi-count-vip">0</div>
                         <div class="text-[11px] text-indigo-400/80 mt-1">Score $\ge 80$ pts</div>
                     </div>
                     <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-sm">
-                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Clientes en Riesgo</div>
+                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Clientes en Riesgo
+                        </div>
                         <div class="text-2xl font-black text-red-400 mt-1" id="kpi-count-riesgo">0</div>
                         <div class="text-[11px] text-red-400/80 mt-1">Score $< 50$ pts</div>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos ApexCharts -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                        <div class="lg:col-span-2 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+                            <h4 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                                <span>📈</span> Tendencia de Cobros vs Ventas
+                            </h4>
+                            <div id="chart-ingresos-deuda" class="min-h-[250px]"></div>
+                        </div>
+                        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+                            <h4 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                                <span>🍩</span> Estatus de Comprobantes
+                            </h4>
+                            <div id="chart-estatus-pagos" class="min-h-[250px] flex items-center justify-center">
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Gráficos ApexCharts -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-                    <div class="lg:col-span-2 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-                        <h4 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
-                            <span>📈</span> Tendencia de Cobros vs Ventas
-                        </h4>
-                        <div id="chart-ingresos-deuda" class="min-h-[250px]"></div>
-                    </div>
-                    <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-                        <h4 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
-                            <span>🍩</span> Estatus de Comprobantes
-                        </h4>
-                        <div id="chart-estatus-pagos" class="min-h-[250px] flex items-center justify-center"></div>
-                    </div>
-                </div>
             </div>
-
         </div>
-    </div>
 
-    {{-- Modal para Registrar Pago Saldado en DashboardAdmin --}}
-    <x-modal name="pago-saldado-modal">
-        <div class="p-6 text-left">
-            <div class="flex justify-between items-center pb-3 border-b mb-4">
-                <h3 class="text-lg font-bold text-gray-900">Registrar Pago Saldado</h3>
-                <button type="button" onclick="closeModal('pago-saldado-modal')" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+        {{-- Modal para Registrar Pago Saldado en DashboardAdmin --}}
+        <x-modal name="pago-saldado-modal">
+            <div class="p-6 text-left">
+                <div class="flex justify-between items-center pb-3 border-b mb-4">
+                    <h3 class="text-lg font-bold text-gray-900">Registrar Pago Saldado</h3>
+                    <button type="button" onclick="closeModal('pago-saldado-modal')"
+                        class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+                </div>
+                <form method="POST" action="{{ route('admin.entradas.store') }}">
+                    @csrf
+                    <input type="hidden" name="tipo_pago" value="2">
+
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-bold mb-2">Cliente</label>
+                        <select name="cliente_id" id="modal_pago_cliente_id"
+                            class="w-full border-gray-300 rounded-lg shadow-sm" required>
+                            @foreach ($users as $cliente)
+                                <option value="{{ $cliente->id }}">{{ $cliente->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-bold mb-2">Artículo</label>
+                        <select name="articulo_id" id="modal_pago_articulo_id"
+                            class="w-full border-gray-300 rounded-lg shadow-sm" required>
+                            @foreach ($articulos as $art)
+                                @php $esPagoSaldado = strtolower($art->nombre) === 'pago saldado'; @endphp
+                                <option value="{{ $art->id }}" {{ $esPagoSaldado ? 'selected' : '' }}>
+                                    {{ $art->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-bold mb-2">Monto / Precio de Venta ($)</label>
+                        <input type="number" step="0.01" name="precio_venta" id="modal_pago_precio_venta"
+                            class="w-full border-gray-300 rounded-lg shadow-sm" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-bold mb-2">Descripción</label>
+                        <textarea name="descripcion" id="modal_pago_descripcion" class="block w-full border-gray-300 rounded-md shadow-sm">Saldar adeudo pendiente</textarea>
+                    </div>
+
+                    <div class="mb-4 flex items-center">
+                        <input type="hidden" name="enviar_wa" value="0">
+                        <input type="checkbox" name="enviar_wa" id="modal_pago_enviar_wa" value="1" checked
+                            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 w-4 h-4 cursor-pointer">
+                        <label for="modal_pago_enviar_wa"
+                            class="ml-2 block text-sm text-gray-700 font-medium cursor-pointer">
+                            Enviar notificación de pago por WhatsApp al cliente
+                        </label>
+                    </div>
+
+                    <div class="flex justify-end gap-3 mt-4 border-t pt-4">
+                        <button type="button" onclick="closeModal('pago-saldado-modal')"
+                            class="px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm cursor-pointer">
+                            Cancelar
+                        </button>
+                        <button type="submit"
+                            class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md cursor-pointer">
+                            Guardar Pago
+                        </button>
+                    </div>
+                </form>
             </div>
-            <form method="POST" action="{{ route('admin.entradas.store') }}">
-                @csrf
-                <input type="hidden" name="tipo_pago" value="2">
-
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-bold mb-2">Cliente</label>
-                    <select name="cliente_id" id="modal_pago_cliente_id" class="w-full border-gray-300 rounded-lg shadow-sm" required>
-                        @foreach($users as $cliente)
-                            <option value="{{ $cliente->id }}">{{ $cliente->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-bold mb-2">Artículo</label>
-                    <select name="articulo_id" id="modal_pago_articulo_id" class="w-full border-gray-300 rounded-lg shadow-sm" required>
-                        @foreach($articulos as $art)
-                            @php $esPagoSaldado = strtolower($art->nombre) === 'pago saldado'; @endphp
-                            <option value="{{ $art->id }}" {{ $esPagoSaldado ? 'selected' : '' }}>
-                                {{ $art->nombre }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-bold mb-2">Monto / Precio de Venta ($)</label>
-                    <input type="number" step="0.01" name="precio_venta" id="modal_pago_precio_venta" class="w-full border-gray-300 rounded-lg shadow-sm" required>
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-bold mb-2">Descripción</label>
-                    <textarea name="descripcion" id="modal_pago_descripcion" class="block w-full border-gray-300 rounded-md shadow-sm">Saldar adeudo pendiente</textarea>
-                </div>
-
-                <div class="mb-4 flex items-center">
-                    <input type="hidden" name="enviar_wa" value="0">
-                    <input type="checkbox" name="enviar_wa" id="modal_pago_enviar_wa" value="1" checked class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 w-4 h-4 cursor-pointer">
-                    <label for="modal_pago_enviar_wa" class="ml-2 block text-sm text-gray-700 font-medium cursor-pointer">
-                        Enviar notificación de pago por WhatsApp al cliente
-                    </label>
-                </div>
-
-                <div class="flex justify-end gap-3 mt-4 border-t pt-4">
-                    <button type="button" onclick="closeModal('pago-saldado-modal')" class="px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm cursor-pointer">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md cursor-pointer">
-                        Guardar Pago
-                    </button>
-                </div>
-            </form>
-        </div>
-    </x-modal>
+        </x-modal>
 </x-app-layout>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -540,6 +653,7 @@
         if (precioInput) precioInput.value = parseFloat(saldo).toFixed(2);
         openModal('pago-saldado-modal');
     }
+
     function exportarExcel() {
         const tabla = document.getElementById('tabla-resumen');
         if (!tabla) return;
@@ -558,7 +672,9 @@
             }
         });
 
-        const ws = XLSX.utils.table_to_sheet(clone, { raw: false });
+        const ws = XLSX.utils.table_to_sheet(clone, {
+            raw: false
+        });
 
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Resumen_Saldos");
@@ -582,12 +698,12 @@
 
             rows.forEach(row => {
                 // Buscamos en la PRIMERA columna (Cliente)
-                const cellCliente = row.querySelector('td:first-child'); 
+                const cellCliente = row.querySelector('td:first-child');
                 if (cellCliente) {
                     const text = cellCliente.textContent.toLowerCase();
                     const visible = text.includes(filter);
                     row.style.display = visible ? '' : 'none';
-                    
+
                     // Si ocultamos la fila, desmarcamos su checkbox por seguridad
                     if (!visible) {
                         const cb = row.querySelector('.cliente-checkbox');
@@ -613,7 +729,7 @@
         // C. Actualizar contador
         function actualizarContador() {
             const seleccionados = document.querySelectorAll('.cliente-checkbox:checked').length;
-            if(countSpan) countSpan.innerText = seleccionados;
+            if (countSpan) countSpan.innerText = seleccionados;
             btnMasivo.disabled = (seleccionados === 0);
         }
 
@@ -660,38 +776,39 @@
                     btnMasivo.style.opacity = '0.6';
 
                     fetch("{{ route('admin.enviar.masivo') }}", {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: JSON.stringify({
-                            user_ids: seleccionados,
-                            ajustes: ajustes
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({
+                                user_ids: seleccionados,
+                                ajustes: ajustes
+                            })
                         })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        Swal.fire({
-                            icon: 'success',
-                            title: '¡Proceso Finalizado!',
-                            text: data.message || 'Los mensajes se han encolado y enviado correctamente.',
-                            confirmButtonColor: '#10b981'
+                        .then(res => res.json())
+                        .then(data => {
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Proceso Finalizado!',
+                                text: data.message ||
+                                    'Los mensajes se han encolado y enviado correctamente.',
+                                confirmButtonColor: '#10b981'
+                            });
+                            btnMasivo.disabled = false;
+                            btnMasivo.style.opacity = '1';
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error de Envío',
+                                text: 'Ocurrió un problema al enviar los mensajes por WhatsApp.',
+                                confirmButtonColor: '#ef4444'
+                            });
+                            btnMasivo.disabled = false;
+                            btnMasivo.style.opacity = '1';
                         });
-                        btnMasivo.disabled = false;
-                        btnMasivo.style.opacity = '1';
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error de Envío',
-                            text: 'Ocurrió un problema al enviar los mensajes por WhatsApp.',
-                            confirmButtonColor: '#ef4444'
-                        });
-                        btnMasivo.disabled = false;
-                        btnMasivo.style.opacity = '1';
-                    });
                 }
             });
         });
@@ -709,19 +826,58 @@
 
                 // 1. Gráfico de Tendencias Mensuales (Ingresos vs Ventas)
                 const optionsTrend = {
-                    series: [
-                        { name: 'Ventas Totales', type: 'column', data: data.trend.ventas },
-                        { name: 'Cobros (Entradas)', type: 'line', data: data.trend.entradas }
+                    series: [{
+                            name: 'Ventas Totales',
+                            type: 'column',
+                            data: data.trend.ventas
+                        },
+                        {
+                            name: 'Cobros (Entradas)',
+                            type: 'line',
+                            data: data.trend.entradas
+                        }
                     ],
-                    chart: { height: 260, type: 'line', toolbar: { show: false }, background: 'transparent' },
-                    stroke: { width: [0, 3], curve: 'smooth' },
-                    plotOptions: { bar: { columnWidth: '45%', borderRadius: 6 } },
+                    chart: {
+                        height: 260,
+                        type: 'line',
+                        toolbar: {
+                            show: false
+                        },
+                        background: 'transparent'
+                    },
+                    stroke: {
+                        width: [0, 3],
+                        curve: 'smooth'
+                    },
+                    plotOptions: {
+                        bar: {
+                            columnWidth: '45%',
+                            borderRadius: 6
+                        }
+                    },
                     colors: ['#6366f1', '#10b981'],
                     labels: data.trend.categories,
-                    theme: { mode: 'dark' },
-                    xaxis: { labels: { style: { colors: '#94a3b8' } } },
-                    yaxis: { labels: { style: { colors: '#94a3b8' }, formatter: (val) => '$' + Number(val).toLocaleString() } },
-                    tooltip: { theme: 'dark' }
+                    theme: {
+                        mode: 'dark'
+                    },
+                    xaxis: {
+                        labels: {
+                            style: {
+                                colors: '#94a3b8'
+                            }
+                        }
+                    },
+                    yaxis: {
+                        labels: {
+                            style: {
+                                colors: '#94a3b8'
+                            },
+                            formatter: (val) => '$' + Number(val).toLocaleString()
+                        }
+                    },
+                    tooltip: {
+                        theme: 'dark'
+                    }
                 };
                 new ApexCharts(document.querySelector("#chart-ingresos-deuda"), optionsTrend).render();
 
@@ -734,11 +890,24 @@
                         data.donut.pendiente || 0
                     ],
                     labels: ['Aprobados', 'Procesando Pago', 'Rechazados', 'Pendientes'],
-                    chart: { type: 'donut', height: 260, background: 'transparent' },
+                    chart: {
+                        type: 'donut',
+                        height: 260,
+                        background: 'transparent'
+                    },
                     colors: ['#10b981', '#f59e0b', '#ef4444', '#64748b'],
-                    theme: { mode: 'dark' },
-                    legend: { position: 'bottom', labels: { colors: '#94a3b8' } },
-                    dataLabels: { enabled: true }
+                    theme: {
+                        mode: 'dark'
+                    },
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            colors: '#94a3b8'
+                        }
+                    },
+                    dataLabels: {
+                        enabled: true
+                    }
                 };
                 new ApexCharts(document.querySelector("#chart-estatus-pagos"), optionsDonut).render();
             })
@@ -786,37 +955,43 @@
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    const isOverrideVal = document.querySelector('input[name="swal-override-mode"]:checked')?.value === '1';
+                    const isOverrideVal = document.querySelector(
+                        'input[name="swal-override-mode"]:checked')?.value === '1';
                     const scoreManualVal = document.getElementById('swal-score-manual')?.value;
                     const notasVal = document.getElementById('swal-notas-scoring')?.value;
 
                     fetch(`/admin/scoring/update/${userId}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: JSON.stringify({
-                            override_score: isOverrideVal ? 1 : 0,
-                            score_manual: isOverrideVal ? parseInt(scoreManualVal) : null,
-                            notas_scoring: notasVal
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({
+                                override_score: isOverrideVal ? 1 : 0,
+                                score_manual: isOverrideVal ? parseInt(scoreManualVal) :
+                                    null,
+                                notas_scoring: notasVal
+                            })
                         })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Scoring Actualizado',
+                                    text: data.message,
+                                    confirmButtonColor: '#10b981'
+                                }).then(() => location.reload());
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Error:', err);
                             Swal.fire({
-                                icon: 'success',
-                                title: 'Scoring Actualizado',
-                                text: data.message,
-                                confirmButtonColor: '#10b981'
-                            }).then(() => location.reload());
-                        }
-                    })
-                    .catch(err => {
-                        console.error('Error:', err);
-                        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar el scoring.' });
-                    });
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'No se pudo actualizar el scoring.'
+                            });
+                        });
                 }
             });
         };

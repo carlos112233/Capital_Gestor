@@ -5,11 +5,12 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Pedidos') }}
             </h2>
-            @if($articulos->isEmpty())
-                <button id="tour-btn-nuevo-pedido" type="button" onclick="Swal.fire({title: 'Atención', text: 'No hay artículos disponibles para realizar un pedido en este momento.', icon: 'info', confirmButtonColor: '#4f46e5'})"
+            @if ($articulos->isEmpty())
+                <button id="tour-btn-nuevo-pedido" type="button"
+                    onclick="Swal.fire({title: 'Atención', text: 'No hay artículos disponibles para realizar un pedido en este momento.', icon: 'info', confirmButtonColor: '#4f46e5'})"
                     class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-indigo-500/35 transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none cursor-pointer opacity-75">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
                     </svg>
                     {{ __('Nuevo Pedido') }}
                 </button>
@@ -17,7 +18,7 @@
                 <button id="tour-btn-nuevo-pedido" type="button" onclick="openModal('create-pedido')"
                     class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-indigo-500/35 transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
                     </svg>
                     {{ __('Nuevo Pedido') }}
                 </button>
@@ -29,16 +30,21 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <form method="GET" action="{{ route('pedidos.index') }}" class="mb-4 flex gap-2">
                 <div class="relative w-full group" id="tour-buscador">
-    <input type="text" name="q" id="search" value="{{ request('q') }}" class="block rounded-t-lg px-3 pb-2 pt-6 w-full text-sm text-slate-800 bg-slate-100 border-0 border-b-2 border-slate-300 appearance-none focus:outline-none focus:ring-0 focus:border-indigo-600 peer pr-10 transition-colors focus:bg-slate-200/50" placeholder=" " autocomplete="off" />
-    <label for="search" class="absolute text-sm text-slate-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-3 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 cursor-text">
-        Buscar pedidos por artículo, descripción o usuario...
-    </label>
-    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 group-focus-within:text-indigo-600 transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-    </div>
-</div>
+                    <input type="text" name="q" id="search" value="{{ request('q') }}"
+                        class="block rounded-t-lg px-3 pb-2 pt-6 w-full text-sm text-slate-800 bg-slate-100 border-0 border-b-2 border-slate-300 appearance-none focus:outline-none focus:ring-0 focus:border-indigo-600 peer pr-10 transition-colors focus:bg-slate-200/50"
+                        placeholder=" " autocomplete="off" />
+                    <label for="search"
+                        class="absolute text-sm text-slate-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-3 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 cursor-text">
+                        Buscar pedidos por artículo, descripción o usuario...
+                    </label>
+                    <div
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 group-focus-within:text-indigo-600 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                </div>
             </form>
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg" id="tour-tabla-pedidos">
@@ -47,41 +53,64 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">ID</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Artículo</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Descripción</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Usuario</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Artículo
+                                </th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">
+                                    Descripción</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Usuario
+                                </th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Costo</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Fecha</th>
                                 @if (Auth::user()->hasRole('admin'))
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Acciones</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">
+                                        Acciones</th>
                                 @endif
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($pedidos as $pedido)
                                 <tr>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $pedido->id }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-gray-900">{{ $pedido->articulo->nombre ?? '' }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $pedido->descripcion }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $pedido->user->name ?? '' }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">${{ number_format($pedido->costo, 2) }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ \Carbon\Carbon::parse($pedido->created_at)->translatedFormat('l d/m/Y') }}</td>
+                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
+                                        {{ $pedido->id }}</td>
+                                    <td
+                                        class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {{ $pedido->articulo->nombre ?? '' }}</td>
+                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
+                                        {{ $pedido->descripcion }}</td>
+                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
+                                        {{ $pedido->user->name ?? '' }}</td>
+                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
+                                        ${{ number_format($pedido->costo, 2) }}</td>
+                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
+                                        {{ \Carbon\Carbon::parse($pedido->created_at)->translatedFormat('l d/m/Y') }}
+                                    </td>
                                     @if (Auth::user()->hasRole('admin'))
                                         <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
-                                            {{-- Botón Editar Modal --}}
-                                            <button type="button" onclick="openModal('edit-pedido-{{ $pedido->id }}')"
-                                                class="text-indigo-600 hover:text-indigo-900 font-semibold cursor-pointer">
-                                                Editar
+                                            <button type="button"
+                                                onclick="openModal('edit-pedido-{{ $pedido->id }}')"
+                                                class="inline-flex items-center justify-center text-indigo-600 hover:text-indigo-900 font-semibold cursor-pointer">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
                                             </button>
 
                                             {{-- Botón Eliminar con SweetAlert2 --}}
-                                            <form id="delete-pedido-{{ $pedido->id }}" class="inline-block ml-4"
+                                            <form id="delete-pedido-{{ $pedido->id }}" class="contents"
                                                 action="{{ route('pedidos.destroy', $pedido) }}" method="POST"
                                                 onsubmit="return confirmDelete(this, 'este pedido');">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="text-red-600 hover:text-red-900 font-semibold cursor-pointer">
-                                                    Eliminar
+                                                <button type="submit"
+                                                    class="inline-flex items-center justify-center text-red-600 hover:text-red-900 font-semibold cursor-pointer">
+                                                    <svg class="w-6 h-6" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
                                                 </button>
                                             </form>
 
@@ -89,10 +118,14 @@
                                             <x-modal name="edit-pedido-{{ $pedido->id }}">
                                                 <div class="p-6 text-left">
                                                     <div class="flex justify-between items-center pb-3 border-b mb-4">
-                                                        <h3 class="text-lg font-bold text-gray-900">Editar Pedido #{{ $pedido->id }}</h3>
-                                                        <button type="button" onclick="closeModal('edit-pedido-{{ $pedido->id }}')" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+                                                        <h3 class="text-lg font-bold text-gray-900">Editar Pedido
+                                                            #{{ $pedido->id }}</h3>
+                                                        <button type="button"
+                                                            onclick="closeModal('edit-pedido-{{ $pedido->id }}')"
+                                                            class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
                                                     </div>
-                                                    <form method="POST" action="{{ route('pedidos.update', $pedido) }}">
+                                                    <form method="POST"
+                                                        action="{{ route('pedidos.update', $pedido) }}">
                                                         @csrf
                                                         @method('PUT')
                                                         @include('pedidos._form', ['pedido' => $pedido])
@@ -124,7 +157,8 @@
         <div class="p-6">
             <div class="flex justify-between items-center pb-3 border-b mb-4">
                 <h3 class="text-lg font-bold text-gray-900">Crear Nuevo Pedido</h3>
-                <button type="button" onclick="closeModal('create-pedido')" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+                <button type="button" onclick="closeModal('create-pedido')"
+                    class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
             </div>
             <form method="POST" action="{{ route('pedidos.store') }}">
                 @csrf
@@ -146,11 +180,11 @@
                 rows.forEach(row => {
                     // Columnas: Artículo (2), Descripción (3), Usuario (4)
                     const articulo = row.querySelector('td:nth-child(2)')?.textContent
-                    .toLowerCase() || '';
+                        .toLowerCase() || '';
                     const descripcion = row.querySelector('td:nth-child(3)')?.textContent
                         .toLowerCase() || '';
                     const usuario = row.querySelector('td:nth-child(4)')?.textContent
-                    .toLowerCase() || '';
+                        .toLowerCase() || '';
 
                     // Mostrar fila si alguna columna coincide
                     if (articulo.includes(filter) || descripcion.includes(filter) || usuario
@@ -170,7 +204,7 @@
 @endphp
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         const forceTutorial = new URLSearchParams(window.location.search).get('tutorial') === 'true';
         const hasSeenTutorial = @json($hasSeenTutorial);
 
@@ -180,9 +214,8 @@
                 nextBtnText: 'Siguiente ➔',
                 prevBtnText: '⬅ Anterior',
                 doneBtnText: '¡Entendido!',
-                progressText: 'Paso @{{current}} de @{{total}}',
-                steps: [
-                    {
+                progressText: 'Paso @{{ current }} de @{{ total }}',
+                steps: [{
                         element: '#tour-btn-nuevo-pedido',
                         popover: {
                             title: 'Crea un Pedido',
@@ -211,15 +244,19 @@
                     }
                 ],
                 onDestroyStarted: () => {
-                    if (!driverObj.hasNextStep() || confirm("¿Seguro que quieres saltar el tutorial?")) {
+                    if (!driverObj.hasNextStep() || confirm(
+                            "¿Seguro que quieres saltar el tutorial?")) {
                         driverObj.destroy();
-                        fetch('{{ route("tutorial.marcar-visto") }}', {
+                        fetch('{{ route('tutorial.marcar-visto') }}', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                'X-CSRF-TOKEN': document.querySelector(
+                                    'meta[name="csrf-token"]').getAttribute('content')
                             },
-                            body: JSON.stringify({ tutorial_name: 'pedidos' })
+                            body: JSON.stringify({
+                                tutorial_name: 'pedidos'
+                            })
                         });
                     }
                 }
