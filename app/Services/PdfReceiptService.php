@@ -62,7 +62,7 @@ class PdfReceiptService
         $scoreCrediticio = $scoringData['score'];
         $scoreCategoria = $scoringData;
 
-        // 2. Historial de Movimientos (Ventas y Entradas) para calcular el punto de quiebre (saldo 0)
+        // 2. Historial de Movimientos (Ventas y Entradas) para calcular lo que debe (FIFO)
         $ventasHistory = \App\Models\Venta::where('user_id', $user->id)
             ->with(['articulo'])
             ->orderBy('created_at', 'asc')
@@ -72,30 +72,29 @@ class PdfReceiptService
             ->orderBy('created_at', 'asc')
             ->get();
             
-        $todosHistory = $ventasHistory->concat($entradasHistory)->sortBy('created_at')->values();
+        $totalPagado = $entradasHistory->sum('precio_venta');
+        $movimientos = collect();
         
-        $saldoRunning = 0;
-        $fechaUltimoCero = null;
-        
-        foreach ($todosHistory as $mov) {
-            if (isset($mov->total_venta)) { // Es Venta
-                $saldoRunning += (float) ($mov->total_venta ?? $mov->precio_venta);
-            } else { // Es Entrada
-                $saldoRunning -= (float) $mov->precio_venta;
-            }
+        foreach ($ventasHistory as $venta) {
+            $costoVenta = (float)($venta->total_venta ?? $venta->precio_venta);
             
-            if ($saldoRunning <= 0.01) {
-                $fechaUltimoCero = $mov->created_at;
+            if ($totalPagado >= $costoVenta) {
+                // Esta venta ya fue totalmente pagada
+                $totalPagado -= $costoVenta;
+            } elseif ($totalPagado > 0) {
+                // Pagada parcialmente, aún entra en lo que debe (se muestra completa por simplicidad)
+                $movimientos->push($venta);
+                $totalPagado = 0;
+            } else {
+                // No pagada
+                $movimientos->push($venta);
             }
         }
 
-        // Filtrar Ventas para el PDF: Solo las ventas posteriores al último saldo en cero, o máximo 15 días si lo prefieren
-        $fechaFiltro = $fechaUltimoCero ? $fechaUltimoCero : now()->subDays(15);
-        $movimientos = $ventasHistory->filter(function($venta) use ($fechaFiltro) {
-            return $venta->created_at > $fechaFiltro;
-        })->sortByDesc('created_at')->values();
+        // Ordenar del más reciente al más antiguo para el PDF
+        $movimientos = $movimientos->sortByDesc('created_at')->values();
 
-        // 3. Cálculo de Consumo (Total de Adeudo)
+        // 3. Cálculo de Consumo (Total de Adeudo real)
         $totalAdeudo = floatval($user->saldo ?? $ventasHistory->sum('total_venta') - $entradasHistory->sum('precio_venta'));
         if ($totalAdeudo <= 0 && $movimientos->count() === 0) {
             $totalAdeudo = 4250.00;
