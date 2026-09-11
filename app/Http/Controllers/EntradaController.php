@@ -140,12 +140,12 @@ class EntradaController extends Controller
                     $telCliente = (strlen($num) == 10) ? '521' . $num : $num;
                     $totalFormatted = number_format($entrada->precio_venta, 2);
                     $reciboUrl = route('admin.entradas.show', $entrada);
-                    $mensajeWa = "💰 ¡Hola {$cliente->name}! Se ha registrado tu Pago por la cantidad de \${$totalFormatted}.\n📄 Adjunto encontrarás tu Estado de Cuenta Actualizado en PDF.\n\n¡Gracias por tu pago en El Bajón!";
+                    $mensajeWa = "💰 ¡Hola {$cliente->name}! Se ha registrado tu Pago por la cantidad de \${$totalFormatted}.\n📄 Adjunto encontrarás tu Comprobante de Pago en PDF.\n\n¡Gracias por tu pago en El Bajón!";
 
-                    // Generar PDF temporal del Estado de Cuenta actualizado
+                    // Generar PDF temporal del recibo individual
                     $pdfPath = null;
                     try {
-                        $pdfPath = \App\Services\PdfReceiptService::generateEstadoCuentaPdf($cliente, $entrada->precio_venta);
+                        $pdfPath = \App\Services\PdfReceiptService::generateEntradaPdf($entrada);
                     } catch (\Exception $ePdf) {
                         \Illuminate\Support\Facades\Log::error("Error generando PDF para Entrada #{$entrada->id}: " . $ePdf->getMessage());
                     }
@@ -284,10 +284,10 @@ class EntradaController extends Controller
             $num = preg_replace('/[^0-9]/', '', $cliente->telefono);
             $telCliente = (strlen($num) == 10) ? '521' . $num : $num;
             $totalFormatted = number_format($entrada->precio_venta, 2);
-            $mensajeWa = "💰 ¡Hola {$cliente->name}! Se reenvía tu Estado de Cuenta Actualizado (posterior a tu pago de \${$totalFormatted}).\n📄 Adjunto encontrarás tu Estado de Cuenta en PDF.\n\n¡Gracias por tu pago en El Bajón!";
+            $mensajeWa = "💰 ¡Hola {$cliente->name}! Se reenvía tu Comprobante de Pago por la cantidad de \${$totalFormatted}.\n📄 Adjunto encontrarás tu Recibo de Pago en PDF.\n\n¡Gracias por tu pago en El Bajón!";
 
-            // Generar PDF temporal del Estado de Cuenta actualizado
-            $pdfPath = \App\Services\PdfReceiptService::generateEstadoCuentaPdf($cliente, $entrada->precio_venta);
+            // Generar PDF temporal del recibo
+            $pdfPath = \App\Services\PdfReceiptService::generateEntradaPdf($entrada);
 
             \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
                 'numero'     => $telCliente,

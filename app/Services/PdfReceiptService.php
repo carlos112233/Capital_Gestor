@@ -28,8 +28,12 @@ class PdfReceiptService
         $fileName = 'recibo_pago_' . $entrada->id . '_' . time() . '.pdf';
         $filePath = $tempDir . DIRECTORY_SEPARATOR . $fileName;
 
+        // Imágenes Base64
+        $logoPath = public_path('images/logo.png');
+        $logoBase64 = \Illuminate\Support\Facades\File::exists($logoPath) ? base64_encode(\Illuminate\Support\Facades\File::get($logoPath)) : '';
+
         // Renderizar la vista a PDF con Dompdf usando la plantilla dedicada pdf.recibo_pago
-        $pdf = Pdf::loadView('pdf.recibo_pago', compact('entrada'))
+        $pdf = Pdf::loadView('pdf.recibo_pago', compact('entrada', 'logoBase64'))
             ->setPaper('a4', 'portrait')
             ->setWarnings(false);
 
