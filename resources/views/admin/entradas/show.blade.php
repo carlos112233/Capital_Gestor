@@ -5,7 +5,7 @@
                 <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span>Recibo de Pago #{{ $entrada->id }}</span>
+                <span>Comprobante de Pago #{{ $entrada->id }}</span>
             </h2>
             <div class="flex items-center gap-2">
                 <a href="{{ route('admin.entradas.index') }}" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-semibold text-sm transition-all">
@@ -23,123 +23,92 @@
 
     <style>
         @page {
-            margin: 12mm;
+            margin: 15mm;
         }
 
         @media print {
-            .no-print,
-            nav,
-            header {
-                display: none !important;
-            }
-
-            body {
-                background: #fff !important;
-                color: #000 !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-
-            .py-8 {
-                padding-top: 0 !important;
-                padding-bottom: 0 !important;
-            }
-
-            .max-w-3xl {
-                max-width: 100% !important;
-                width: 100% !important;
-            }
-
-            .print-container {
-                box-shadow: none !important;
-                border: 1px solid #cbd5e1 !important;
-                border-radius: 12px !important;
-                margin: 0 auto !important;
-                width: 100% !important;
-                padding: 28px !important;
-            }
-
-            .print-header {
-                background: #f8fafc !important;
-                border: 1px solid #cbd5e1 !important;
-                color: #0f172a !important;
-            }
+            .no-print, nav, header { display: none !important; }
+            body { background: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; }
+            .py-8 { padding-top: 0 !important; padding-bottom: 0 !important; }
+            .max-w-3xl { max-width: 100% !important; width: 100% !important; }
+            .print-container { box-shadow: none !important; border: none !important; margin: 0 auto !important; width: 100% !important; padding: 0 !important; }
+            .bg-\[\#f4f7fb\] { background-color: #f4f7fb !important; -webkit-print-color-adjust: exact; color-adjust: exact; }
+            .bg-\[\#d6e2ee\] { background-color: #d6e2ee !important; -webkit-print-color-adjust: exact; color-adjust: exact; }
         }
     </style>
 
     <div class="py-8">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white p-8 sm:p-10 rounded-2xl shadow-sm border border-slate-200 print-container">
-                <!-- Encabezado del Recibo -->
-                <div class="bg-slate-50 border border-slate-200/80 p-6 rounded-2xl mb-6 flex justify-between items-center print-header">
-                    <div>
-                        <h1 class="text-3xl font-black tracking-wider text-slate-900">EL BAJÓN</h1>
-                        <p class="text-xs text-slate-700 mt-1 font-bold">Comprobante de Pago Saldado / Abono</p>
+            <div class="bg-white p-8 sm:p-10 rounded-2xl shadow-sm border border-slate-200 print-container font-sans text-black">
+                
+                <!-- Header Section -->
+                <div class="flex justify-between items-start border-b-[1.5px] border-slate-300 pb-4 mb-5">
+                    <div class="w-1/2">
+                        <!-- Espacio para el logo, igual que en el estado de cuenta -->
+                        <div class="text-[22px] font-extrabold text-slate-800 uppercase tracking-wide">EL BAJÓN</div>
                     </div>
-                    <div class="text-right">
-                        <span class="inline-block px-4 py-1.5 bg-slate-200 border border-slate-300 text-slate-900 text-xs font-black rounded-full shadow-sm">
-                            Folio: #{{ $entrada->id }}
-                        </span>
-                        <p class="text-xs text-slate-900 mt-2 font-bold">Fecha: {{ $entrada->created_at ? $entrada->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A') }}</p>
+                    <div class="w-1/2 text-right">
+                        <div class="text-[22px] font-extrabold text-slate-800 uppercase tracking-wide">EL BAJÓN</div>
+                        <div class="text-sm font-bold text-black mt-0.5">Comprobante de Pago</div>
+                        <div class="text-[11px] text-slate-600 mt-1">Fecha de Emisión: {{ $entrada->created_at ? $entrada->created_at->format('d/m/Y') : now()->format('d/m/Y') }}</div>
                     </div>
                 </div>
 
-                <!-- Información del Cliente -->
+                <!-- Client Info Grid -->
                 @php
                     $clienteObj = $entrada->cliente ?? $entrada->user;
                 @endphp
-                <div class="grid grid-cols-2 gap-6 bg-slate-50 p-5 rounded-xl mb-6 border border-slate-100">
-                    <div>
-                        <p class="text-xs font-bold uppercase text-slate-400">Cliente</p>
-                        <p class="font-semibold text-slate-800 mt-1 text-base">{{ $clienteObj->name ?? 'Cliente General' }}</p>
-                        <p class="text-xs text-slate-500 mt-0.5">{{ $clienteObj->email ?? '' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs font-bold uppercase text-slate-400">Teléfono</p>
-                        <p class="font-semibold text-slate-800 mt-1 text-base">{{ $clienteObj->telefono ?? 'Sin teléfono' }}</p>
+                <div class="flex gap-4 mb-5">
+                    <div class="w-full bg-[#f4f7fb] border border-slate-300 rounded-xl p-4">
+                        <div class="mb-1 text-xs"><span class="font-bold text-black">Cliente:</span> <span class="text-black">{{ $clienteObj->name ?? 'Cliente General' }}</span></div>
+                        <div class="mb-1 text-xs"><span class="font-bold text-black">Dirección:</span> <span class="text-black">{{ $clienteObj->direccion ?? 'Calle Falsa 123, Colonia Centro' }}</span></div>
+                        <div class="mb-1 text-xs"><span class="font-bold text-black">RFC:</span> <span class="text-black">{{ $clienteObj->rfc ?? 'GALA900101XYZ' }}</span></div>
+                        <div class="mb-0 text-xs"><span class="font-bold text-black">Teléfono:</span> <span class="text-black">{{ $clienteObj->telefono ?? 'Sin teléfono' }}</span></div>
                     </div>
                 </div>
 
-                <!-- Detalle del Pago -->
-                <table class="w-full text-left border-collapse mb-6">
-                    <thead>
-                        <tr class="border-b border-slate-200 text-xs uppercase text-slate-500 font-bold bg-slate-100">
-                            <th class="py-3 px-4">Concepto de Pago</th>
-                            <th class="py-3 px-4 text-center">Tipo</th>
-                            <th class="py-3 px-4 text-right">Monto Pagado</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 text-sm">
-                        <tr>
-                            <td class="py-4 px-4 font-semibold text-slate-800">
-                                {{ $entrada->articulo->nombre ?? 'Pago Registrado' }}
-                                @if($entrada->descripcion)
-                                    <p class="text-xs font-normal text-slate-500 mt-1">{{ $entrada->descripcion }}</p>
-                                @endif
-                            </td>
-                            <td class="py-4 px-4 text-center font-medium">
-                                <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold">Abono / Pago</span>
-                            </td>
-                            <td class="py-4 px-4 text-right font-bold text-slate-900 text-lg">${{ number_format($entrada->precio_venta, 2) }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <!-- Resumen de Total -->
-                <div class="flex justify-end border-t border-slate-200 pt-6 mt-4">
-                    <div class="w-full sm:w-80 bg-slate-50 p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
-                        <div class="flex justify-between items-center text-slate-900">
-                            <span class="font-bold text-base">Monto Recibido:</span>
-                            <span class="font-black text-emerald-600 text-2xl">${{ number_format($entrada->precio_venta, 2) }}</span>
-                        </div>
-                    </div>
+                <!-- Consumo Card -->
+                <div class="bg-[#f4f7fb] border border-slate-300 rounded-xl text-center py-4 px-3 mb-5">
+                    <div class="text-[15px] font-bold text-black">Monto Pagado</div>
+                    <div class="text-[34px] font-black text-black mt-1 tracking-tight">${{ number_format($entrada->precio_venta, 2) }}</div>
                 </div>
 
-                <!-- Pie de página -->
-                <div class="mt-10 text-center text-xs text-slate-400 border-t border-slate-100 pt-6">
-                    <p class="font-medium">¡Gracias por su pago!</p>
-                    <p class="mt-1 font-semibold text-slate-500">El Bajón</p>
+                <!-- Table Items -->
+                <div class="border border-slate-300 rounded-lg overflow-hidden mb-5">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-[#d6e2ee]">
+                                <th class="py-2 px-3 text-center border border-slate-300 text-xs font-bold text-black">Fecha</th>
+                                <th class="py-2 px-3 text-left border border-slate-300 text-xs font-bold text-black">Concepto</th>
+                                <th class="py-2 px-3 text-center border border-slate-300 text-xs font-bold text-black">Referencia</th>
+                                <th class="py-2 px-3 text-right border border-slate-300 text-xs font-bold text-black">Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-white">
+                                <td class="py-2 px-3 border border-slate-300 text-xs text-black text-center">{{ $entrada->created_at ? $entrada->created_at->format('d/m/Y') : now()->format('d/m/Y') }}</td>
+                                <td class="py-2 px-3 border border-slate-300 text-xs text-black">
+                                    {{ $entrada->articulo->nombre ?? 'Abono / Pago' }}
+                                    @if($entrada->descripcion)
+                                        <span class="text-slate-500">({{ $entrada->descripcion }})</span>
+                                    @endif
+                                </td>
+                                <td class="py-2 px-3 border border-slate-300 text-xs text-black text-center">#{{ $entrada->id }}</td>
+                                <td class="py-2 px-3 border border-slate-300 text-xs text-black text-right font-bold">${{ number_format($entrada->precio_venta, 2) }}</td>
+                            </tr>
+                            <tr class="bg-white">
+                                <td colspan="3" class="py-2 px-3 border border-slate-300 text-xs text-black text-right font-bold">Total Pagado:</td>
+                                <td class="py-2 px-3 border border-slate-300 text-xs text-black text-right font-bold">${{ number_format($entrada->precio_venta, 2) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
+
+                <!-- Footer -->
+                <div class="text-center text-[10px] text-slate-500 mt-6 pt-4 border-t border-slate-200">
+                    Documento oficial emitido por EL BAJÓN © {{ date('Y') }}. Todos los derechos reservados.
+                </div>
+
             </div>
         </div>
     </div>

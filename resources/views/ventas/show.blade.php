@@ -23,121 +23,89 @@
 
     <style>
         @page {
-            margin: 12mm;
+            margin: 15mm;
         }
 
         @media print {
-
-            .no-print,
-            nav,
-            header {
-                display: none !important;
-            }
-
-            body {
-                background: #fff !important;
-                color: #000 !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-
-            .py-8 {
-                padding-top: 0 !important;
-                padding-bottom: 0 !important;
-            }
-
-            .max-w-3xl {
-                max-width: 100% !important;
-                width: 100% !important;
-            }
-
-            .print-container {
-                box-shadow: none !important;
-                border: 1px solid #cbd5e1 !important;
-                border-radius: 12px !important;
-                margin: 0 auto !important;
-                width: 100% !important;
-                padding: 28px !important;
-            }
-
-            .print-header {
-                background: #f8fafc !important;
-                border: 1px solid #cbd5e1 !important;
-                color: #0f172a !important;
-            }
+            .no-print, nav, header { display: none !important; }
+            body { background: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; }
+            .py-8 { padding-top: 0 !important; padding-bottom: 0 !important; }
+            .max-w-3xl { max-width: 100% !important; width: 100% !important; }
+            .print-container { box-shadow: none !important; border: none !important; margin: 0 auto !important; width: 100% !important; padding: 0 !important; }
+            .bg-\[\#f4f7fb\] { background-color: #f4f7fb !important; -webkit-print-color-adjust: exact; color-adjust: exact; }
+            .bg-\[\#d6e2ee\] { background-color: #d6e2ee !important; -webkit-print-color-adjust: exact; color-adjust: exact; }
         }
     </style>
 
     <div class="py-8">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white p-8 sm:p-10 rounded-2xl shadow-sm border border-slate-200 print-container">
-                <!-- Encabezado de la Nota -->
-                <div class="bg-slate-50 border border-slate-200/80 p-6 rounded-2xl mb-6 flex justify-between items-center print-header">
-                    <div>
-                        <h1 class="text-3xl font-black tracking-wider text-slate-900">EL BAJÓN</h1>
-                        <p class="text-xs text-slate-700 mt-1 font-bold">Comprobante de Venta Directa</p>
+            <div class="bg-white p-8 sm:p-10 rounded-2xl shadow-sm border border-slate-200 print-container font-sans text-black">
+                
+                <!-- Header Section -->
+                <div class="flex justify-between items-start border-b-[1.5px] border-slate-300 pb-4 mb-5">
+                    <div class="w-1/2">
+                        <!-- Espacio para el logo -->
+                        <div class="text-[22px] font-extrabold text-slate-800 uppercase tracking-wide">EL BAJÓN</div>
                     </div>
-                    <div class="text-right">
-                        <span class="inline-block px-4 py-1.5 text-slate-900 text-xs font-black rounded-full">
-                            Folio: #{{ $venta->id }}
-                        </span>
-                        <p class="text-xs text-slate-900 mt-2 font-bold">Fecha: {{ $venta->created_at ? $venta->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A') }}</p>
-                    </div>
-                </div>
-
-                <!-- Información del Cliente -->
-                <div class="grid grid-cols-2 gap-6 bg-slate-50 p-5 rounded-xl mb-6 border border-slate-100">
-                    <div>
-                        <p class="text-xs font-bold uppercase text-slate-400">Cliente</p>
-                        <p class="font-semibold text-slate-800 mt-1 text-base">{{ $venta->user->name ?? 'Cliente General' }}</p>
-                        <p class="text-xs text-slate-500 mt-0.5">{{ $venta->user->email ?? '' }}</p>
+                    <div class="w-1/2 text-right">
+                        <div class="text-[22px] font-extrabold text-slate-800 uppercase tracking-wide">EL BAJÓN</div>
+                        <div class="text-sm font-bold text-black mt-0.5">Comprobante de Venta</div>
+                        <div class="text-[11px] text-slate-600 mt-1">Fecha de Emisión: {{ $venta->created_at ? $venta->created_at->format('d/m/Y') : now()->format('d/m/Y') }}</div>
                     </div>
                 </div>
 
-                <!-- Detalle del Artículo -->
-                <table class="w-full text-left border-collapse mb-6">
-                    <thead>
-                        <tr class="border-b border-slate-200 text-xs uppercase text-slate-500 font-bold bg-slate-100">
-                            <th class="py-3 px-4">Artículo</th>
-                            <th class="py-3 px-4 text-center">Cantidad</th>
-                            <th class="py-3 px-4 text-right">Precio Unitario</th>
-                            <th class="py-3 px-4 text-right">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 text-sm">
-                        <tr>
-                            <td class="py-4 px-4 font-semibold text-slate-800">
-                                {{ $venta->articulo->nombre ?? 'Artículo' }}
-                                @if($venta->descripcion)
-                                <p class="text-xs font-normal text-slate-500 mt-1">{{ $venta->descripcion }}</p>
-                                @endif
-                            </td>
-                            <td class="py-4 px-4 text-center font-medium">{{ $venta->cantidad }}</td>
-                            <td class="py-4 px-4 text-right">${{ number_format($venta->precio_venta, 2) }}</td>
-                            <td class="py-4 px-4 text-right font-bold text-slate-900">${{ number_format($venta->total_venta, 2) }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <!-- Resumen de Total -->
-                <div class="flex justify-end border-t border-slate-200 pt-6 mt-4">
-                    <div class="w-full sm:w-80 bg-slate-50 p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
-                        <div class="flex justify-between items-center text-slate-600 text-sm">
-                            <span class="font-medium">Subtotal:</span>
-                            <span class="font-semibold text-slate-800 text-base">${{ number_format($venta->total_venta, 2) }}</span>
-                        </div>
-                        <div class="flex justify-between items-center text-slate-900 border-t border-slate-200 pt-3">
-                            <span class="font-bold text-base">Total a Cobrar:</span>
-                            <span class="font-black text-emerald-600 text-2xl">${{ number_format($venta->total_venta, 2) }}</span>
-                        </div>
+                <!-- Client Info Grid -->
+                <div class="flex gap-4 mb-5">
+                    <div class="w-full bg-[#f4f7fb] border border-slate-300 rounded-xl p-4">
+                        <div class="mb-1 text-xs"><span class="font-bold text-black">Cliente:</span> <span class="text-black">{{ $venta->user->name ?? 'Cliente General' }}</span></div>
+                        <div class="mb-1 text-xs"><span class="font-bold text-black">Dirección:</span> <span class="text-black">{{ $venta->user->direccion ?? 'Calle Falsa 123, Colonia Centro' }}</span></div>
+                        <div class="mb-1 text-xs"><span class="font-bold text-black">RFC:</span> <span class="text-black">{{ $venta->user->rfc ?? 'GALA900101XYZ' }}</span></div>
+                        <div class="mb-0 text-xs"><span class="font-bold text-black">Teléfono:</span> <span class="text-black">{{ $venta->user->telefono ?? 'Sin teléfono' }}</span></div>
                     </div>
                 </div>
 
-                <!-- Pie de página -->
-                <div class="mt-10 text-center text-xs text-slate-400 border-t border-slate-100 pt-6">
-                    <p class="font-medium">¡Gracias por su compra!</p>
-                    <p class="mt-1 font-semibold text-slate-500">El Bajón</p>
+                <!-- Consumo Card -->
+                <div class="bg-[#f4f7fb] border border-slate-300 rounded-xl text-center py-4 px-3 mb-5">
+                    <div class="text-[15px] font-bold text-black">Total Venta</div>
+                    <div class="text-[34px] font-black text-black mt-1 tracking-tight">${{ number_format($venta->total_venta, 2) }}</div>
                 </div>
+
+                <!-- Table Items -->
+                <div class="border border-slate-300 rounded-lg overflow-hidden mb-5">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-[#d6e2ee]">
+                                <th class="py-2 px-3 text-center border border-slate-300 text-xs font-bold text-black">Fecha</th>
+                                <th class="py-2 px-3 text-left border border-slate-300 text-xs font-bold text-black">Concepto</th>
+                                <th class="py-2 px-3 text-center border border-slate-300 text-xs font-bold text-black">Referencia</th>
+                                <th class="py-2 px-3 text-right border border-slate-300 text-xs font-bold text-black">Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-white">
+                                <td class="py-2 px-3 border border-slate-300 text-xs text-black text-center">{{ $venta->created_at ? $venta->created_at->format('d/m/Y') : now()->format('d/m/Y') }}</td>
+                                <td class="py-2 px-3 border border-slate-300 text-xs text-black">
+                                    {{ $venta->articulo->nombre ?? 'Artículo de Venta' }}
+                                    @if($venta->cantidad > 1)
+                                        <span class="text-slate-500">(x{{ $venta->cantidad }})</span>
+                                    @endif
+                                </td>
+                                <td class="py-2 px-3 border border-slate-300 text-xs text-black text-center">#{{ $venta->id }}</td>
+                                <td class="py-2 px-3 border border-slate-300 text-xs text-black text-right font-bold">${{ number_format($venta->total_venta, 2) }}</td>
+                            </tr>
+                            <tr class="bg-white">
+                                <td colspan="3" class="py-2 px-3 border border-slate-300 text-xs text-black text-right font-bold">Total:</td>
+                                <td class="py-2 px-3 border border-slate-300 text-xs text-black text-right font-bold">${{ number_format($venta->total_venta, 2) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer -->
+                <div class="text-center text-[10px] text-slate-500 mt-6 pt-4 border-t border-slate-200">
+                    Documento oficial emitido por EL BAJÓN © {{ date('Y') }}. Todos los derechos reservados.
+                </div>
+
             </div>
         </div>
     </div>

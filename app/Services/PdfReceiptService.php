@@ -82,7 +82,10 @@ class PdfReceiptService
                 // Esta venta ya fue totalmente pagada
                 $totalPagado -= $costoVenta;
             } elseif ($totalPagado > 0) {
-                // Pagada parcialmente, aún entra en lo que debe (se muestra completa por simplicidad)
+                // Pagada parcialmente, modificamos el costo para reflejar solo lo que resta por pagar
+                $venta->total_venta = $costoVenta - $totalPagado;
+                $venta->precio_venta = $costoVenta - $totalPagado; // Por si acaso usa precio_venta
+                $venta->descripcion = ($venta->descripcion ? $venta->descripcion . " " : "") . "(Saldo restante)";
                 $movimientos->push($venta);
                 $totalPagado = 0;
             } else {
