@@ -76,7 +76,10 @@ class PdfReceiptService
             ->orderBy('created_at', 'asc')
             ->get();
             
-        $totalPagado = $entradasHistory->sum('precio_venta');
+        $totalVentasReal = $ventasHistory->sum('total_venta');
+        $totalPagadoReal = $entradasHistory->sum('precio_venta');
+        
+        $totalPagado = $totalPagadoReal;
         $movimientos = collect();
         
         foreach ($ventasHistory as $venta) {
@@ -102,7 +105,7 @@ class PdfReceiptService
         $movimientos = $movimientos->sortByDesc('created_at')->values();
 
         // 3. Cálculo de Consumo (Total de Adeudo real)
-        $totalAdeudo = floatval($user->saldo ?? $ventasHistory->sum('total_venta') - $entradasHistory->sum('precio_venta'));
+        $totalAdeudo = floatval($user->saldo ?? ($totalVentasReal - $totalPagadoReal));
         if ($totalAdeudo <= 0 && $movimientos->count() === 0) {
             $totalAdeudo = 4250.00;
         }
