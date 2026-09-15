@@ -248,7 +248,7 @@
     <!-- Consumo Card (Single metric) -->
     <div class="consumo-card">
         <div class="consumo-title">Consumo</div>
-        <div class="consumo-amount">${{ number_format($totalAdeudo > 0 ? $totalAdeudo : 4250.00, 2) }}</div>
+        <div class="consumo-amount">${{ number_format($totalAdeudo, 2) }}</div>
     </div>
 
     <!-- Movements Table -->
@@ -297,7 +297,7 @@
             @endforelse
             <tr class="table-total">
                 <td colspan="3" style="text-align: right; padding-right: 12px; font-weight: 700;">Total:</td>
-                <td style="text-align: right; font-weight: 700;">${{ number_format($totalAdeudo > 0 ? $totalAdeudo : 4250.00, 2) }}</td>
+                <td style="text-align: right; font-weight: 700;">${{ number_format($totalAdeudo, 2) }}</td>
             </tr>
         </tbody>
     </table>
