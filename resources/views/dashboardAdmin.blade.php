@@ -203,6 +203,7 @@
                                                     @endphp
                                                 <!-- BOTON PDF PREVIO EN LUGAR DE WHATSAPP -->
                                                 <a href="{{ $pdfUrl }}" target="_blank"
+                                                    onclick="this.href = '{{ $pdfUrl }}?ajuste=' + (document.querySelector('input.input-ajuste[data-id=\'{{ $r->id }}\']').value || 0)"
                                                     class="inline-flex items-center justify-center bg-red-500 text-white rounded-full p-2.5 shadow-sm hover:bg-red-600 hover:shadow-md transition-all">
                                                     <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>

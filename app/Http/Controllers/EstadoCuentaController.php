@@ -31,18 +31,19 @@ class EstadoCuentaController extends Controller
     /**
      * Genera y descarga/visualiza el Estado de Cuenta en PDF de cualquier cliente (para el Administrador).
      */
-    public function descargarPdfAdmin(User $cliente)
+    public function descargarPdfAdmin(Request $request, User $cliente)
     {
-        return $this->generarPdfParaUsuario($cliente);
+        $ajuste = (float) $request->input('ajuste', 0);
+        return $this->generarPdfParaUsuario($cliente, $ajuste);
     }
 
     /**
      * Lógica compartida para compilar los datos y renderizar el PDF oficial con QR.
      */
-    protected function generarPdfParaUsuario(User $cliente)
+    protected function generarPdfParaUsuario(User $cliente, float $ajuste = 0)
     {
         // Usar la lógica centralizada y corregida del servicio
-        $pdfPath = \App\Services\PdfReceiptService::generateEstadoCuentaPdf($cliente, 0);
+        $pdfPath = \App\Services\PdfReceiptService::generateEstadoCuentaPdf($cliente, $ajuste);
 
         return response()->file($pdfPath, [
             'Content-Type' => 'application/pdf',

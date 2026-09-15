@@ -106,6 +106,8 @@ class PdfReceiptService
 
         // 3. Cálculo de Consumo (Total de Adeudo real)
         $totalAdeudo = floatval($user->saldo ?? ($totalVentasReal - $totalPagadoReal));
+        $totalAdeudo -= $montoAjuste; // Aplicar el ajuste temporal
+        
         if ($totalAdeudo <= 0 && $movimientos->count() === 0) {
             $totalAdeudo = 4250.00;
         }
