@@ -77,6 +77,25 @@
         .info-val {
             color: #000000;
         }
+        .gauge-card {
+            background-color: #f4f7fb;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            text-align: center;
+            padding: 8px;
+        }
+        .score-val {
+            font-size: 13.5px;
+            font-weight: 500;
+            color: #000000;
+            margin-top: 1px;
+        }
+        .score-label {
+            font-size: 14px;
+            font-weight: 700;
+            color: #000000;
+            margin-top: 2px;
+        }
         .consumo-card {
             background-color: #f4f7fb;
             border: 1px solid #cbd5e1;
@@ -137,7 +156,7 @@
 <body>
 
     @php
-        $clienteObj = $entrada->cliente ?? $entrada->user;
+        $clienteObj = $cliente ?? ($entrada->cliente ?? $entrada->user);
     @endphp
 
     <!-- Header Section -->
@@ -153,15 +172,15 @@
             <td class="header-right" style="width: 50%;">
                 <div class="brand-title">EL BAJÓN</div>
                 <div class="doc-subtitle">Comprobante de Pago</div>
-                <div class="date-text">Fecha de Emisión: {{ $entrada->created_at ? $entrada->created_at->format('d/m/Y') : now()->format('d/m/Y') }}</div>
+                <div class="date-text">Fecha de Emisión: {{ $fechaEmision ?? ($entrada->created_at ? $entrada->created_at->format('d/m/Y') : now()->format('d/m/Y')) }}</div>
             </td>
         </tr>
     </table>
 
-    <!-- Client Info -->
+    <!-- Client Info & Score Gauge Grid -->
     <table class="grid-table">
         <tr>
-            <td style="width: 100%; vertical-align: top;">
+            <td style="width: 66%; vertical-align: top; padding-right: 8px;">
                 <div class="card-box">
                     <div class="info-row">
                         <span class="info-label">Cliente:</span>
@@ -179,6 +198,15 @@
                         <span class="info-label">Teléfono:</span>
                         <span class="info-val">{{ $clienteObj->telefono ?? 'Sin teléfono' }}</span>
                     </div>
+                </div>
+            </td>
+            <td style="width: 34%; vertical-align: top;">
+                <div class="gauge-card">
+                    @if(!empty($gaugeBase64))
+                        <img src="data:image/svg+xml;base64,{{ $gaugeBase64 }}" style="width: 110px; height: 55px;" alt="Medidor Scoring">
+                    @endif
+                    <div class="score-label">{{ $scoreCategoria['categoria'] ?? 'Platino VIP' }}</div>
+                    <div class="score-val">{{ $scoreCrediticio ?? 85 }}/100</div>
                 </div>
             </td>
         </tr>

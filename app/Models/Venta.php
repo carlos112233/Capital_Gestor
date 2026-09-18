@@ -89,6 +89,17 @@ class Venta extends Model
                 ]);
             }
             \Illuminate\Support\Facades\Log::info("Notificación WhatsApp de Nueva Compra/Venta #{$venta->id} encolada para admins: " . implode(', ', $adminPhones));
+
+            // Notificación Push a Administradores (Campana web, WebSockets y navegador)
+            try {
+                \App\Services\PushNotificationService::notifyAdmins(
+                    "Nueva Compra Registrada 🛒",
+                    "El cliente {$clienteNombre} ha comprado {$venta->cantidad}x {$articuloNombre} (\${$totalFormatted}).",
+                    route('ventas.index')
+                );
+            } catch (\Throwable $ePush) {
+                \Illuminate\Support\Facades\Log::error("Error enviando Push de Nueva Compra #{$venta->id}: " . $ePush->getMessage());
+            }
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("Error encolando WhatsApp de Nueva Compra/Venta #{$venta->id}: " . $e->getMessage());
         }
@@ -149,9 +160,21 @@ class Venta extends Model
                 ]);
             }
 
-            \Illuminate\Support\Facades\Log::info("Notificación WhatsApp de Nueva Compra/Venta #{$venta->id} encolada para admins: " . implode(', ', $adminPhones));
+            \Illuminate\Support\Facades\Log::info("Notificación WhatsApp de Carrito encolada para admins: " . implode(', ', $adminPhones));
+
+            // Notificación Push a Administradores (Campana web, WebSockets y navegador)
+            try {
+                $cantArticulos = count($ventas);
+                \App\Services\PushNotificationService::notifyAdmins(
+                    "Nueva Compra Múltiple (Carrito) 🛒",
+                    "El cliente {$clienteNombre} ha realizado una compra de {$cantArticulos} artículo(s) por un total de \${$totalFormatted}.",
+                    route('ventas.index')
+                );
+            } catch (\Throwable $ePush) {
+                \Illuminate\Support\Facades\Log::error("Error enviando Push de Carrito: " . $ePush->getMessage());
+            }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Error encolando WhatsApp de Nueva Compra/Venta #{$venta->id}: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error("Error encolando WhatsApp de Carrito: " . $e->getMessage());
         }
     }
 }

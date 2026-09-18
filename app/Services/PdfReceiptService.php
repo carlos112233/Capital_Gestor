@@ -28,12 +28,50 @@ class PdfReceiptService
         $fileName = 'recibo_pago_' . $entrada->id . '_' . time() . '.pdf';
         $filePath = $tempDir . DIRECTORY_SEPARATOR . $fileName;
 
-        // Imágenes Base64
-        $logoPath = public_path('images/logo.png');
-        $logoBase64 = \Illuminate\Support\Facades\File::exists($logoPath) ? base64_encode(\Illuminate\Support\Facades\File::get($logoPath)) : '';
+        // Cliente asociado al pago
+        $cliente = $entrada->cliente ?? $entrada->user;
+
+        // 1. Scoring Crediticio del cliente
+        $scoreCrediticio = 85;
+        $scoreCategoria = ['categoria' => 'Platino VIP', 'score' => 85];
+        if ($cliente) {
+            $scoringData = \App\Services\ClientScoringService::getScoring($cliente);
+            $scoreCrediticio = $scoringData['score'] ?? 85;
+            $scoreCategoria = $scoringData;
+        }
+
+        // 2. Logo Principal Base64 (img/Logo.svg o img/Logo.png)
+        $logoBase64 = '';
+        $logoSvgPath = public_path('img/Logo.svg');
+        $logoPngPath = public_path('img/Logo.png');
+
+        if (\Illuminate\Support\Facades\File::exists($logoSvgPath)) {
+            $logoBase64 = base64_encode(\Illuminate\Support\Facades\File::get($logoSvgPath));
+        } elseif (\Illuminate\Support\Facades\File::exists($logoPngPath)) {
+            $logoBase64 = base64_encode(\Illuminate\Support\Facades\File::get($logoPngPath));
+        }
+
+        // 3. Medidor SVG en Base64 para el Score Crediticio
+        $gaugeSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="130" height="65" viewBox="0 0 100 50">
+            <path d="M 10 45 A 40 40 0 0 1 90 45" fill="none" stroke="#e2e8f0" stroke-width="10" stroke-linecap="round" />
+            <path d="M 10 45 A 40 40 0 0 1 80 23" fill="none" stroke="#22c55e" stroke-width="10" stroke-linecap="round" />
+            <line x1="50" y1="45" x2="73" y2="24" stroke="#1e293b" stroke-width="3.5" stroke-linecap="round"/>
+            <circle cx="50" cy="45" r="5" fill="#1e293b"/>
+        </svg>';
+        $gaugeBase64 = base64_encode($gaugeSvg);
+
+        $fechaEmision = $entrada->created_at ? $entrada->created_at->format('d/m/Y') : now()->format('d/m/Y');
 
         // Renderizar la vista a PDF con Dompdf usando la plantilla dedicada pdf.recibo_pago
-        $pdf = Pdf::loadView('pdf.recibo_pago', compact('entrada', 'logoBase64'))
+        $pdf = Pdf::loadView('pdf.recibo_pago', compact(
+            'entrada',
+            'cliente',
+            'logoBase64',
+            'gaugeBase64',
+            'scoreCrediticio',
+            'scoreCategoria',
+            'fechaEmision'
+        ))
             ->setPaper('a4', 'portrait')
             ->setWarnings(false);
 
