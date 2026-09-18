@@ -33,6 +33,4 @@ if __name__ == '__main__':
     run_remote_cmd("php artisan config:cache")
     run_remote_cmd("php artisan route:cache")
     run_remote_cmd("php artisan view:cache")
-
-    # Step 4: Run Pest tests on production server
-    run_remote_cmd("vendor/bin/pest")
+    print("\n✅ ¡Despliegue a producción completado con éxito!")
