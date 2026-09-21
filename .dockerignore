@@ -1,0 +1,44 @@
+# ── Git ──────────────────────────────────────────────────────────────────────
+.git
+.gitignore
+.gitattributes
+.github
+
+# ── Node / Frontend ───────────────────────────────────────────────────────────
+node_modules
+npm-debug.log
+
+# ── Laravel ───────────────────────────────────────────────────────────────────
+# El .env real NUNCA debe entrar a la imagen
+.env
+.env.*
+!.env.docker.example
+
+# Archivos de log
+storage/logs/*.log
+
+# Archivos temporales generados por Laravel
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/temp_pdfs/*
+
+# Bootstrap cache se regenera con php artisan optimize
+bootstrap/cache/*.php
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+.phpunit.cache
+
+# ── IDE / Sistema operativo ───────────────────────────────────────────────────
+.idea
+.vscode
+*.DS_Store
+Thumbs.db
+
+# ── Docker (evitar recursión) ─────────────────────────────────────────────────
+docker-compose*.yml
+docker
+
+# ── WhatsApp session (se monta como volumen) ─────────────────────────────────
+.wwebjs_auth
+

@@ -1,0 +1,81 @@
+name: 🚀 Deploy a DigitalOcean (elbajon.store)
+
+# ────────────────────────────────────────────────────────────────────
+# ACTIVACIÓN: Solo cuando hay push a la rama 'main'
+# ────────────────────────────────────────────────────────────────────
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Despliegue en Producción
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # 1. Descargar el código del commit actual
+      - name: 📥 Checkout del código
+        uses: actions/checkout@v4
+
+      # 2. Configurar PHP para la validación de sintaxis local
+      - name: 🐘 Configurar PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer:v2
+
+      # 3. Instalar dependencias de PHP (sin dev) para verificar que compilan
+      - name: 📦 Instalar dependencias PHP
+        run: composer install --no-interaction --optimize-autoloader --no-dev
+
+      # 4. Ejecutar pruebas unitarias LOCALMENTE (aquí sí, nunca en producción)
+      #    Solo se ejecutan las que no requieren BD real
+      - name: ✅ Ejecutar Pest (solo pruebas Unit)
+        run: vendor/bin/pest --testsuite=Unit
+        env:
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+
+      # 5. Conectar al Droplet de DigitalOcean por SSH y ejecutar el despliegue
+      - name: 🚀 Desplegar en DigitalOcean
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DO_HOST }}           # IP o dominio del Droplet
+          username: ${{ secrets.DO_USER }}       # Generalmente 'root'
+          password: ${{ secrets.DO_PASSWORD }}   # Contraseña SSH del Droplet
+          # Si prefieres SSH key en vez de password:
+          # key: ${{ secrets.DO_SSH_KEY }}
+          script: |
+            set -e
+            echo "📂 Cambiando al directorio de la aplicación..."
+            cd /var/www/capital_gestor
+
+            echo "📥 Descargando código más reciente de GitHub..."
+            git pull origin main
+
+            echo "📦 Instalando dependencias de PHP (producción)..."
+            composer install --no-interaction --optimize-autoloader --no-dev
+
+            echo "🎨 Compilando assets de frontend (Tailwind + Vite)..."
+            npm ci && npm run build
+
+            echo "🗄️ Aplicando migraciones de base de datos (sin tocar datos existentes)..."
+            php artisan migrate --force
+
+            echo "🧹 Limpiando caché antigua..."
+            php artisan optimize:clear
+
+            echo "⚡ Compilando nueva caché de configuración, rutas y vistas..."
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            echo "🔗 Asegurando enlace de almacenamiento público..."
+            php artisan storage:link || true
+
+            echo "🤖 Recargando el motor de WhatsApp (wa-motor) en PM2..."
+            pm2 reload wa-motor || true
+
+            echo "✅ ¡Despliegue completado con éxito en elbajon.store!"
+

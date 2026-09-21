@@ -1,0 +1,115 @@
+services:
+
+  # ─────────────────────────────────────────────
+  # 1. Nginx — Servidor web (reverse proxy a PHP-FPM)
+  # ─────────────────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: capital_gestor_nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"          # Puerto 8080 del host → 80 dentro del contenedor
+    volumes:
+      - .:/var/www/html:ro                          # Código fuente (solo lectura)
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - php
+    networks:
+      - capital_net
+
+  # ─────────────────────────────────────────────
+  # 2. PHP-FPM — Procesador de Laravel
+  # ─────────────────────────────────────────────
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: capital_gestor_php
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html                             # Código fuente (lectura/escritura para storage)
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    environment:
+      - APP_ENV=${APP_ENV:-local}
+      - APP_KEY=${APP_KEY}
+      - APP_URL=${APP_URL:-http://localhost:8080}
+      - DB_CONNECTION=${DB_CONNECTION:-mysql}
+      - DB_HOST=${DB_HOST:-mysql}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_DATABASE=${DB_DATABASE:-gestor_capital_db}
+      - DB_USERNAME=${DB_USERNAME:-root}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - QUEUE_CONNECTION=database
+      - SESSION_DRIVER=database
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - capital_net
+
+  # ─────────────────────────────────────────────
+  # 3. MySQL 8.0 — Base de datos local (solo para desarrollo/docker)
+  # (En producción DigitalOcean se usa el MySQL nativo del servidor)
+  # ─────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: capital_gestor_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_DATABASE: ${DB_DATABASE:-gestor_capital_db}
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql                  # Datos persistentes
+    ports:
+      - "3307:3306"        # Exponer en 3307 para no chocar con MySQL local del host
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD:-secret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - capital_net
+
+  # ─────────────────────────────────────────────
+  # 4. wa-motor — Motor de WhatsApp (Node.js + Puppeteer/Chromium)
+  # ─────────────────────────────────────────────
+  wa-motor:
+    build:
+      context: .
+      dockerfile: docker/wa-motor/Dockerfile
+    container_name: capital_gestor_wa_motor
+    restart: unless-stopped
+    working_dir: /app/wa-motor
+    volumes:
+      - ./.wwebjs_auth:/app/.wwebjs_auth            # Sesión de WhatsApp persistente
+      - ./storage:/app/storage                       # PDFs compartidos con PHP
+    environment:
+      - DB_CONNECTION=${DB_CONNECTION:-mysql}
+      - DB_HOST=${DB_HOST:-mysql}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_DATABASE=${DB_DATABASE:-gestor_capital_db}
+      - DB_USERNAME=${DB_USERNAME:-root}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - capital_net
+
+# ─────────────────────────────────────────────
+# Volúmenes persistentes
+# ─────────────────────────────────────────────
+volumes:
+  mysql_data:
+    driver: local
+
+# ─────────────────────────────────────────────
+# Red interna compartida entre los contenedores
+# ─────────────────────────────────────────────
+networks:
+  capital_net:
+    driver: bridge
+
