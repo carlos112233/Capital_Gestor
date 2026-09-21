@@ -26,9 +26,9 @@ jobs:
           php-version: "8.2"
           tools: composer:v2
 
-      # 3. Instalar dependencias de PHP (sin dev) para verificar que compilan
+      # 3. Instalar dependencias de PHP CON dev (Pest es dev dependency y se necesita para los tests)
       - name: 📦 Instalar dependencias PHP
-        run: composer install --no-interaction --optimize-autoloader --no-dev
+        run: composer install --no-interaction --optimize-autoloader
 
       # 4. Ejecutar pruebas unitarias LOCALMENTE (aquí sí, nunca en producción)
       #    Solo se ejecutan las que no requieren BD real
@@ -36,6 +36,8 @@ jobs:
         run: vendor/bin/pest --testsuite=Unit
         env:
           APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
 
       # 5. Conectar al Droplet de DigitalOcean por SSH y ejecutar el despliegue
       - name: 🚀 Desplegar en DigitalOcean
