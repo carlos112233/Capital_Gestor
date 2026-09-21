@@ -57,7 +57,10 @@ jobs:
             git pull origin main
 
             echo "📦 Instalando dependencias de PHP (producción)..."
-            composer install --no-interaction --optimize-autoloader --no-dev
+            composer install --no-interaction --optimize-autoloader --no-dev --no-scripts
+
+            echo "🔍 Regenerando autoload y descubriendo paquetes..."
+            composer dump-autoload --no-scripts --optimize
 
             echo "🎨 Compilando assets de frontend (Tailwind + Vite)..."
             npm ci && npm run build
