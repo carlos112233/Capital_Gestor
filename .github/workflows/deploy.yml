@@ -62,6 +62,10 @@ jobs:
             echo "🔍 Regenerando autoload y descubriendo paquetes..."
             composer dump-autoload --no-scripts --optimize
 
+            echo "🧹 Limpiando caché de bootstrap (paquetes registrados)..."
+            rm -f bootstrap/cache/packages.php
+            rm -f bootstrap/cache/services.php
+
             echo "🎨 Compilando assets de frontend (Tailwind + Vite)..."
             npm ci && npm run build
 
