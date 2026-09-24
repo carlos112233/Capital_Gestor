@@ -212,6 +212,21 @@ class ConfiguracionController extends Controller
         }
     }
 
+    public function markAllMessagesAsSent()
+    {
+        try {
+            $updated = DB::table('whatsapp_pending_messages')
+                ->where('status', 'pendiente')
+                ->update([
+                    'status' => 'enviado',
+                    'updated_at' => now(),
+                ]);
+            return response()->json(['success' => true, 'message' => "$updated mensajes marcados como enviados."]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
     /**
      * Marcar un mensaje enviado/fallido de vuelta a pendiente para reenviar
      */

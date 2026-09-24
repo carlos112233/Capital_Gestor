@@ -210,6 +210,10 @@
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 font-bold text-xs">
                         📊 Total: <span class="text-indigo-600" x-text="messages.length"></span>
                     </span>
+                    <button type="button" @click="markAllAsSent()" title="Marcar todos los pendientes como enviados" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold text-xs transition-colors cursor-pointer shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                        Marcar todos como enviados
+                    </button>
                 </div>
             </div>
 
@@ -477,6 +481,60 @@
                             this.processMarkAsSent(id);
                         }
                     }
+                },
+
+                markAllAsSent() {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: '¿Marcar todos como enviados?',
+                            text: 'Todos los mensajes que estén en estado "pendiente" se marcarán como enviados.',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#4f46e5',
+                            cancelButtonColor: '#64748b',
+                            confirmButtonText: 'Sí, marcar todos',
+                            cancelButtonText: 'Cancelar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                this.processMarkAllAsSent();
+                            }
+                        });
+                    } else {
+                        if (confirm('¿Estás seguro de que deseas marcar TODOS los mensajes pendientes como enviados?')) {
+                            this.processMarkAllAsSent();
+                        }
+                    }
+                },
+
+                processMarkAllAsSent() {
+                    fetch('{{ route('admin.configuracion.wa-mark-all-sent') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            this.fetchStatus();
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Mensajes Marcados',
+                                    text: data.message,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            }
+                        } else {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire('Error', data.error, 'error');
+                            } else {
+                                alert('Error: ' + data.error);
+                            }
+                        }
+                    });
                 },
                 
                 processMarkAsSent(id) {
