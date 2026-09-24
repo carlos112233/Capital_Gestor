@@ -656,10 +656,10 @@ function iniciarBucleEnvio() {
                         // Formato estándar de chat ID de WhatsApp
                         let targetId = `${cleanNum}@c.us`;
                         try {
-                            const contactId =
-                                await client.getNumberId(cleanNum);
+                            const contactId = await client.getNumberId(cleanNum);
                             if (contactId && contactId._serialized) {
-                                targetId = contactId._serialized;
+                                // Mantenemos el targetId como @c.us, NO usamos @lid porque whatsapp-web.js falla enviando PDFs a @lid
+                                // targetId = contactId._serialized; 
                             }
                         } catch (eId) {
                             console.log(
