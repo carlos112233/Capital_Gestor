@@ -50,11 +50,13 @@
             <span class="text-red-500 text-sm">{{ $message }}</span>
         @enderror
 
-        @if(isset($articulo) && $articulo->img_base64)
+        @if(isset($articulo) && $articulo->id && $articulo->imagen_tipo)
             <div class="mt-3">
                 <p class="text-sm text-gray-600 mb-1">Imagen actual:</p>
-                <img src="data:{{ $articulo->imagen_tipo }};base64,{{ $articulo->img_base64 }}" 
-                     class="w-32 h-32 object-cover rounded-lg border shadow-md">
+                <img src="{{ route('admin.articulos.imagen', $articulo->id) }}"
+                     class="w-32 h-32 object-cover rounded-lg border shadow-md"
+                     loading="lazy"
+                     alt="Imagen de {{ $articulo->nombre ?? 'artículo' }}">
             </div>
         @endif
     </div>

@@ -65,6 +65,7 @@ Route::middleware('auth')->group(function () {
         Route::post('articulos/reset-stock', [ArticuloController::class, 'resetStock'])->name('articulos.reset-stock');
         Route::post('articulos/bulk-disponible', [ArticuloController::class, 'bulkDisponible'])->name('articulos.bulk-disponible');
         Route::post('articulos/{articulo}/toggle-disponible', [ArticuloController::class, 'toggleDisponible'])->name('articulos.toggle');
+        Route::get('articulos/{articulo}/imagen', [ArticuloController::class, 'imagen'])->name('admin.articulos.imagen');
         Route::resource('entradas', EntradaController::class);
         Route::post('entradas/{entrada}/reenviar-whatsapp', [EntradaController::class, 'reenviarWhatsApp'])->name('entradas.reenviar-whatsapp');
         Route::resource('pedidos', PedidoController::class);

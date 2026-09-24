@@ -12,7 +12,10 @@ class ArticuloController extends Controller
 {
     public function index(Request $request)
     {
+        // Excluimos img_base64 del listado — puede ser varios MB por artículo.
+        // La imagen se sirve bajo demanda via /admin/articulos/{id}/imagen
         $articulos = Articulo::comerciales()
+            ->select(['id', 'nombre', 'descripcion', 'precio', 'stock', 'disponible', 'imagen_tipo', 'created_at', 'updated_at'])
             ->when($request->filled('q'), function ($query) use ($request) {
                 $query->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($request->q) . '%']);
             })
@@ -24,7 +27,7 @@ class ArticuloController extends Controller
             return view('admin.articulos._tabla', compact('articulos'))->render();
         }
 
-        $clientes = \App\Models\User::orderBy('name', 'asc')->get();
+        $clientes = \App\Models\User::orderBy('name', 'asc')->select(['id', 'name'])->get();
         return view('admin.articulos.index', compact('articulos', 'clientes'));
     }
 
@@ -115,6 +118,24 @@ class ArticuloController extends Controller
         $articulo->delete();
         return redirect()->route('admin.articulos.index')
             ->with('success', 'Artículo eliminado con éxito.');
+    }
+
+    /**
+     * Sirve la imagen del artículo como respuesta HTTP con caché de 1 hora.
+     * Evita incrustar img_base64 en el HTML de la lista (optimización de rendimiento).
+     */
+    public function imagen(Articulo $articulo)
+    {
+        if (!$articulo->img_base64) {
+            abort(404);
+        }
+
+        $imageData = base64_decode($articulo->img_base64);
+        $mimeType  = $articulo->imagen_tipo ?? 'image/jpeg';
+
+        return response($imageData, 200)
+            ->header('Content-Type', $mimeType)
+            ->header('Cache-Control', 'public, max-age=3600');
     }
 
     public function toggleDisponible(Articulo $articulo)
