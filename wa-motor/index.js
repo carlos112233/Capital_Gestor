@@ -656,10 +656,10 @@ function iniciarBucleEnvio() {
                         // Formato estándar de chat ID de WhatsApp
                         let targetId = `${cleanNum}@c.us`;
                         try {
-                            const contactId = await client.getNumberId(cleanNum);
+                            const contactId =
+                                await client.getNumberId(cleanNum);
                             if (contactId && contactId._serialized) {
-                                // Mantenemos el targetId como @c.us, NO usamos @lid porque whatsapp-web.js falla enviando PDFs a @lid
-                                // targetId = contactId._serialized; 
+                                targetId = contactId._serialized;
                             }
                         } catch (eId) {
                             console.log(
@@ -670,7 +670,9 @@ function iniciarBucleEnvio() {
                         if (msg.pdf_path && fs.existsSync(msg.pdf_path)) {
                             console.log(`📎 Adjuntando PDF temporal "${msg.pdf_path}" a ${targetId}...`);
                             const media = MessageMedia.fromFilePath(msg.pdf_path);
-                            await client.sendMessage(targetId, media, { caption: msg.mensaje });
+                            // WORKAROUND: Enviar primero el texto y luego el PDF para esquivar bug de whatsapp-web.js
+                            await client.sendMessage(targetId, msg.mensaje);
+                            await client.sendMessage(targetId, media, { sendMediaAsDocument: true });
 
                             // Autolimpieza inmediata del PDF temporal
                             try {
