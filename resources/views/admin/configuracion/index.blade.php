@@ -210,9 +210,9 @@
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 font-bold text-xs">
                         📊 Total: <span class="text-indigo-600" x-text="messages.length"></span>
                     </span>
-                    <button type="button" @click="markAllAsSent()" title="Marcar todos los pendientes como enviados" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold text-xs transition-colors cursor-pointer shadow-sm">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                        Marcar todos como enviados
+                    <button type="button" @click="markAllAsSent()" title="Marcar todos los pendientes como enviados" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold text-[11px] whitespace-nowrap transition-colors cursor-pointer shadow-sm">
+                        <svg class="w-3 h-3" style="width: 12px; height: 12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
+                        Marcar enviados
                     </button>
                 </div>
             </div>
