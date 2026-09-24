@@ -9,7 +9,7 @@
         </h2>
     </x-slot>
 
-    <div class="py-6 max-w-4xl mx-auto space-y-6" x-data="waStatusComponent()">
+    <div class="py-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6" x-data="waStatusComponent()">
 
         <!-- Módulo Principal: Vinculación de WhatsApp QR & Estado en Tiempo Real -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80 p-6 sm:p-8">
@@ -222,13 +222,14 @@
                             <th class="py-3 px-4">Número Destino</th>
                             <th class="py-3 px-4">Contenido del Mensaje</th>
                             <th class="py-3 px-4">Estado</th>
+                            <th class="py-3 px-4">Error</th>
                             <th class="py-3 px-4">Fecha y Hora</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 text-xs">
                         <template x-if="messages.length === 0">
                             <tr>
-                                <td colspan="5" class="py-8 text-center text-slate-400">
+                                <td colspan="6" class="py-8 text-center text-slate-400">
                                     <div class="flex flex-col items-center justify-center space-y-1">
                                         <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -280,6 +281,9 @@
                                             </button>
                                         </div>
                                     </template>
+                                </td>
+                                <td class="py-3 px-4 max-w-[150px] text-rose-600 text-[10px]">
+                                    <p class="truncate" x-text="msg.error_message || ''" :title="msg.error_message || ''"></p>
                                 </td>
                                 <td class="py-3 px-4 text-slate-500 font-mono text-[11px]" x-text="msg.created_at ? msg.created_at.replace('T', ' ').substring(0, 19) : ''"></td>
                             </tr>
