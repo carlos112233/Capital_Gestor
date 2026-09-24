@@ -12,6 +12,7 @@ class ClientScoringService
 {
     /**
      * Calcula o resuelve el scoring de crédito del cliente.
+     * Uso general (hace queries a DB). Para el dashboard usar getScoringFromData().
      */
     public static function getScoring(User $user, ?float $saldoTotal = null): array
     {
@@ -20,45 +21,80 @@ class ClientScoringService
             $effectiveScore = (int) max(0, min(100, $user->score_manual));
             $isOverride = true;
         } else {
-            // 2. Cálculo automático
-            $score = 70; // Puntaje Base
+            // 2. Cálculo automático con cache de 15 minutos
+            $saldoKey = is_null($saldoTotal) ? 'x' : (string)(int)($saldoTotal);
+            $cacheKey  = "scoring_{$user->id}_{$saldoKey}";
 
-            // +10 por cada comprobante aprobado
-            $aprobados = Comprobante::where('user_id', $user->id)->where('status', 'aprobado')->count();
-            $score += ($aprobados * 10);
+            return \Illuminate\Support\Facades\Cache::remember($cacheKey, 900, function () use ($user, $saldoTotal) {
+                $score = 70; // Puntaje Base
 
-            // -15 por cada comprobante rechazado
-            $rechazados = Comprobante::where('user_id', $user->id)->where('status', 'rechazado')->count();
-            $score -= ($rechazados * 15);
+                $aprobados = Comprobante::where('user_id', $user->id)->where('status', 'aprobado')->count();
+                $score += ($aprobados * 10);
 
-            // +5 por pedidos realizados en los últimos 30 días
-            $recentOrders = Pedido::where('user_id', $user->id)
-                ->where('created_at', '>=', now()->subDays(30))
-                ->count();
-            $score += ($recentOrders * 5);
+                $rechazados = Comprobante::where('user_id', $user->id)->where('status', 'rechazado')->count();
+                $score -= ($rechazados * 15);
 
-            // Penalización por deuda acumulada > $5,000
-            if (is_null($saldoTotal)) {
-                $totalVentas = Venta::where('user_id', $user->id)->sum('total_venta');
-                $totalEntradas = Entrada::where('user_id', $user->id)->sum('precio_venta');
-                $saldoTotal = max(0, $totalVentas - $totalEntradas);
-            }
+                $recentOrders = Pedido::where('user_id', $user->id)
+                    ->where('created_at', '>=', now()->subDays(30))
+                    ->count();
+                $score += ($recentOrders * 5);
 
-            if ($saldoTotal > 5000) {
-                $score -= 20;
-            }
+                if (is_null($saldoTotal)) {
+                    $totalVentas  = Venta::where('user_id', $user->id)->sum('total_venta');
+                    $totalEntradas = Entrada::where('user_id', $user->id)->sum('precio_venta');
+                    $saldoTotal = max(0, $totalVentas - $totalEntradas);
+                }
 
-            $effectiveScore = (int) max(0, min(100, $score));
-            $isOverride = false;
+                if ($saldoTotal > 5000) {
+                    $score -= 20;
+                }
 
-            // Actualizar score_calculado en BD si cambió
-            if ($user->score_calculado !== $effectiveScore) {
-                User::where('id', $user->id)->update(['score_calculado' => $effectiveScore]);
-                $user->score_calculado = $effectiveScore;
-            }
+                $effectiveScore = (int) max(0, min(100, $score));
+
+                if ($user->score_calculado !== $effectiveScore) {
+                    User::where('id', $user->id)->update(['score_calculado' => $effectiveScore]);
+                    $user->score_calculado = $effectiveScore;
+                }
+
+                return self::formatTier($effectiveScore, false, $user->notas_scoring);
+            });
         }
 
         return self::formatTier($effectiveScore, $isOverride, $user->notas_scoring);
+    }
+
+    /**
+     * Versión de alto rendimiento para el dashboard.
+     * Recibe los conteos ya precargados en bulk (sin queries adicionales por usuario).
+     */
+    public static function getScoringFromData(
+        User $user,
+        int $aprobados,
+        int $rechazados,
+        int $recentOrders,
+        float $saldoTotal
+    ): array {
+        if ($user->override_score && !is_null($user->score_manual)) {
+            return self::formatTier((int) max(0, min(100, $user->score_manual)), true, $user->notas_scoring);
+        }
+
+        $score = 70;
+        $score += ($aprobados * 10);
+        $score -= ($rechazados * 15);
+        $score += ($recentOrders * 5);
+
+        if ($saldoTotal > 5000) {
+            $score -= 20;
+        }
+
+        $effectiveScore = (int) max(0, min(100, $score));
+
+        // Actualizar en BD solo si el score cambió (sin bloquear el render)
+        if ($user->score_calculado !== $effectiveScore) {
+            User::where('id', $user->id)->update(['score_calculado' => $effectiveScore]);
+        }
+
+        return self::formatTier($effectiveScore, false, $user->notas_scoring);
     }
 
     /**

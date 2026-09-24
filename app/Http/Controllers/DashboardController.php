@@ -16,34 +16,69 @@ class DashboardController extends Controller
     {
         $fechaCorteAnterior = (new User())->fecha_corte_anterior;
 
-        $resumen = User::select('id', 'name', 'email', 'telefono', 'updated_at', \Illuminate\Support\Facades\DB::raw('image IS NOT NULL as has_image'))
+        $resumen = User::select(
+                'id', 'name', 'email', 'telefono', 'updated_at',
+                'override_score', 'score_manual', 'score_calculado', 'notas_scoring',
+                DB::raw('image IS NOT NULL as has_image')
+            )
             ->withSum('ventas', 'total_venta')
             ->withSum(['ventas as ventas_corte_sum' => function ($query) use ($fechaCorteAnterior) {
                 $query->where('created_at', '<=', $fechaCorteAnterior);
             }], 'total_venta')
             ->withSum('entradas', 'precio_venta')
+            ->get();
+
+        // ─── Pre-carga masiva de scoring (evita N+1: pasa de ~220 queries a 2) ───
+        $userIds = $resumen->pluck('id');
+
+        // 1 sola query para comprobantes aprobados/rechazados de todos los usuarios
+        $compStats = DB::table('comprobantes')
+            ->whereIn('user_id', $userIds)
+            ->selectRaw('user_id,
+                SUM(status = "aprobado") as aprobados,
+                SUM(status = "rechazado") as rechazados')
+            ->groupBy('user_id')
             ->get()
-            ->map(function ($User) {
-                $totalDeuda = (float) ($User->ventas_sum_total_venta ?? 0);
-                $totalPagado = (float) ($User->entradas_sum_precio_venta ?? 0);
-                $ventasCorte = (float) ($User->ventas_corte_sum ?? 0);
+            ->keyBy('user_id');
 
-                $saldo = $totalDeuda - $totalPagado;
-                $saldoAnterior = max(0, $ventasCorte - $totalPagado);
-                $saldoActual = max(0, $saldo - $saldoAnterior);
+        // 1 sola query para pedidos recientes (últimos 30 días) de todos los usuarios
+        $pedidoStats = DB::table('pedidos')
+            ->whereIn('user_id', $userIds)
+            ->where('created_at', '>=', now()->subDays(30))
+            ->selectRaw('user_id, COUNT(*) as total')
+            ->groupBy('user_id')
+            ->get()
+            ->keyBy('user_id');
+        // ────────────────────────────────────────────────────────────────────────
 
-                $User->total_deuda = $totalDeuda;
-                $User->total_pagado = $totalPagado;
-                $User->saldo = $saldo;
-                $User->saldo_corte_anterior = $saldoAnterior;
-                $User->saldo_corte_actual = $saldoActual;
-                $User->scoring = \App\Services\ClientScoringService::getScoring($User, $saldo);
+        $resumen = $resumen->map(function ($User) use ($compStats, $pedidoStats) {
+            $totalDeuda = (float) ($User->ventas_sum_total_venta ?? 0);
+            $totalPagado = (float) ($User->entradas_sum_precio_venta ?? 0);
+            $ventasCorte = (float) ($User->ventas_corte_sum ?? 0);
 
-                return $User;
-            });
-        $totalSaldo = $resumen->sum(function ($User) {
-            return $User->saldo;
+            $saldo = $totalDeuda - $totalPagado;
+            $saldoAnterior = max(0, $ventasCorte - $totalPagado);
+            $saldoActual = max(0, $saldo - $saldoAnterior);
+
+            $User->total_deuda = $totalDeuda;
+            $User->total_pagado = $totalPagado;
+            $User->saldo = $saldo;
+            $User->saldo_corte_anterior = $saldoAnterior;
+            $User->saldo_corte_actual = $saldoActual;
+
+            // Calcular scoring usando datos ya pre-cargados (sin queries adicionales)
+            $User->scoring = \App\Services\ClientScoringService::getScoringFromData(
+                $User,
+                (int) ($compStats[$User->id]->aprobados ?? 0),
+                (int) ($compStats[$User->id]->rechazados ?? 0),
+                (int) ($pedidoStats[$User->id]->total ?? 0),
+                $saldo
+            );
+
+            return $User;
         });
+
+        $totalSaldo = $resumen->sum(fn($User) => $User->saldo);
         $resumen = $resumen->sortBy('name')->values();
 
         $articulos = \App\Models\Articulo::select('id', 'nombre', 'precio')->orderBy('nombre', 'asc')->get();
