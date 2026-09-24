@@ -539,19 +539,12 @@
                     </div>
 
                     <!-- Gráficos ApexCharts -->
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-                        <div class="lg:col-span-2 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+                    <div class="mt-6">
+                        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
                             <h4 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
                                 <span>📈</span> Tendencia de Cobros vs Ventas
                             </h4>
                             <div id="chart-ingresos-deuda" class="min-h-[250px]"></div>
-                        </div>
-                        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-                            <h4 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
-                                <span>🍩</span> Estatus de Comprobantes
-                            </h4>
-                            <div id="chart-estatus-pagos" class="min-h-[250px] flex items-center justify-center">
-                            </div>
                         </div>
                     </div>
                 </div>
