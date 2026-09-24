@@ -83,6 +83,9 @@ jobs:
             echo "🔗 Asegurando enlace de almacenamiento público..."
             php artisan storage:link || true
 
+            echo "📦 Instalando dependencias del motor..."
+            cd wa-motor && npm ci && cd ..
+
             echo "🤖 Recargando el motor de WhatsApp (wa-motor) en PM2..."
             pm2 reload wa-motor || true
 

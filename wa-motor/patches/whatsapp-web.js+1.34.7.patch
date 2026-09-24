@@ -1,0 +1,12 @@
+diff --git a/node_modules/whatsapp-web.js/src/util/Injected/Utils.js b/node_modules/whatsapp-web.js/src/util/Injected/Utils.js
+index 540078a..8fcacd1 100644
+--- a/node_modules/whatsapp-web.js/src/util/Injected/Utils.js
++++ b/node_modules/whatsapp-web.js/src/util/Injected/Utils.js
+@@ -481,6 +481,7 @@ exports.LoadUtils = () => {
+             ...listOptions,
+             ...botOptions,
+             ...extraOptions,
++        delete message.__x_id;
+         };
+ 
+         // Bot's won't reply if canonicalUrl is set (linking)
