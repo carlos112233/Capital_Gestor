@@ -42,7 +42,7 @@ class EnviarRecordatoriosMasivos extends Command
                 }
 
                 $saldoFormat = number_format($saldo, 2);
-                $mensaje = "Hola *{$user->name}*, te compartimos tu Estado de Cuenta adjunto con el saldo a cubrir de *\${$saldoFormat}*.\n\nTransferencia Bancaria BBVA Acuunt: 0123 4567 8901 2345 6789\nMercado Pago User: El Bajon Pagos\n\nFavor de enviar tu comprobante de pago a este número de WhatsApp. ¡Gracias!";
+                $mensaje = "Hola *{$user->name}*, te compartimos tu Estado de Cuenta adjunto con el saldo a cubrir de *\${$saldoFormat}*.\n\nTransferir a cualquiera de estas cuentas bancarias.\nBBVA:\nCuenta: 158 086 7512\nCuenta CLABE: 012 650 01580867512 5\n\nMercado Pago:\nCuenta CLABE: 722969010384935035\n\nFavor de enviar tu comprobante de pago a este número de WhatsApp. ¡Gracias!";
 
                 // Limpiar número
                 $num = preg_replace('/[^0-9]/', '', $user->telefono);
