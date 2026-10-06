@@ -88,8 +88,21 @@
             const descripcionInput = form.querySelector('[name="descripcion"]');
 
             if (articuloSelect) {
-                if (articuloSelect.tomselect) articuloSelect.tomselect.setValue(venta.articulo_id || '');
-                else articuloSelect.value = venta.articulo_id || '';
+                if (articuloSelect.tomselect) {
+                    if (venta.articulo_id && !articuloSelect.tomselect.options[venta.articulo_id]) {
+                        articuloSelect.tomselect.addOption({
+                            value: venta.articulo_id,
+                            text: venta.articulo_nombre || ('Artículo #' + venta.articulo_id)
+                        });
+                    }
+                    articuloSelect.tomselect.setValue(venta.articulo_id || '');
+                } else {
+                    let exists = Array.from(articuloSelect.options).some(opt => opt.value == venta.articulo_id);
+                    if (venta.articulo_id && !exists) {
+                        articuloSelect.add(new Option(venta.articulo_nombre || ('Artículo #' + venta.articulo_id), venta.articulo_id));
+                    }
+                    articuloSelect.value = venta.articulo_id || '';
+                }
             }
             if (precioInput) precioInput.value = parseFloat(venta.precio_venta || 0).toFixed(2);
             if (cantidadInput) cantidadInput.value = venta.cantidad || 1;

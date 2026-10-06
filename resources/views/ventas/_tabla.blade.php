@@ -58,7 +58,7 @@
 
                                 {{-- Botón Editar Modal --}}
                                 <button type="button"
-                                    onclick='openEditVentaModal({{ json_encode(['id' => $venta->id, 'articulo_id' => $venta->articulo_id, 'precio_venta' => $venta->precio_venta, 'cantidad' => $venta->cantidad, 'user_id' => $venta->user_id, 'descripcion' => $venta->descripcion]) }})'
+                                    onclick='openEditVentaModal({{ json_encode(['id' => $venta->id, 'articulo_id' => $venta->articulo_id, 'articulo_nombre' => $venta->articulo ? $venta->articulo->nombre : '(Sin Artículo)', 'precio_venta' => $venta->precio_venta, 'cantidad' => $venta->cantidad, 'user_id' => $venta->user_id, 'descripcion' => $venta->descripcion]) }})'
                                     class="inline-flex items-center justify-center text-indigo-600 hover:text-indigo-900 font-semibold cursor-pointer">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
