@@ -1,63 +1,108 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🚀 Capital Gestor — elbajon.store
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Plataforma integral desarrollada en **Laravel 12** para la gestión de inventario, ventas, pedidos, cobranza, control de clientes, scoring crediticio, análisis de comprobantes y notificaciones automáticas en tiempo real (WebSockets & WhatsApp).
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🌳 Estructura del Proyecto
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+```text
+capital_gestor/
+├── app/                        # Lógica central de la aplicación (Laravel)
+│   ├── Console/                # Comandos personalizados de consola / Artisan
+│   ├── Events/                 # Eventos para WebSockets y broadcasting
+│   ├── Http/
+│   │   ├── Controllers/        # Controladores (Artículos, Ventas, Pedidos, Clientes, etc.)
+│   │   ├── Middleware/         # Middlewares (Autenticación, Roles, etc.)
+│   │   └── Requests/           # Validaciones de formularios (FormRequests)
+│   ├── Jobs/                   # Tareas en cola (Background jobs)
+│   ├── Models/                 # Modelos Eloquent (User, Articulo, Venta, Pedido, etc.)
+│   ├── Notifications/          # Notificaciones (WebPush, General, Pedidos)
+│   ├── Providers/              # Service Providers de la aplicación
+│   ├── Services/               # Servicios de dominio (OCR Comprobantes, Scoring, PDFs)
+│   ├── Traits/                 # Traits reutilizables (ApiResponse, etc.)
+│   └── View/                   # Componentes Blade
+├── bootstrap/                  # Arranque del framework y caché de configuración
+├── config/                     # Archivos de configuración (DB, Mail, WebSockets, etc.)
+├── database/                   # Migraciones, factories y seeders de la BD
+│   ├── factories/              # Generadores de datos de prueba
+│   ├── migrations/             # Migraciones estructuradas de base de datos
+│   └── seeders/                # Población inicial de datos y roles
+├── docker/                     # Configuraciones para contenedores Docker
+│   ├── nginx/                  # Servidor web Nginx para desarrollo local
+│   ├── php/                    # Imagen y configuración de PHP 8.2-FPM
+│   └── wa-motor/               # Dockerfile del servicio de WhatsApp
+├── public/                     # Archivos estáticos accesibles públicamente
+│   ├── build/                  # Assets compilados por Vite
+│   ├── img/                    # Logos, iconos y recursos gráficos
+│   └── sw.js                   # Service Worker para Push Notifications
+├── resources/                  # Vistas, estilos y scripts fuente
+│   ├── css/                    # Estilos CSS / Tailwind CSS
+│   ├── js/                     # Scripts frontend (Echo, Alpine, etc.)
+│   └── views/                  # Plantillas Blade (Admin, Ventas, Pedidos, PDF, etc.)
+├── routes/                     # Definición de rutas del sistema
+│   ├── api.php                 # Endpoints API REST
+│   ├── auth.php                # Rutas de autenticación
+│   ├── channels.php            # Canales privados de broadcasting (Reverb)
+│   ├── console.php             # Comandos interactivos de consola
+│   └── web.php                 # Rutas de la interfaz web
+├── scripts/                    # Scripts de utilidad y respaldos automáticos
+│   └── backup_db.sh            # Script de respaldo de MySQL
+├── tests/                      # Suite de pruebas automatizadas
+│   ├── Browser/                # Pruebas End-to-End con Laravel Dusk
+│   ├── Feature/                # Pruebas de integración y funcionalidad
+│   └── Unit/                   # Pruebas unitarias (Pest PHP)
+├── wa-motor/                   # Microservicio Node.js para WhatsApp automatizado
+│   ├── patches/                # Parches para dependencias
+│   ├── index.js                # Punto de entrada de WhatsApp Web Bot (Puppeteer)
+│   └── package.json            # Dependencias del bot
+├── docker-compose.yml          # Orquestación de contenedores para entorno local
+├── MANUAL_DESPLIEGUE.md        # Guía completa de despliegue en servidor / DigitalOcean
+├── package.json                # Dependencias frontend (Tailwind, Vite, etc.)
+├── composer.json               # Dependencias backend PHP / Laravel
+└── vite.config.js              # Configuración del empaquetador Vite
+```
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 🛠️ Stack Tecnológico
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- **Backend:** Laravel 12, PHP 8.2+
+- **Base de Datos:** MySQL 8.0
+- **Tiempo Real:** Laravel Reverb (WebSockets)
+- **Frontend:** Blade, Tailwind CSS, Vite, Alpine.js, DataTables
+- **Notificaciones:** WebPush, Resend (Email), WhatsApp vía `wa-motor` (Node.js + Puppeteer)
+- **Documentos & OCR:** DomPDF, Simple QrCode, Google Cloud Vision SDK
+- **Testing:** Pest PHP, Laravel Dusk
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+---
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 🚀 Inicio Rápido con Docker (Desarrollo Local)
 
-## Laravel Sponsors
+1. **Clonar el repositorio:**
+   ```bash
+   git clone https://github.com/carlos112233/Capital_Gestor.git
+   cd Capital_Gestor
+   ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+2. **Configurar el entorno:**
+   ```bash
+   cp .env.docker.example .env
+   ```
 
-### Premium Partners
+3. **Levantar los servicios:**
+   ```bash
+   docker compose up -d --build
+   ```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+4. **Configuración inicial de Laravel:**
+   ```bash
+   docker compose exec php php artisan key:generate
+   docker compose exec php php artisan migrate --seed
+   docker compose exec php php artisan storage:link
+   ```
 
-## Contributing
+5. **Acceso:**
+   Abre [http://localhost:8080](http://localhost:8080) en tu navegador.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-# Capital_Gestor
-# Capital_Gestor
+Para información detallada del despliegue en producción (DigitalOcean, CI/CD, Nginx, PM2), consulta [MANUAL_DESPLIEGUE.md](file:///home/armando/capital_gestor/MANUAL_DESPLIEGUE.md).
