@@ -54,6 +54,7 @@ jobs:
             cd /var/www/capital_gestor
 
             echo "📥 Descargando código más reciente de GitHub..."
+            git checkout -- . || true
             git pull origin main
 
             echo "📦 Instalando dependencias de PHP (producción)..."
