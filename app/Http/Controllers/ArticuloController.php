@@ -1,21 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Articulo;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Storage;
 
 class ArticuloController extends Controller
 {
     public function index(Request $request)
     {
-        // Excluimos img_base64 del listado — puede ser varios MB por artículo.
-        // La imagen se sirve bajo demanda via /admin/articulos/{id}/imagen
         $articulos = Articulo::comerciales()
-            ->select(['id', 'nombre', 'descripcion', 'precio', 'stock', 'disponible', 'imagen_tipo', 'created_at', 'updated_at'])
+            ->select(['id', 'nombre', 'descripcion', 'precio', 'stock', 'disponible', 'img_base64', 'imagen_tipo', 'created_at', 'updated_at'])
             ->when($request->filled('q'), function ($query) use ($request) {
                 $query->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($request->q) . '%']);
             })
@@ -38,33 +38,21 @@ class ArticuloController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        if ($request->hasFile('img_base64')) {
-            // Obtiene el contenido binario del archivo
-            $imagenBinaria = file_get_contents($request->file('img_base64')->getRealPath());
-            $imagen_tipo = $request->file('img_base64')->getMimeType();
-
-            // Lo convierte a Base64
-            $base64 = base64_encode($imagenBinaria);
-
-            $request->merge([
-                'img_base64' => $base64,
-                'img_tipo' => $imagen_tipo,
-            ]);
-        }
-
         $validated = $request->validate([
-            'nombre' => 'required|string|max:255',
+            'nombre'      => 'required|string|max:255',
             'descripcion' => 'nullable|string',
-            'precio' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'img_base64' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'precio'      => 'required|numeric|min:0',
+            'stock'       => 'required|integer|min:0',
+            'img_base64'  => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        if (isset($validated['stock']) && $validated['stock'] > 0) {
-            $validated['disponible'] = true;
-        } else {
-            $validated['disponible'] = false;
+        if ($request->hasFile('img_base64')) {
+            $path = $request->file('img_base64')->store('articulos', 'public');
+            $validated['img_base64'] = $path;
+            $validated['imagen_tipo'] = $request->file('img_base64')->getMimeType();
         }
+
+        $validated['disponible'] = ($validated['stock'] > 0);
 
         Articulo::create($validated);
 
@@ -79,14 +67,12 @@ class ArticuloController extends Controller
 
     public function update(Request $request, Articulo $articulo): RedirectResponse
     {
-
         $validated = $request->validate([
-            'nombre' => 'required|string|max:255',
+            'nombre'      => 'required|string|max:255',
             'descripcion' => 'nullable|string',
-            'precio' => 'required|numeric|min:0',
-            'stock' => 'required',
-            'img_base64' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-
+            'precio'      => 'required|numeric|min:0',
+            'stock'       => 'required',
+            'img_base64'  => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         if (isset($validated['stock'])) {
@@ -94,17 +80,18 @@ class ArticuloController extends Controller
         }
 
         if ($request->hasFile('img_base64')) {
-            $file = $request->file('img_base64');
-            $validated['img_base64'] = base64_encode(file_get_contents($file->getRealPath()));
-            $articulo->imagen_tipo = $request->file('img_base64')->getMimeType();
+            // Eliminar imagen física anterior si existe
+            if (!empty($articulo->img_base64) && Storage::disk('public')->exists($articulo->img_base64)) {
+                Storage::disk('public')->delete($articulo->img_base64);
+            }
+
+            $path = $request->file('img_base64')->store('articulos', 'public');
+            $validated['img_base64'] = $path;
+            $validated['imagen_tipo'] = $request->file('img_base64')->getMimeType();
         }
 
         if (isset($validated['stock'])) {
-            if ($validated['stock'] > 0) {
-                $validated['disponible'] = true;
-            } else {
-                $validated['disponible'] = false;
-            }
+            $validated['disponible'] = ($validated['stock'] > 0);
         }
 
         $articulo->update($validated);
@@ -115,27 +102,46 @@ class ArticuloController extends Controller
 
     public function destroy(Articulo $articulo): RedirectResponse
     {
+        // Limpiar archivo físico asociado al eliminar el registro
+        if (!empty($articulo->img_base64) && Storage::disk('public')->exists($articulo->img_base64)) {
+            Storage::disk('public')->delete($articulo->img_base64);
+        }
+
         $articulo->delete();
         return redirect()->route('admin.articulos.index')
             ->with('success', 'Artículo eliminado con éxito.');
     }
 
     /**
-     * Sirve la imagen del artículo como respuesta HTTP con caché de 1 hora.
-     * Evita incrustar img_base64 en el HTML de la lista (optimización de rendimiento).
+     * Sirve la imagen del artículo desde Storage con caché HTTP o redirige a placeholder.
      */
     public function imagen(Articulo $articulo)
     {
-        if (!$articulo->img_base64) {
-            abort(404);
+        if (!empty($articulo->img_base64)) {
+            if (Storage::disk('public')->exists($articulo->img_base64)) {
+                return Storage::disk('public')->response($articulo->img_base64, null, [
+                    'Cache-Control' => 'public, max-age=3600',
+                ]);
+            }
+
+            if (strlen($articulo->img_base64) > 100) {
+                $imageData = base64_decode($articulo->img_base64);
+                $mimeType  = $articulo->imagen_tipo ?? 'image/jpeg';
+                return response($imageData, 200)
+                    ->header('Content-Type', $mimeType)
+                    ->header('Cache-Control', 'public, max-age=3600');
+            }
         }
 
-        $imageData = base64_decode($articulo->img_base64);
-        $mimeType  = $articulo->imagen_tipo ?? 'image/jpeg';
+        $defaultPath = public_path('img/default_food.svg');
+        if (file_exists($defaultPath)) {
+            return response()->file($defaultPath, [
+                'Content-Type' => 'image/svg+xml',
+                'Cache-Control' => 'public, max-age=3600',
+            ]);
+        }
 
-        return response($imageData, 200)
-            ->header('Content-Type', $mimeType)
-            ->header('Cache-Control', 'public, max-age=3600');
+        abort(404);
     }
 
     public function toggleDisponible(Articulo $articulo)
@@ -161,12 +167,6 @@ class ArticuloController extends Controller
             $mensaje = 'Se deshabilitaron todos los artículos.';
         }
 
-        return back()->with('success', $mensaje);
-    }
-
-    public function resetStock(): RedirectResponse
-    {
-        $affected = Articulo::comerciales()->update(['stock' => 0, 'disponible' => false]);
-        return back()->with('status', "Cierre 7:00 PM: Se actualizó el stock a 0 en {$affected} artículos.");
+        return redirect()->route('admin.articulos.index')->with('success', $mensaje);
     }
 }

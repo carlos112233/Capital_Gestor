@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\User;
@@ -8,6 +10,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ClienteController extends Controller
 {
@@ -58,7 +61,7 @@ class ClienteController extends Controller
         // Manejo de Imagen
         if ($request->hasFile('image')) {
             $file = $request->file('image');
-            $validated['image'] = base64_encode(file_get_contents($file->getRealPath()));
+            $validated['image'] = $file->store('avatars', 'public');
             $validated['image_tipo'] = $file->getMimeType();
         }
 
@@ -102,8 +105,11 @@ class ClienteController extends Controller
 
         // Manejo de Imagen
         if ($request->hasFile('image')) {
+            if (!empty($cliente->image) && Storage::disk('public')->exists($cliente->image)) {
+                Storage::disk('public')->delete($cliente->image);
+            }
             $file = $request->file('image');
-            $validated['image'] = base64_encode(file_get_contents($file->getRealPath()));
+            $validated['image'] = $file->store('avatars', 'public');
             $validated['image_tipo'] = $file->getMimeType();
         }
 

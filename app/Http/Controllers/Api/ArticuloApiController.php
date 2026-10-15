@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -7,7 +9,7 @@ use App\Models\Articulo;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class ArticuloApiController extends Controller
@@ -21,16 +23,11 @@ class ArticuloApiController extends Controller
         if ($request->filled('q')) {
             $query->when($request->filled('q'), function ($query) use ($request) {
                 $query->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($request->q) . '%']);
-            })  ->orderBy('nombre', 'asc')
-            ->toBase()
-            ->get();
-            
+            })->orderBy('nombre', 'asc');
         }
 
-        // Quitamos 'imagen' de aquí porque no existe en la tabla
-        $articulos = $query->select('id', 'nombre', 'precio', 'stock')
+        $articulos = $query->select('id', 'nombre', 'precio', 'stock', 'img_base64', 'imagen_tipo')
             ->orderBy('nombre', 'asc')
-            ->toBase()
             ->get();
 
         return $this->success($articulos);
@@ -39,25 +36,19 @@ class ArticuloApiController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
-            if ($request->hasFile('img_base64')) {
-                $imagenBinaria = file_get_contents(
-                    $request->file('img_base64')->getRealPath()
-                );
-
-                $request->merge([
-                    'img_base64' => base64_encode($imagenBinaria),
-                    'img_tipo'   => $request->file('img_base64')->getMimeType(),
-                ]);
-            }
-
             $validated = $request->validate([
                 'nombre'      => 'required|string|max:255',
                 'descripcion' => 'nullable|string',
                 'precio'      => 'required|numeric|min:0',
                 'stock'       => 'required|integer|min:0',
-                'img_base64'  => 'nullable|string',
-                'img_tipo'    => 'nullable|string',
+                'img_base64'  => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ]);
+
+            if ($request->hasFile('img_base64')) {
+                $path = $request->file('img_base64')->store('articulos', 'public');
+                $validated['img_base64'] = $path;
+                $validated['imagen_tipo'] = $request->file('img_base64')->getMimeType();
+            }
 
             $articulo = Articulo::create($validated);
 
@@ -96,17 +87,18 @@ class ArticuloApiController extends Controller
                 'img_base64'  => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ]);
 
-            // suma de stock (misma lógica que web)
             if (isset($validated['stock'])) {
                 $validated['stock'] = $articulo->stock + $validated['stock'];
             }
 
             if ($request->hasFile('img_base64')) {
-                $file = $request->file('img_base64');
-                $validated['img_base64'] = base64_encode(
-                    file_get_contents($file->getRealPath())
-                );
-                $validated['img_tipo'] = $file->getMimeType();
+                if (!empty($articulo->img_base64) && Storage::disk('public')->exists($articulo->img_base64)) {
+                    Storage::disk('public')->delete($articulo->img_base64);
+                }
+
+                $path = $request->file('img_base64')->store('articulos', 'public');
+                $validated['img_base64'] = $path;
+                $validated['imagen_tipo'] = $request->file('img_base64')->getMimeType();
             }
 
             $articulo->update($validated);
@@ -132,6 +124,10 @@ class ArticuloApiController extends Controller
     public function destroy(Articulo $articulo): JsonResponse
     {
         try {
+            if (!empty($articulo->img_base64) && Storage::disk('public')->exists($articulo->img_base64)) {
+                Storage::disk('public')->delete($articulo->img_base64);
+            }
+
             $articulo->delete();
 
             return $this->success(

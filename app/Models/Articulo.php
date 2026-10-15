@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Articulo extends Model
 {
@@ -17,6 +20,7 @@ class Articulo extends Model
         'stock',
         'img_base64',
         'img_tipo',
+        'imagen_tipo',
         'disponible',
     ];
 
@@ -26,6 +30,10 @@ class Articulo extends Model
 
     protected $hidden = [
         'img_base64',
+    ];
+
+    protected $appends = [
+        'imagen_url',
     ];
 
     public function ventas(): HasMany
@@ -42,14 +50,28 @@ class Articulo extends Model
     }
 
     /**
-     * Obtiene la fuente de la imagen (Base64 o imagen por defecto).
+     * Obtiene la URL pública del archivo en Storage o un placeholder SVG si no existe o está corrupto.
+     */
+    public function getImagenUrlAttribute(): string
+    {
+        if (!empty($this->img_base64)) {
+            if (str_starts_with($this->img_base64, 'http://') || str_starts_with($this->img_base64, 'https://')) {
+                return $this->img_base64;
+            }
+
+            if (Storage::disk('public')->exists($this->img_base64)) {
+                return asset('storage/' . ltrim($this->img_base64, '/'));
+            }
+        }
+
+        return asset('img/default_food.svg');
+    }
+
+    /**
+     * Compatibilidad con llamadas heredadas a imagen_src.
      */
     public function getImagenSrcAttribute(): string
     {
-        if (!empty($this->img_base64) && strlen($this->img_base64) > 100) {
-            $tipo = $this->imagen_tipo ?: 'image/jpeg';
-            return "data:{$tipo};base64,{$this->img_base64}";
-        }
-        return asset('img/default_food.svg');
+        return $this->imagen_url;
     }
 }

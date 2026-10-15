@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -11,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class ClienteApiController extends Controller
 {
@@ -50,16 +53,24 @@ class ClienteApiController extends Controller
             'image_tipo' => 'nullable|string',
         ]);
 
-        // Lógica de Imagen Base64
-        if ($request->filled('image')) {
-            $imageData = $request->image;
-            if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
-                $imageData = substr($imageData, strpos($imageData, ',') + 1);
-                $validated['image'] = $imageData;
-                $validated['image_tipo'] = "image/" . strtolower($type[1]);
-            } else {
-                $validated['image'] = $imageData;
-                $validated['image_tipo'] = $request->image_tipo ?? 'image/jpeg';
+        // Almacenamiento físico de Avatar
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('avatars', 'public');
+            $validated['image'] = $path;
+            $validated['image_tipo'] = $request->file('image')->getMimeType();
+        } elseif ($request->filled('image')) {
+            $clean = preg_replace('/^data:image\/[a-zA-Z0-9\+\-\.]+;base64,/', '', (string) $request->image);
+            $clean = preg_replace('/\s+/', '', $clean);
+            $bin = base64_decode($clean, true);
+            if ($bin !== false && strlen($bin) > 0) {
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $mime = finfo_buffer($finfo, $bin);
+                finfo_close($finfo);
+                $ext = $mime === 'image/png' ? 'png' : ($mime === 'image/webp' ? 'webp' : 'jpg');
+                $filename = 'avatars/' . uniqid('avatar_') . '.' . $ext;
+                Storage::disk('public')->put($filename, $bin);
+                $validated['image'] = $filename;
+                $validated['image_tipo'] = $mime;
             }
         }
 
@@ -95,16 +106,30 @@ class ClienteApiController extends Controller
             'password' => 'nullable|string|min:8',
         ]);
 
-        // Lógica de Imagen Base64 (simplificada para legibilidad)
-        if ($request->filled('image')) {
-            $imageData = $request->image;
-            if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
-                $imageData = substr($imageData, strpos($imageData, ',') + 1);
-                $validated['image'] = $imageData;
-                $validated['image_tipo'] = "image/" . strtolower($type[1]);
-            } else {
-                $validated['image'] = $imageData;
-                $validated['image_tipo'] = $request->image_tipo ?? $cliente->image_tipo;
+        // Almacenamiento físico de Avatar
+        if ($request->hasFile('image')) {
+            if (!empty($cliente->image) && Storage::disk('public')->exists($cliente->image)) {
+                Storage::disk('public')->delete($cliente->image);
+            }
+            $path = $request->file('image')->store('avatars', 'public');
+            $validated['image'] = $path;
+            $validated['image_tipo'] = $request->file('image')->getMimeType();
+        } elseif ($request->filled('image')) {
+            $clean = preg_replace('/^data:image\/[a-zA-Z0-9\+\-\.]+;base64,/', '', (string) $request->image);
+            $clean = preg_replace('/\s+/', '', $clean);
+            $bin = base64_decode($clean, true);
+            if ($bin !== false && strlen($bin) > 0) {
+                if (!empty($cliente->image) && Storage::disk('public')->exists($cliente->image)) {
+                    Storage::disk('public')->delete($cliente->image);
+                }
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $mime = finfo_buffer($finfo, $bin);
+                finfo_close($finfo);
+                $ext = $mime === 'image/png' ? 'png' : ($mime === 'image/webp' ? 'webp' : 'jpg');
+                $filename = 'avatars/avatar_' . $cliente->id . '.' . $ext;
+                Storage::disk('public')->put($filename, $bin);
+                $validated['image'] = $filename;
+                $validated['image_tipo'] = $mime;
             }
         }
 

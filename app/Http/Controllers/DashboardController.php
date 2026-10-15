@@ -14,18 +14,12 @@ class DashboardController extends Controller
     // Dashboard para administradores
     public function indexAdmin()
     {
-        $fechaCorteAnterior = (new User())->fecha_corte_anterior;
-
         $resumen = User::select(
-                'id', 'name', 'email', 'telefono', 'updated_at',
+                'id', 'name', 'email', 'telefono', 'updated_at', 'image',
                 'override_score', 'score_manual', 'score_calculado', 'notas_scoring',
                 DB::raw('image IS NOT NULL as has_image')
             )
-            ->withSum('ventas', 'total_venta')
-            ->withSum(['ventas as ventas_corte_sum' => function ($query) use ($fechaCorteAnterior) {
-                $query->where('created_at', '<=', $fechaCorteAnterior);
-            }], 'total_venta')
-            ->withSum('entradas', 'precio_venta')
+            ->withSaldos()
             ->get();
 
         // ─── Pre-carga masiva de scoring (evita N+1: pasa de ~220 queries a 2) ───
@@ -117,6 +111,7 @@ class DashboardController extends Controller
                 'saldo' => $saldo,
                 'saldo_corte_anterior' => $user->saldo_corte_anterior,
                 'saldo_corte_actual' => $user->saldo_corte_actual,
+                'image_url' => $user->image_url,
             ]
         ]);
 

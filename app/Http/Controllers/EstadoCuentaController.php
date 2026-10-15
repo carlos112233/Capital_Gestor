@@ -1,25 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Venta;
 use App\Services\ClientScoringService;
-include_once __DIR__ . '/../../Services/ClientScoringService.php';
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\PdfReceiptService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\File;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class EstadoCuentaController extends Controller
 {
+    public function __construct(
+        protected ClientScoringService $scoringService,
+        protected PdfReceiptService $pdfService
+    ) {}
+
     /**
      * Genera y descarga/visualiza el Estado de Cuenta en PDF para el cliente autenticado.
      */
-    public function descargarPdfCliente(Request $request)
+    public function descargarPdfCliente(Request $request): BinaryFileResponse
     {
-        /** @var User $user */
+        /** @var User|null $user */
         $user = Auth::user();
         if (!$user) {
             abort(403, 'No autorizado.');
@@ -31,7 +35,7 @@ class EstadoCuentaController extends Controller
     /**
      * Genera y descarga/visualiza el Estado de Cuenta en PDF de cualquier cliente (para el Administrador).
      */
-    public function descargarPdfAdmin(Request $request, User $cliente)
+    public function descargarPdfAdmin(Request $request, User $cliente): BinaryFileResponse
     {
         $ajuste = (float) $request->input('ajuste', 0);
         return $this->generarPdfParaUsuario($cliente, $ajuste);
@@ -40,14 +44,13 @@ class EstadoCuentaController extends Controller
     /**
      * Lógica compartida para compilar los datos y renderizar el PDF oficial con QR.
      */
-    protected function generarPdfParaUsuario(User $cliente, float $ajuste = 0)
+    protected function generarPdfParaUsuario(User $cliente, float $ajuste = 0): BinaryFileResponse
     {
-        // Usar la lógica centralizada y corregida del servicio
-        $pdfPath = \App\Services\PdfReceiptService::generateEstadoCuentaPdf($cliente, $ajuste);
+        $pdfPath = $this->pdfService->generateEstadoCuentaPdf($cliente, $ajuste);
 
         return response()->file($pdfPath, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="Estado_Cuenta_' . $cliente->name . '.pdf"'
+            'Content-Disposition' => 'inline; filename="Estado_Cuenta_' . $cliente->name . '.pdf"',
         ]);
     }
 }

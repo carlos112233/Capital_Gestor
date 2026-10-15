@@ -76,7 +76,9 @@ class CatalogoApiController extends Controller
                     'descripcion'  => $validated['descripcion'] ?? null,
                 ]);
 
-                \App\Models\Venta::notificarAdminWhatsApp($venta);
+                DB::afterCommit(function () use ($venta): void {
+                    \App\Models\Venta::notificarAdminWhatsApp($venta);
+                });
             });
         } catch (ValidationException $e) {
             return $this->error(
