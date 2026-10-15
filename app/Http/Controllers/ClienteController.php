@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -16,8 +18,9 @@ class ClienteController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Optimización: Paginamos directamente en la base de datos (PostgreSQL)
-        $clientes = User::withTrashed()
+        // 1. Optimización: Paginamos directamente en la base de datos con Eager Loading de roles
+        $clientes = User::with('roles')
+            ->withTrashed()
             ->when($request->filled('q'), function ($query) use ($request) {
                 $search = '%' . strtolower($request->q) . '%';
                 // Buscamos por nombre, email o el nuevo campo telefono
@@ -51,12 +54,15 @@ class ClienteController extends Controller
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|string|email|max:255|unique:users,email',
+            'role'     => 'required|string|in:admin,vendedor,cocina,cliente',
             'password' => 'required|string|min:6',
-            'telefono' => 'nullable|string|max:20', // Nuevo campo
+            'telefono' => 'nullable|string|max:20',
             'image'    => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         $rawPassword = $request->password;
+        $roleName = $validated['role'];
+        unset($validated['role']);
 
         // Manejo de Imagen
         if ($request->hasFile('image')) {
@@ -69,9 +75,13 @@ class ClienteController extends Controller
 
         $cliente = User::create($validated);
 
+        // Asignación del rol seleccionado en la tabla pivote
+        $role = Role::where('name', $roleName)->firstOrFail();
+        $cliente->roles()->sync([$role->id]);
+
         $waEnviado = false;
         if ($request->boolean('send_whatsapp_credentials') && !empty($cliente->telefono)) {
-            $waEnviado = $this->queueWhatsAppCredentials($cliente, $rawPassword);
+            $waEnviado = $this->queueWhatsAppCredentials($cliente, $rawPassword, $roleName);
         }
 
         $mensajeExito = 'Usuario creado correctamente' . ($waEnviado ? ' y accesos encolados por WhatsApp.' : '.');
@@ -82,14 +92,14 @@ class ClienteController extends Controller
 
     public function edit($id)
     {
-        $cliente = User::findOrFail($id);
+        $cliente = User::with('roles')->findOrFail($id);
         return view('admin.clientes.edit', compact('cliente'));
     }
 
     public function update(Request $request, User $cliente)
     {
         $request->merge([
-            'email' => trim(strtolower($request->email)),
+            'email' => trim(strtolower((string) $request->email)),
         ]);
 
         $validated = $request->validate([
@@ -98,10 +108,14 @@ class ClienteController extends Controller
                 'required', 'string', 'email', 'max:255',
                 Rule::unique('users')->ignore($cliente->id),
             ],
-            'telefono' => 'nullable|string|max:20', // Nuevo campo
-            'password' => 'nullable|string|min:8',
+            'role'     => 'nullable|string|in:admin,vendedor,cocina,cliente',
+            'telefono' => 'nullable|string|max:20',
+            'password' => 'nullable|string|min:6',
             'image'    => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
+
+        $roleName = $validated['role'] ?? null;
+        unset($validated['role']);
 
         // Manejo de Imagen
         if ($request->hasFile('image')) {
@@ -124,8 +138,14 @@ class ClienteController extends Controller
 
         $cliente->update($validated);
 
+        // Sincronizar rol si el usuario autenticado es admin y envió un rol válido
+        if (Auth::check() && Auth::user()->hasRole('admin') && !empty($roleName)) {
+            $role = Role::where('name', $roleName)->firstOrFail();
+            $cliente->roles()->sync([$role->id]);
+        }
+
         if ($request->boolean('send_whatsapp_credentials') && !empty($cliente->telefono)) {
-            $this->queueWhatsAppCredentials($cliente, $rawPassword ?? 'Su contraseña actual');
+            $this->queueWhatsAppCredentials($cliente, $rawPassword ?? 'Su contraseña actual', $roleName);
         }
 
         return redirect()->route('admin.clientes.index')
@@ -134,7 +154,7 @@ class ClienteController extends Controller
 
     public function enviarWhatsAppAccess(Request $request, $id)
     {
-        $cliente = User::withTrashed()->findOrFail($id);
+        $cliente = User::with('roles')->withTrashed()->findOrFail($id);
 
         if (empty($cliente->telefono)) {
             return back()->with('error', 'El cliente no tiene un número de teléfono registrado.');
@@ -155,9 +175,9 @@ class ClienteController extends Controller
         return back()->with('success', 'Mensaje de accesos por WhatsApp encolado correctamente para ' . $cliente->name . '.');
     }
 
-    private function queueWhatsAppCredentials(User $cliente, string $password): bool
+    private function queueWhatsAppCredentials(User $cliente, string $password, ?string $roleName = null): bool
     {
-        $phone = preg_replace('/[^0-9]/', '', $cliente->telefono);
+        $phone = preg_replace('/[^0-9]/', '', (string) $cliente->telefono);
         if (empty($phone)) return false;
 
         // Si son 10 dígitos (México), anteponer 521
@@ -165,11 +185,14 @@ class ClienteController extends Controller
             $phone = '521' . $phone;
         }
 
+        $rolAsignado = ucfirst($roleName ?? $cliente->roles()->first()?->name ?? 'cliente');
+
         $mensaje = "🔐 *ACCESOS DE CUENTA - El Bajón*\n\n" .
                    "Hola *{$cliente->name}*,\n" .
                    "Tus credenciales de acceso a la plataforma son:\n\n" .
                    "👤 *Usuario/Email:* {$cliente->email}\n" .
-                   "🔑 *Contraseña:* {$password}\n\n" .
+                   "🔑 *Contraseña:* {$password}\n" .
+                   "🏷️ *Tu rol asignado es:* {$rolAsignado}\n\n" .
                    "🌐 *Iniciar Sesión:* " . url('/login') . "\n\n" .
                    "¡Gracias por formar parte de El Bajón!";
 

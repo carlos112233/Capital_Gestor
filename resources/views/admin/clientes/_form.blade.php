@@ -16,7 +16,25 @@
     @enderror
 </div>
 
-<!-- NUEVO CAMPO: TELÉFONO -->
+<!-- CAMPO: ROL DEL USUARIO -->
+<div class="mb-4">
+    <label class="block text-gray-700 font-bold mb-2">Rol del Usuario</label>
+    @php
+        $targetUser = $cliente ?? $user ?? null;
+        $currentRole = old('role', ($targetUser && $targetUser->exists) ? ($targetUser->roles->first()?->name ?? 'cliente') : 'cliente');
+    @endphp
+    <select name="role" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 font-medium text-gray-800" required>
+        <option value="cliente" {{ $currentRole === 'cliente' ? 'selected' : '' }}>Cliente</option>
+        <option value="vendedor" {{ $currentRole === 'vendedor' ? 'selected' : '' }}>Vendedor</option>
+        <option value="cocina" {{ $currentRole === 'cocina' ? 'selected' : '' }}>Cocina</option>
+        <option value="admin" {{ $currentRole === 'admin' ? 'selected' : '' }}>Administrador (Admin)</option>
+    </select>
+    @error('role')
+        <span class="text-red-600 text-sm">{{ $message }}</span>
+    @enderror
+</div>
+
+<!-- CAMPO: TELÉFONO -->
 <div class="mb-4">
     <label class="block text-gray-700 font-bold mb-2">Teléfono</label>
     <input type="text" name="telefono" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
