@@ -32,8 +32,12 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'indexUsuario'])
+    Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
+    Route::get('/dashboard/vendedor', [DashboardController::class, 'index'])
+        ->name('dashboardVendedor');
+    Route::post('/pagos-vendedores', [\App\Http\Controllers\PagoVendedorController::class, 'store'])
+        ->name('pagos-vendedores.store');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -43,6 +47,7 @@ Route::middleware('auth')->group(function () {
     Route::post('catalogo/vender', [CatalogoController::class, 'vender'])->name('catalogo.vender');
     Route::resource('pedidos', PedidoController::class);
     Route::post('ventas/multiples', [VentaController::class, 'storeMultiple'])->name('ventas.storeMultiple');
+    Route::post('ventas/{venta}/solicitar-anulacion', [VentaController::class, 'solicitarAnulacion'])->name('ventas.solicitar-anulacion');
     Route::resource('ventas', VentaController::class);
     Route::resource('datos', TransferenciaController::class);
     Route::get('cobros', [\App\Http\Controllers\CobroController::class, 'index'])->name('cobros.index');

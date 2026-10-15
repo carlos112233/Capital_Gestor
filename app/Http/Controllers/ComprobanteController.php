@@ -150,6 +150,7 @@ class ComprobanteController extends Controller
         Entrada::create([
             'user_id' => $comprobante->user_id,
             'cliente_id' => $comprobante->user_id,
+            'registrado_por_id' => Auth::id(),
             'articulo_id' => $articuloId,
             'precio_venta' => $comprobante->monto,
             'descripcion' => 'Aprobación de comprobante #' . $comprobante->id . ($comprobante->clave_rastreo ? ' [Folio: ' . $comprobante->clave_rastreo . ']' : '') . ($comprobante->banco ? ' [Banco: ' . $comprobante->banco . ']' : ''),

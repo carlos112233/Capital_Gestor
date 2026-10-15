@@ -71,9 +71,71 @@
         </div>
     </x-modal>
 
+    <!-- Modal Solicitar Anulación de Venta (Vendedores) -->
+    <x-modal name="solicitar-anulacion-modal" :show="$errors->has('motivo')">
+        <div class="p-6 text-left">
+            <div class="flex justify-between items-center pb-3 border-b mb-4">
+                <div class="flex items-center gap-2">
+                    <span class="p-2 rounded-xl bg-amber-50 text-amber-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </span>
+                    <h3 id="anulacion-modal-title" class="text-lg font-bold text-gray-900">Solicitar Anulación de Venta</h3>
+                </div>
+                <button type="button" onclick="closeModal('solicitar-anulacion-modal')"
+                    class="text-gray-400 hover:text-gray-600 font-bold text-xl cursor-pointer">&times;</button>
+            </div>
+
+            <p class="text-xs text-slate-500 mb-4">
+                Los vendedores no pueden anular ventas directamente. Ingresa el motivo detallado de la anulación para notificar de inmediato al Administrador vía WhatsApp y sistema central.
+            </p>
+
+            <form id="form-solicitar-anulacion" method="POST" action="" class="space-y-4">
+                @csrf
+                <div>
+                    <label for="motivo_anulacion" class="block text-xs font-bold uppercase text-slate-700 mb-1">
+                        Motivo de la anulación <span class="text-red-500">*</span>
+                    </label>
+                    <textarea name="motivo" id="motivo_anulacion" rows="4" minlength="10" required
+                        placeholder="Describe detalladamente el motivo de la anulación (mínimo 10 caracteres)..."
+                        class="w-full text-sm text-slate-800 rounded-xl border-slate-300 focus:border-amber-500 focus:ring-amber-500 shadow-xs">{{ old('motivo') }}</textarea>
+                    <p class="text-[11px] text-slate-400 mt-1">Mínimo 10 caracteres requeridos.</p>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-3 border-t">
+                    <button type="button" onclick="closeModal('solicitar-anulacion-modal')"
+                        class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                        class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold text-xs shadow-md shadow-amber-500/20 hover:shadow-lg transition-all cursor-pointer inline-flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                        Enviar Solicitud al Administrador
+                    </button>
+                </div>
+            </form>
+        </div>
+    </x-modal>
+
 </x-app-layout>
 
 <script>
+    function openSolicitarAnulacionModal(ventaId) {
+        const form = document.getElementById('form-solicitar-anulacion');
+        const title = document.getElementById('anulacion-modal-title');
+        if (form) {
+            form.action = "{{ url('ventas') }}/" + ventaId + "/solicitar-anulacion";
+            if (title) title.textContent = "Solicitar Anulación de Venta #" + ventaId;
+            const motivoInput = form.querySelector('[name="motivo"]');
+            if (motivoInput) motivoInput.value = '';
+        }
+        openModal('solicitar-anulacion-modal');
+    }
+
     function openEditVentaModal(venta) {
         const form = document.getElementById('form-edit-venta');
         const title = document.getElementById('edit-modal-title-venta');

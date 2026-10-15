@@ -25,9 +25,10 @@ class EntradaController extends Controller
         $unMesAtras = Carbon::now()->subMonth();
 
         $entradasQuery = Entrada::with([
+            'cliente:id,name',
+            'registradoPor:id,name',
             'user:id,name',
-            'articulo:id,nombre,precio',
-            'cliente:id,name'
+            'articulo:id,nombre,precio'
         ])
         ->where('created_at', '>=', $unMesAtras)
         ->latest();
@@ -114,11 +115,12 @@ class EntradaController extends Controller
 
         // 3. Crear el registro
         $data = [
-            'articulo_id'    => $validated['articulo_id'],
-            'user_id'        => $clienteId,
-            'precio_venta'   => $validated['precio_venta'],
-            'descripcion'    => $validated['descripcion'] ?? null,
-            'fecha_generado' => now(),
+            'articulo_id'       => $validated['articulo_id'],
+            'user_id'           => $clienteId,
+            'registrado_por_id' => Auth::id(),
+            'precio_venta'      => $validated['precio_venta'],
+            'descripcion'       => $validated['descripcion'] ?? null,
+            'fecha_generado'    => now(),
         ];
 
         if (\Illuminate\Support\Facades\Schema::hasColumn('entradas', 'cliente_id')) {
@@ -183,7 +185,7 @@ class EntradaController extends Controller
      */
     public function show(Entrada $entrada)
     {
-        $entrada->load(['user', 'cliente', 'articulo']);
+        $entrada->load(['user', 'cliente', 'registradoPor', 'articulo']);
         return view('admin.entradas.show', compact('entrada'));
     }
 

@@ -13,6 +13,7 @@ class Entrada extends Model
     protected $fillable = [
         'user_id',
         'cliente_id',
+        'registrado_por_id',
         'articulo_id',
         'precio_venta',
         'descripcion',
@@ -27,6 +28,11 @@ class Entrada extends Model
     public function cliente()
     {
         return $this->belongsTo(User::class, 'cliente_id')->withTrashed();
+    }
+
+    public function registradoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'registrado_por_id')->withTrashed();
     }
 
      public function articulo(): BelongsTo

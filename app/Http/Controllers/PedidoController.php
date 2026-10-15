@@ -126,7 +126,8 @@ class PedidoController extends Controller
             $targetUserId = $p['user_id'] ?? $userId;
 
             $venta = Venta::create([
-                'user_id'     => $targetUserId,
+                'user_id'      => $targetUserId,
+                'comprador_id' => Auth::id(),
                 'articulo_id'  => $p['articulo_id'],
                 'cantidad'     => $p['cantidad'],
                 'precio_venta' => $p['costo'],
@@ -368,7 +369,8 @@ class PedidoController extends Controller
                 $pedidoParaMensaje = $pedidoExistente;
             } else {
                 $venta = Venta::create([
-                    'user_id'     => $p['user_id'] ?? $userId,
+                    'user_id'      => $p['user_id'] ?? $userId,
+                    'comprador_id' => Auth::id(),
                     'articulo_id'  => $p['articulo_id'],
                     'cantidad'     => $p['cantidad'],
                     'precio_venta' => $p['costo'],

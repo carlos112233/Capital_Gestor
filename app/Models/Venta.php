@@ -12,6 +12,7 @@ class Venta extends Model
 
     protected $fillable = [
         'user_id',
+        'comprador_id',
         'articulo_id',
         'cliente_id',
         'cantidad',
@@ -23,6 +24,11 @@ class Venta extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class)->withTrashed();
+    }
+
+    public function comprador(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'comprador_id')->withTrashed();
     }
 
     public function articulo(): BelongsTo

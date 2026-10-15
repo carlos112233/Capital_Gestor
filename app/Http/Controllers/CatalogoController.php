@@ -67,6 +67,7 @@ class CatalogoController extends Controller
                 // 2. Registrar la venta en la tabla 'ventas'
                 $venta = $articulo->ventas()->create([
                     'user_id'      => Auth::id(),
+                    'comprador_id' => Auth::id(),
                     'cantidad'     => $cantidadVenta,
                     'precio_venta' => $articulo->precio,
                     'total_venta'  => $articulo->precio * $cantidadVenta,

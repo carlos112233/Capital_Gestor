@@ -70,6 +70,7 @@ class CatalogoApiController extends Controller
                 // Registrar venta
                 $venta = $articulo->ventas()->create([
                     'user_id'      => Auth::id(),
+                    'comprador_id' => Auth::id(),
                     'cantidad'     => $cantidadVenta,
                     'precio_venta' => $validated['precio_venta'],
                     'total_venta'  => $validated['precio_venta'] * $cantidadVenta,
