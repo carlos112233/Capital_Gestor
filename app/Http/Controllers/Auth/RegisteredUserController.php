@@ -42,13 +42,11 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Asignar el rol 'user' por defecto
-        $userRole = Role::where('name', 'user')->first();
-        if ($userRole) {
-            $user->roles()->attach($userRole);
+        // Asignar el rol 'cliente' por defecto
+        $clienteRole = Role::where('name', 'cliente')->first() ?? Role::where('name', 'user')->first();
+        if ($clienteRole) {
+            $user->roles()->attach($clienteRole);
         }
-        // --- FIN DE LA MODIFICACIÓN ---
 
         event(new Registered($user));
 
