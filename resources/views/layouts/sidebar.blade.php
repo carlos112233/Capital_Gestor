@@ -23,7 +23,15 @@
             </div>
             <div x-show="sidebarOpen" x-transition class="flex flex-col whitespace-nowrap">
                 <span class="font-extrabold text-white text-base tracking-wide leading-tight">El bajon</span>
-                <span class="text-[11px] text-indigo-400 font-extrabold tracking-wider uppercase mt-0.5">PANEL ADMIN</span>
+                <span class="text-[11px] text-indigo-400 font-extrabold tracking-wider uppercase mt-0.5">
+                    @if(Auth::user()->hasRole('admin'))
+                        PANEL ADMIN
+                    @elseif(Auth::user()->hasRole('vendedor'))
+                        PANEL VENDEDOR
+                    @else
+                        PANEL CLIENTE
+                    @endif
+                </span>
             </div>
         </a>
         <button @click="sidebarOpen = !sidebarOpen" 
@@ -52,6 +60,14 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                         </svg>
                         <span x-show="sidebarOpen" x-transition class="ml-3 whitespace-nowrap">Dashboard</span>
+                    </a>
+                @elseif (Auth::user()->hasRole('vendedor'))
+                    <a href="{{ route('dashboard') }}"
+                       class="flex items-center px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group {{ (request()->routeIs('dashboard') || request()->routeIs('dashboardVendedor')) ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                        <svg class="w-5 h-5 flex-shrink-0 {{ (request()->routeIs('dashboard') || request()->routeIs('dashboardVendedor')) ? 'text-white' : 'text-indigo-400 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span x-show="sidebarOpen" x-transition class="ml-3 whitespace-nowrap">Panel de Vendedor</span>
                     </a>
                 @else
                     <a href="{{ route('dashboard') }}"
@@ -101,7 +117,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <span x-show="sidebarOpen" x-transition class="ml-3 whitespace-nowrap">
-                        {{ Auth::user()->hasRole('admin') ? 'Ventas Realizadas' : 'Compras Realizadas' }}
+                        {{ (Auth::user()->hasRole('admin') || Auth::user()->hasRole('vendedor')) ? 'Ventas Realizadas' : 'Compras Realizadas' }}
                     </span>
                 </a>
 
@@ -150,39 +166,40 @@
         @endif
 
         <!-- Grupo 4: SISTEMA Y AJUSTES -->
-        <div>
-            <div x-show="sidebarOpen" x-transition class="px-3 mb-2 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-                Sistema
-            </div>
-            <nav class="space-y-1">
-                <a href="{{ route('cobros.index') }}"
-                   class="flex items-center px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group {{ request()->routeIs('cobros.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                    <svg class="w-5 h-5 flex-shrink-0 {{ request()->routeIs('cobros.*') ? 'text-white' : 'text-emerald-400 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span x-show="sidebarOpen" x-transition class="ml-3 whitespace-nowrap">Cobros y Pagos</span>
-                </a>
-
-                <a href="{{ route('datos.index') }}"
-                   class="flex items-center px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group {{ request()->routeIs('datos.*') ? 'bg-gradient-to-r from-slate-700 to-slate-800 text-white shadow-lg shadow-slate-700/25' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                    <svg class="w-5 h-5 flex-shrink-0 {{ request()->routeIs('datos.*') ? 'text-white' : 'text-blue-400 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                    </svg>
-                    <span x-show="sidebarOpen" x-transition class="ml-3 whitespace-nowrap">Método de pago</span>
-                </a>
-
-                @if (Auth::user()->hasRole('admin'))
-                    <a href="{{ route('admin.configuracion.index') }}"
-                       class="flex items-center px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group {{ request()->routeIs('admin.configuracion.*') ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/25' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                        <svg class="w-5 h-5 flex-shrink-0 {{ request()->routeIs('admin.configuracion.*') ? 'text-white' : 'text-emerald-400 group-hover:text-white' }} transition-colors" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+        @if (!Auth::user()->hasRole('vendedor'))
+            <div>
+                <div x-show="sidebarOpen" x-transition class="px-3 mb-2 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                    Sistema
+                </div>
+                <nav class="space-y-1">
+                    <a href="{{ route('cobros.index') }}"
+                       class="flex items-center px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group {{ request()->routeIs('cobros.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                        <svg class="w-5 h-5 flex-shrink-0 {{ request()->routeIs('cobros.*') ? 'text-white' : 'text-emerald-400 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span x-show="sidebarOpen" x-transition class="ml-3 whitespace-nowrap">WhatsApp Motor (QR)</span>
+                        <span x-show="sidebarOpen" x-transition class="ml-3 whitespace-nowrap">Cobros y Pagos</span>
                     </a>
-                @endif
-            </nav>
-        </div>
 
+                    <a href="{{ route('datos.index') }}"
+                       class="flex items-center px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group {{ request()->routeIs('datos.*') ? 'bg-gradient-to-r from-slate-700 to-slate-800 text-white shadow-lg shadow-slate-700/25' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                        <svg class="w-5 h-5 flex-shrink-0 {{ request()->routeIs('datos.*') ? 'text-white' : 'text-blue-400 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        <span x-show="sidebarOpen" x-transition class="ml-3 whitespace-nowrap">Método de pago</span>
+                    </a>
+
+                    @if (Auth::user()->hasRole('admin'))
+                        <a href="{{ route('admin.configuracion.index') }}"
+                           class="flex items-center px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group {{ request()->routeIs('admin.configuracion.*') ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/25' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                            <svg class="w-5 h-5 flex-shrink-0 {{ request()->routeIs('admin.configuracion.*') ? 'text-white' : 'text-emerald-400 group-hover:text-white' }} transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                            </svg>
+                            <span x-show="sidebarOpen" x-transition class="ml-3 whitespace-nowrap">WhatsApp Motor (QR)</span>
+                        </a>
+                    @endif
+                </nav>
+            </div>
+        @endif
     </div>
 
     <!-- User Profile Footer -->
@@ -231,7 +248,15 @@
             </div>
             <div class="flex flex-col whitespace-nowrap">
                 <span class="font-extrabold text-white text-base tracking-wide leading-tight">El bajon</span>
-                <span class="text-[11px] text-indigo-400 font-extrabold tracking-wider uppercase mt-0.5">PANEL ADMIN</span>
+                <span class="text-[11px] text-indigo-400 font-extrabold tracking-wider uppercase mt-0.5">
+                    @if(Auth::user()->hasRole('admin'))
+                        PANEL ADMIN
+                    @elseif(Auth::user()->hasRole('vendedor'))
+                        PANEL VENDEDOR
+                    @else
+                        PANEL CLIENTE
+                    @endif
+                </span>
             </div>
         </a>
         <button @click="mobileOpen = false" class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
@@ -257,6 +282,14 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                         </svg>
                         <span>Dashboard</span>
+                    </a>
+                @elseif (Auth::user()->hasRole('vendedor'))
+                    <a href="{{ route('dashboard') }}"
+                       class="flex items-center px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group {{ (request()->routeIs('dashboard') || request()->routeIs('dashboardVendedor')) ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                        <svg class="w-5 h-5 flex-shrink-0 mr-3 {{ (request()->routeIs('dashboard') || request()->routeIs('dashboardVendedor')) ? 'text-white' : 'text-indigo-400 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Panel de Vendedor</span>
                     </a>
                 @else
                     <a href="{{ route('dashboard') }}"
@@ -306,7 +339,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <span>
-                        {{ Auth::user()->hasRole('admin') ? 'Ventas Realizadas' : 'Compras Realizadas' }}
+                        {{ (Auth::user()->hasRole('admin') || Auth::user()->hasRole('vendedor')) ? 'Ventas Realizadas' : 'Compras Realizadas' }}
                     </span>
                 </a>
 
@@ -355,6 +388,7 @@
         @endif
 
         <!-- Grupo 4: SISTEMA Y AJUSTES -->
+        @if (!Auth::user()->hasRole('vendedor'))
         <div>
             <div class="px-3 mb-2 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
                 Sistema
@@ -387,6 +421,7 @@
                 @endif
             </nav>
         </div>
+        @endif
 
     </div>
 

@@ -58,7 +58,13 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
             <!-- Título de la Plataforma o Módulo Actual -->
             <div class="flex flex-col">
                 <h1 class="text-lg font-bold text-slate-800 tracking-tight leading-none">
-                    PANEL ADMINISTRATIVO
+                    @if(Auth::user()->hasRole('admin'))
+                        PANEL ADMINISTRATIVO
+                    @elseif(Auth::user()->hasRole('vendedor'))
+                        PANEL DE VENDEDOR
+                    @else
+                        PANEL DE CONTROL
+                    @endif
                 </h1>
             </div>
         </div>

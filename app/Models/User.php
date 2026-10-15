@@ -119,6 +119,26 @@ class User extends Authenticatable
         return $this->hasMany(Venta::class);
     }
 
+    public function comprasRealizadas(): HasMany
+    {
+        return $this->hasMany(Venta::class, 'comprador_id');
+    }
+
+    public function entradasRegistradas(): HasMany
+    {
+        return $this->hasMany(Entrada::class, 'registrado_por_id');
+    }
+
+    public function pagosRecibidos(): HasMany
+    {
+        return $this->hasMany(PagoVendedor::class, 'vendedor_id');
+    }
+
+    public function pagosAutorizados(): HasMany
+    {
+        return $this->hasMany(PagoVendedor::class, 'registrado_por_id');
+    }
+
     public function tutorials(): HasMany
     {
         return $this->hasMany(UserTutorial::class);
@@ -289,6 +309,9 @@ class User extends Authenticatable
     {
         foreach ($this->roles as $role) {
             if ($role->name === $roleName) {
+                return true;
+            }
+            if (($roleName === 'cliente' && $role->name === 'user') || ($roleName === 'user' && $role->name === 'cliente')) {
                 return true;
             }
         }

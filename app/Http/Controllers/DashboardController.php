@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -11,8 +13,52 @@ use App\Jobs\SendWhatsAppJob;
 
 class DashboardController extends Controller
 {
-    // Dashboard para administradores
-    public function indexAdmin()
+    /**
+     * Enrutador único y centralizado del Dashboard.
+     * Delega estrictamente según el rol activo del usuario autenticado.
+     */
+    public function index(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($user->hasRole('admin')) {
+            return $this->adminDashboard($request);
+        }
+
+        if ($user->hasRole('vendedor')) {
+            return $this->vendedorDashboard($request);
+        }
+
+        if ($user->hasRole('cliente')) {
+            return $this->clienteDashboard($request);
+        }
+
+        return $this->clienteDashboard($request);
+    }
+
+    /**
+     * Método puente para compatibilidad con rutas nombradas previas de Admin.
+     */
+    public function indexAdmin(Request $request)
+    {
+        if (!Auth::user()->hasRole('admin')) {
+            return redirect()->route('dashboard');
+        }
+        return $this->adminDashboard($request);
+    }
+
+    /**
+     * Método puente para compatibilidad con rutas previas de Cliente.
+     */
+    public function indexUsuario(Request $request)
+    {
+        return $this->index($request);
+    }
+
+    /**
+     * Dashboard exclusivo para Administradores.
+     */
+    private function adminDashboard(Request $request)
     {
         $resumen = User::select(
                 'id', 'name', 'email', 'telefono', 'updated_at', 'image',
@@ -83,17 +129,101 @@ class DashboardController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
 
-        if (Auth::user()->hasRole('admin')) {
-            return view('dashboardAdmin', compact('resumen', 'totalSaldo', 'articulos', 'users', 'comprobantesPendientes'));
-        } else {
-            return redirect()->intended(route('dashboard'));
-        }
+        // ─── Liquidaciones a Vendedores (Pre-carga de agregados para erradicar N+1) ───
+        $vendedores = User::whereHas('roles', fn($q) => $q->where('name', 'vendedor'))
+            ->select('id', 'name', 'email', 'image', DB::raw('image IS NOT NULL as has_image'))
+            ->withSum('comprasRealizadas as ventas_operador_sum', 'total_venta')
+            ->withCount('comprasRealizadas as ventas_operador_count')
+            ->withSum('pagosRecibidos as pagos_recibidos_sum', 'monto_neto_pagado')
+            ->withSum('pagosRecibidos as base_liquidada_sum', 'total_vendido')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($v) {
+                $totalVendido = (float) ($v->ventas_operador_sum ?? 0);
+                $totalPagadoNeto = (float) ($v->pagos_recibidos_sum ?? 0);
+                $totalBaseLiquidada = (float) ($v->base_liquidada_sum ?? 0);
+
+                $comisionEstimada20 = round($totalVendido * 0.20, 2);
+                $basePendiente = max(0.0, $totalVendido - $totalBaseLiquidada);
+                $saldoPendienteCobro = max(0.0, $comisionEstimada20 - $totalPagadoNeto);
+
+                $v->total_vendido = $totalVendido;
+                $v->total_pagado_neto = $totalPagadoNeto;
+                $v->total_base_liquidada = $totalBaseLiquidada;
+                $v->comision_estimada = $comisionEstimada20;
+                $v->base_pendiente = $basePendiente;
+                $v->saldo_pendiente = $saldoPendienteCobro;
+
+                return $v;
+            });
+
+        return view('dashboardAdmin', compact('resumen', 'totalSaldo', 'articulos', 'users', 'comprobantesPendientes', 'vendedores'));
     }
 
-    // Dashboard para usuario normal
-    public function indexUsuario()
+    /**
+     * Dashboard exclusivo para Vendedores ("Panel de Vendedor" de solo lectura).
+     */
+    private function vendedorDashboard(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
+
+        // Si un administrador supervisa, puede inspeccionar a cualquier vendedor vía ?vendedor_id=X
+        $vendedor = $user;
+        if ($user->hasRole('admin') && $request->filled('vendedor_id')) {
+            $vendedor = User::findOrFail($request->input('vendedor_id'));
+        }
+
+        // 1. Total Vendido: Acumulado de ventas donde comprador_id = $vendedor->id
+        $totalVendido = (float) \App\Models\Venta::where('comprador_id', $vendedor->id)->sum('total_venta');
+
+        // 2. Comisión/Ganancia estimada (20% sobre total vendido)
+        $porcentajeComision = 20.00;
+        $comisionEstimada = round($totalVendido * ($porcentajeComision / 100), 2);
+
+        // 3. Pagos Recibidos: Historial de liquidaciones emitidas por el admin
+        $historialPagos = \App\Models\PagoVendedor::with('registradoPor:id,name')
+            ->where('vendedor_id', $vendedor->id)
+            ->latest()
+            ->get();
+
+        $totalPagadoNeto = (float) $historialPagos->sum('monto_neto_pagado');
+        $totalBaseLiquidada = (float) $historialPagos->sum('total_vendido');
+
+        // 4. Saldo Pendiente por Cobrar
+        $saldoPendienteCobro = max(0.0, $comisionEstimada - $totalPagadoNeto);
+
+        // Ventas recientes efectuadas por este vendedor
+        $ventasRecientes = \App\Models\Venta::with(['user:id,name', 'articulo:id,nombre'])
+            ->where('comprador_id', $vendedor->id)
+            ->latest()
+            ->take(15)
+            ->get();
+
+        // Lista de vendedores si el Admin está visualizando
+        $vendedores = $user->hasRole('admin')
+            ? User::whereHas('roles', fn($q) => $q->where('name', 'vendedor'))->orderBy('name')->get(['id', 'name', 'email'])
+            : collect();
+
+        return view('dashboardVendedor', compact(
+            'vendedor',
+            'totalVendido',
+            'porcentajeComision',
+            'comisionEstimada',
+            'totalPagadoNeto',
+            'totalBaseLiquidada',
+            'saldoPendienteCobro',
+            'historialPagos',
+            'ventasRecientes',
+            'vendedores'
+        ));
+    }
+
+    /**
+     * Dashboard exclusivo para Clientes.
+     */
+    private function clienteDashboard(Request $request)
+    {
+        $user = Auth::user();
 
         // Calculamos totales utilizando los accessors contables centralizados
         $totalDeuda = $user->total_deuda;
@@ -101,7 +231,7 @@ class DashboardController extends Controller
         // En la vista del cliente, saldo positivo significa a favor y negativo adeudo
         $saldo = $totalPagado - $totalDeuda;
 
-        // Creamos un "resumen" para la vista, usando la misma estructura que tu tabla
+        // Creamos un "resumen" para la vista, usando la misma estructura que la tabla
         $resumen = collect([
             (object)[
                 'id' => $user->id,
@@ -115,7 +245,6 @@ class DashboardController extends Controller
             ]
         ]);
 
-        // Sumatoria de todos los saldos (en este caso solo el suyo)
         $totalSaldo = $resumen->sum('saldo');
 
         $comprobantes = \App\Models\Comprobante::where('user_id', $user->id)
@@ -123,11 +252,7 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        if (!Auth::user()->hasRole('admin')) {
-            return view('dashboard', compact('resumen', 'totalSaldo', 'comprobantes'));
-        } else {
-            return redirect()->intended(route('dashboardAdmin'));
-        }
+        return view('dashboard', compact('resumen', 'totalSaldo', 'comprobantes'));
     }
 
     public function enviarRecordatoriosMasivos(Request $request)
