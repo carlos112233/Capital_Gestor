@@ -70,6 +70,17 @@ jobs:
             echo "🎨 Compilando assets de frontend (Tailwind + Vite)..."
             npm ci && npm run build
 
+            echo "💾 Ejecutando respaldo preventivo de MySQL antes de migrar..."
+            mkdir -p /var/backups
+            BACKUP_FILE="/var/backups/pre_migration_backup_$(date +%Y%m%d_%H%M%S).sql"
+            DB_PASS=$(grep '^DB_PASSWORD=' /var/www/capital_gestor/.env | cut -d '=' -f2- | tr -d '"' | tr -d "'")
+            if [ -n "$DB_PASS" ]; then
+              MYSQL_PWD="$DB_PASS" mysqldump --no-tablespaces -u root gestor_capital_db > "$BACKUP_FILE" || mysqldump --no-tablespaces -u root gestor_capital_db > "$BACKUP_FILE"
+            else
+              mysqldump --no-tablespaces -u root gestor_capital_db > "$BACKUP_FILE"
+            fi
+            echo "✅ Respaldo generado con éxito en $BACKUP_FILE"
+
             echo "🗄️ Aplicando migraciones de base de datos (sin tocar datos existentes)..."
             php artisan migrate --force
 

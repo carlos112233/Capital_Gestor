@@ -23,8 +23,9 @@ if __name__ == '__main__':
     # Step 1: Pull latest changes
     run_remote_cmd("git pull origin main")
 
-    # Step 2: Storage link & Migrations
+    # Step 2: Storage link, Backup & Migrations
     run_remote_cmd("php artisan storage:link")
+    run_remote_cmd("mkdir -p /var/backups && mysqldump --no-tablespaces -u root gestor_capital_db > /var/backups/pre_migration_backup_$(date +%Y%m%d_%H%M%S).sql")
     run_remote_cmd("php artisan migrate --force")
     run_remote_cmd("php artisan storage:migrate-base64")
 
