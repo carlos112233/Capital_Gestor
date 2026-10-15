@@ -62,7 +62,8 @@
     @if (isset($cliente) && $cliente->image)
         <div class="mt-3">
             <p class="text-sm text-gray-600 mb-1">Imagen actual:</p>
-            <img src="data:{{ $cliente->image_tipo }};base64,{{ $cliente->image }}" 
+            <img src="{{ $cliente->image_url }}" 
+                 alt="Avatar de {{ $cliente->name }}"
                  class="w-32 h-32 object-cover rounded-lg border shadow-md">
         </div>
     @endif

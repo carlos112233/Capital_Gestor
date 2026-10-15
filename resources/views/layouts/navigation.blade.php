@@ -231,7 +231,7 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
             <!-- Botón Foto de Perfil / Modal -->
             <div class="flex items-center mr-1">
                 <button @click="$dispatch('open-global-photo-modal')" class="block flex-shrink-0 focus:outline-none cursor-pointer transform hover:scale-105 transition-transform" title="Ver foto de perfil">
-                    <img src="{{ route('user.image', Auth::user()->id) }}?v={{ Auth::user()->updated_at?->timestamp }}" class="w-9 h-9 rounded-xl object-cover shadow-sm border border-slate-200 flex-shrink-0 block" alt="Foto de perfil">
+                    <img src="{{ Auth::user()->image_url }}" onerror="this.onerror=null; this.src='{{ asset('img/default_user.svg') }}';" class="w-9 h-9 rounded-xl object-cover shadow-sm border border-slate-200 flex-shrink-0 block" alt="Foto de perfil">
                 </button>
             </div>
 

@@ -15,7 +15,8 @@
                     {{ $cliente->id }}</td>
                 <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                     <div class="flex items-center justify-center gap-2">
-                        <img src="{{ route('user.image', $cliente->id) }}?v={{ $cliente->updated_at ? $cliente->updated_at->timestamp : '' }}"
+                        <img src="{{ $cliente->image_url ?? asset('img/default_user.svg') }}"
+                            onerror="this.onerror=null; this.src='{{ asset('img/default_user.svg') }}';"
                             class="w-7 h-7 rounded-full object-cover border border-slate-200 shadow-sm" alt="Foto">
                         <span class="font-medium text-slate-800">{{ $cliente->name }}</span>
                     </div>

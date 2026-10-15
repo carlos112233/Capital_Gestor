@@ -95,7 +95,8 @@
                                                     <div x-data="{ openTablePhoto: false }">
                                                         <button @click="openTablePhoto = true"
                                                             class="focus:outline-none cursor-pointer transform hover:scale-110 transition-transform">
-                                                            <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}"
+                                                            <img src="{{ $r->image_url ?? asset('img/default_user.svg') }}"
+                                                                onerror="this.onerror=null; this.src='{{ asset('img/default_user.svg') }}';"
                                                                 class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm"
                                                                 alt="Foto">
                                                         </button>
@@ -113,8 +114,10 @@
                                                                             d="M6 18L18 6M6 6l12 12" />
                                                                     </svg>
                                                                 </button>
-                                                                <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}"
-                                                                    class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-white/10">
+                                                                <img src="{{ $r->image_url ?? asset('img/default_user.svg') }}"
+                                                                    onerror="this.onerror=null; this.src='{{ asset('img/default_user.svg') }}';"
+                                                                    class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-white/10"
+                                                                    alt="Foto">
                                                             </div>
                                                         </div>
                                                     </div>
@@ -250,7 +253,8 @@
                                                     <div x-data="{ openTablePhoto: false }">
                                                         <button @click="openTablePhoto = true"
                                                             class="focus:outline-none cursor-pointer transform hover:scale-110 transition-transform">
-                                                            <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}"
+                                                            <img src="{{ $r->image_url ?? asset('img/default_user.svg') }}"
+                                                                onerror="this.onerror=null; this.src='{{ asset('img/default_user.svg') }}';"
                                                                 class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm"
                                                                 alt="Foto">
                                                         </button>
@@ -269,8 +273,10 @@
                                                                             d="M6 18L18 6M6 6l12 12" />
                                                                     </svg>
                                                                 </button>
-                                                                <img src="{{ route('user.image', $r->id) }}?v={{ $r->updated_at ? $r->updated_at->timestamp : '' }}"
-                                                                    class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-white/10">
+                                                                <img src="{{ $r->image_url ?? asset('img/default_user.svg') }}"
+                                                                    onerror="this.onerror=null; this.src='{{ asset('img/default_user.svg') }}';"
+                                                                    class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-white/10"
+                                                                    alt="Foto">
                                                             </div>
                                                         </div>
                                                     </div>

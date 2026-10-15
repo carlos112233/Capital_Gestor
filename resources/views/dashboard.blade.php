@@ -6,7 +6,7 @@
             </h2>
                 <div x-data="{ openDashboardPhoto: false }" class="flex items-center">
                     <button @click="openDashboardPhoto = true" class="focus:outline-none cursor-pointer transform hover:scale-105 transition-transform" title="Ver foto de perfil">
-                        <img src="{{ route('user.image', Auth::user()->id) }}?v={{ Auth::user()->updated_at?->timestamp }}" class="w-10 h-10 rounded-full object-cover shadow-sm border-2 border-indigo-200" alt="Foto de perfil">
+                        <img src="{{ Auth::user()->image_url }}" onerror="this.onerror=null; this.src='{{ asset('img/default_user.svg') }}';" class="w-10 h-10 rounded-full object-cover shadow-sm border-2 border-indigo-200" alt="Foto de perfil">
                     </button>
                     <!-- Modal Foto de Perfil (Dashboard) -->
                     <div x-show="openDashboardPhoto" style="display: none;" x-transition class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
@@ -14,7 +14,7 @@
                             <button @click="openDashboardPhoto = false" class="absolute -top-12 right-0 md:-right-8 md:-top-8 text-white hover:text-slate-300 focus:outline-none bg-white/10 p-2 rounded-full backdrop-blur-md">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
-                            <img src="{{ route('user.image', Auth::user()->id) }}?v={{ Auth::user()->updated_at?->timestamp }}" class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-white/10">
+                            <img src="{{ Auth::user()->image_url }}" onerror="this.onerror=null; this.src='{{ asset('img/default_user.svg') }}';" class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-white/10" alt="Foto de perfil">
                         </div>
                     </div>
                 </div>
@@ -45,7 +45,7 @@
                                             <div class="flex items-center gap-3">
                                                 <div x-data="{ openTablePhoto: false }">
                                                     <button @click="openTablePhoto = true" class="focus:outline-none cursor-pointer transform hover:scale-110 transition-transform">
-                                                        <img src="{{ route('user.image', Auth::user()->id) }}?v={{ Auth::user()->updated_at?->timestamp }}" class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm" alt="Foto">
+                                                        <img src="{{ $r->image_url ?? asset('img/default_user.svg') }}" onerror="this.onerror=null; this.src='{{ asset('img/default_user.svg') }}';" class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm" alt="Foto">
                                                     </button>
                                                     <!-- Modal Foto de Perfil (Tabla) -->
                                                     <div x-show="openTablePhoto" style="display: none;" x-transition class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
@@ -53,7 +53,7 @@
                                                             <button @click="openTablePhoto = false" class="absolute -top-12 right-0 md:-right-8 md:-top-8 text-white hover:text-slate-300 focus:outline-none bg-white/10 p-2 rounded-full backdrop-blur-md">
                                                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                                             </button>
-                                                            <img src="{{ route('user.image', Auth::user()->id) }}?v={{ Auth::user()->updated_at?->timestamp }}" class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-white/10">
+                                                            <img src="{{ $r->image_url ?? asset('img/default_user.svg') }}" onerror="this.onerror=null; this.src='{{ asset('img/default_user.svg') }}';" class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-white/10" alt="Foto">
                                                         </div>
                                                     </div>
                                                 </div>

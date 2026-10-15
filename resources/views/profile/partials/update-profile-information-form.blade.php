@@ -76,7 +76,8 @@
             @if ($user->image)
                 <div class="mt-3">
                     <p class="text-sm text-slate-600 mb-1">Imagen actual:</p>
-                    <img src="data:{{ $user->image_tipo }};base64,{{ $user->image }}" 
+                    <img src="{{ $user->image_url }}" 
+                         alt="{{ $user->name }}"
                          class="w-32 h-32 object-cover rounded-lg border shadow-md">
                 </div>
             @endif
