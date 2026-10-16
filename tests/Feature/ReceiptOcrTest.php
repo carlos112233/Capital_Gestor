@@ -82,7 +82,7 @@ test('el administrador aprueba el comprobante en procesando_pago y genera la ent
     $admin = User::factory()->create();
     assignRoleToUser($admin, 'admin');
 
-    $cliente = User::factory()->create();
+    $cliente = User::factory()->create(['telefono' => '2221234567']);
     assignRoleToUser($cliente, 'cliente');
 
     Articulo::create([
@@ -117,6 +117,14 @@ test('el administrador aprueba el comprobante en procesando_pago y genera la ent
             return str_contains($notification->title, 'Pago Aprobado');
         }
     );
+
+    $this->assertDatabaseHas('whatsapp_pending_messages', [
+        'numero' => '5212221234567',
+    ]);
+
+    $waMessage = DB::table('whatsapp_pending_messages')->where('numero', '5212221234567')->first();
+    $this->assertNotNull($waMessage->pdf_path);
+    $this->assertStringContainsString('Comprobante de Pago en PDF', $waMessage->mensaje);
 });
 
 test('el administrador rechaza el comprobante y respeta el checkbox de whatsapp desmarcado', function () {

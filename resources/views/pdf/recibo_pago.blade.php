@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Comprobante de Pago - EL BAJÓN</title>
+    <title>Comprobante de Pago - {{ $appSettings->app_name ?? 'EL BAJÓN' }}</title>
     <style>
         @page {
             margin: 20px 25px;
@@ -164,13 +164,13 @@
         <tr>
             <td class="logo-box" style="width: 50%;">
                 @if(!empty($logoBase64))
-                    <img src="data:image/svg+xml;base64,{{ $logoBase64 }}" class="logo-img" alt="Logo EL BAJÓN">
+                    <img src="data:image/svg+xml;base64,{{ $logoBase64 }}" class="logo-img" alt="Logo {{ $appSettings->app_name ?? 'EL BAJÓN' }}">
                 @else
-                    <div class="brand-title">EL BAJÓN</div>
+                    <div class="brand-title">{{ $appSettings->app_name ?? 'EL BAJÓN' }}</div>
                 @endif
             </td>
             <td class="header-right" style="width: 50%;">
-                <div class="brand-title">EL BAJÓN</div>
+                <div class="brand-title">{{ $appSettings->app_name ?? 'EL BAJÓN' }}</div>
                 <div class="doc-subtitle">Comprobante de Pago</div>
                 <div class="date-text">Fecha de Emisión: {{ $fechaEmision ?? ($entrada->created_at ? $entrada->created_at->format('d/m/Y') : now()->format('d/m/Y')) }}</div>
             </td>
@@ -248,7 +248,7 @@
     </table>
 
     <div class="footer">
-        Documento oficial emitido por EL BAJÓN © {{ date('Y') }}. Todos los derechos reservados.
+        Documento oficial emitido por {{ $appSettings->app_name ?? 'EL BAJÓN' }} © {{ date('Y') }}. Todos los derechos reservados.
     </div>
 
 </body>

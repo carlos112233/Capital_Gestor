@@ -20,6 +20,12 @@ class Comprobante extends Model
         'datos_ocr_json',
     ];
 
+    protected $casts = [
+        'monto' => 'decimal:2',
+        'monto_extraido' => 'decimal:2',
+        'datos_ocr_json' => 'array',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

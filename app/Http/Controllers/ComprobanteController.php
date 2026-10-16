@@ -33,33 +33,48 @@ class ComprobanteController extends Controller
         $ocrResult = ReceiptOcrService::processImage($fullPath);
         $notasAdicionales = "";
 
+        $montoDeclarado = ($request->monto !== null && $request->monto !== '') ? (float) $request->monto : null;
+        $montoExtraido = $ocrResult['monto_extraido'] !== null ? (float) $ocrResult['monto_extraido'] : null;
+        $coincidenciaMonto = ReceiptOcrService::compareAmounts($montoDeclarado, $montoExtraido);
+
+        $ocrResult['coincidencia_monto'] = $coincidenciaMonto;
+        $ocrResult['monto_declarado'] = $montoDeclarado;
+
         if (!$ocrResult['is_valid_receipt']) {
             Log::warning("Comprobante subido por usuario " . Auth::id() . " no pasó la validación estricta de palabras clave OCR.");
             $notasAdicionales .= "\n[⚠️ ALERTA OCR/IA: La imagen no contiene palabras clave claras de un comprobante bancario.]";
         } else {
-            $bancoDetectado = $ocrResult['banco'] ?? 'No identificado';
-            $montoExtraido = $ocrResult['monto_extraido'];
+            $bancoDetectado = $ocrResult['banco'] ?? $ocrResult['tipo'] ?? 'Comprobante digital';
+            $folioDetectado = $ocrResult['folio'] ?? $ocrResult['clave_rastreo'] ?? null;
+            $destinoDetectado = $ocrResult['destino'] ?? null;
+            $fechaDetectada = $ocrResult['fecha_transferencia'] ?? null;
 
-            $notasAdicionales .= "\n[🤖 OCR/IA: Banco: {$bancoDetectado}";
-            if ($montoExtraido) {
-                $notasAdicionales .= " | Monto Detectado: $" . number_format($montoExtraido, 2);
+            $detalles = ["🏦 {$bancoDetectado}"];
+            if ($folioDetectado) {
+                $detalles[] = "Folio: {$folioDetectado}";
             }
-            if (!empty($ocrResult['clave_rastreo'])) {
-                $notasAdicionales .= " | Folio/Rastreo: " . $ocrResult['clave_rastreo'];
+            if ($destinoDetectado) {
+                $detalles[] = "Destino: {$destinoDetectado}";
             }
-            $notasAdicionales .= "]";
+            if ($fechaDetectada) {
+                $detalles[] = "Fecha: {$fechaDetectada}";
+            }
+            if ($montoExtraido !== null) {
+                $detalles[] = "Monto: $" . number_format($montoExtraido, 2);
+            }
 
-            if ($request->monto && $montoExtraido) {
-                if (abs((float)$request->monto - (float)$montoExtraido) < 0.01) {
-                    $notasAdicionales .= "\n[✅ Verificado por IA: El monto ingresado coincide exactamente con la imagen.]";
-                } else {
-                    $notasAdicionales .= "\n[⚠️ ALERTA IA: El monto reportado ($" . number_format($request->monto, 2) . ") difiere del detectado en imagen ($" . number_format($montoExtraido, 2) . ").]";
-                }
+            $notasAdicionales .= "\n[🤖 OCR/IA: " . implode(' | ', $detalles) . "]";
+
+            if ($coincidenciaMonto === 'exacta') {
+                $notasAdicionales .= "\n[✅ Verificado por IA: El monto ingresado ($" . number_format((float)$montoDeclarado, 2) . ") coincide exactamente con la imagen.]";
+            } elseif ($coincidenciaMonto === 'difiere') {
+                $diferencia = abs((float)$montoDeclarado - (float)$montoExtraido);
+                $notasAdicionales .= "\n[⚠️ ALERTA IA: El monto reportado ($" . number_format((float)$montoDeclarado, 2) . ") difiere del detectado en imagen ($" . number_format((float)$montoExtraido, 2) . "). Discrepancia: $" . number_format($diferencia, 2) . ".]";
             }
         }
 
         $notasFinales = $request->notas ? $request->notas . $notasAdicionales : ltrim($notasAdicionales);
-        $montoFinal = $request->monto ?: ($ocrResult['monto_extraido'] ?? 0.00);
+        $montoFinal = $montoDeclarado ?: ($montoExtraido ?? 0.00);
 
         // Crear el registro con estado 'procesando_pago'
         $comprobante = Comprobante::create([
@@ -68,12 +83,12 @@ class ComprobanteController extends Controller
             'imagen' => $path,
             'notas' => $notasFinales,
             'status' => 'procesando_pago',
-            'banco' => $ocrResult['banco'] ?? null,
-            'clave_rastreo' => $ocrResult['clave_rastreo'] ?? null,
+            'banco' => $ocrResult['banco'] ?? $ocrResult['tipo'] ?? null,
+            'clave_rastreo' => $ocrResult['clave_rastreo'] ?? $ocrResult['folio'] ?? null,
             'fecha_transferencia' => $ocrResult['fecha_transferencia'] ?? null,
             'clabe_cuenta' => $ocrResult['clabe_cuenta'] ?? null,
             'monto_extraido' => $ocrResult['monto_extraido'] ?? null,
-            'datos_ocr_json' => json_encode($ocrResult),
+            'datos_ocr_json' => $ocrResult,
         ]);
 
         // Notificar a administradores por WhatsApp
@@ -136,7 +151,7 @@ class ComprobanteController extends Controller
      */
     public function aprobar($id)
     {
-        $comprobante = Comprobante::findOrFail($id);
+        $comprobante = Comprobante::with('user')->findOrFail($id);
 
         if ($comprobante->status === 'aprobado') {
             return back()->with('error', 'El comprobante ya fue aprobado anteriormente.');
@@ -146,56 +161,76 @@ class ComprobanteController extends Controller
         $articulo = \App\Models\Articulo::where('nombre', 'like', '%pago saldado%')->first();
         $articuloId = $articulo ? $articulo->id : null;
 
-        // Registrar la entrada de capital
-        Entrada::create([
-            'user_id' => $comprobante->user_id,
-            'cliente_id' => $comprobante->user_id,
-            'registrado_por_id' => Auth::id(),
-            'articulo_id' => $articuloId,
-            'precio_venta' => $comprobante->monto,
-            'descripcion' => 'Aprobación de comprobante #' . $comprobante->id . ($comprobante->clave_rastreo ? ' [Folio: ' . $comprobante->clave_rastreo . ']' : '') . ($comprobante->banco ? ' [Banco: ' . $comprobante->banco . ']' : ''),
-            'fecha_generado' => now()
-        ]);
+        $entrada = null;
 
-        $comprobante->update(['status' => 'aprobado']);
-
-        // Notificar por WhatsApp al cliente
-        if ($comprobante->user && $comprobante->user->telefono) {
-            $telefonoCliente = $comprobante->user->telefono;
-            $telefonoCliente = preg_replace('/[^0-9]/', '', $telefonoCliente);
-            if (strlen($telefonoCliente) == 10) {
-                $telefonoCliente = '521' . $telefonoCliente;
-            }
-
-            $montoFormateado = number_format($comprobante->monto, 2);
-
-            $mensajeWa = "*✅ PAGO APROBADO - El bajón*\n\n" .
-                "Hola *" . $comprobante->user->name . "*, te confirmamos que tu comprobante de pago por *\${$montoFormateado}* ha sido revisado y *aprobado* exitosamente.\n\n" .
-                "Este monto ya ha sido abonado a tu cuenta y descontado de tu saldo pendiente.\n\n" .
-                "¡Gracias por tu pago!\n" .
-                "_Mensaje automático de El bajón_";
-
-            DB::table('whatsapp_pending_messages')->insert([
-                'numero'     => $telefonoCliente,
-                'mensaje'    => $mensajeWa,
-                'status'     => 'pendiente',
-                'created_at' => now(),
-                'updated_at' => now(),
+        DB::transaction(function () use ($comprobante, $articuloId, &$entrada) {
+            // Registrar la entrada de capital
+            $entrada = Entrada::create([
+                'user_id' => $comprobante->user_id,
+                'cliente_id' => $comprobante->user_id,
+                'registrado_por_id' => Auth::id(),
+                'articulo_id' => $articuloId,
+                'precio_venta' => $comprobante->monto,
+                'descripcion' => 'Aprobación de comprobante #' . $comprobante->id . ($comprobante->clave_rastreo ? ' [Folio: ' . $comprobante->clave_rastreo . ']' : '') . ($comprobante->banco ? ' [Banco: ' . $comprobante->banco . ']' : ''),
+                'fecha_generado' => now()
             ]);
-        }
 
-        // Notificar Push al cliente
-        if ($comprobante->user) {
-            $montoFormateado = number_format($comprobante->monto, 2);
-            PushNotificationService::notifyUser(
-                $comprobante->user,
-                "Pago Aprobado 🟢",
-                "Su pago por \${$montoFormateado} ha sido acreditado exitosamente. ¡Gracias por su preferencia!",
-                route('dashboard')
-            );
-        }
+            $comprobante->update(['status' => 'aprobado']);
 
-        return back()->with('success', 'Comprobante aprobado, entrada de capital registrada y notificación enviada al cliente.');
+            DB::afterCommit(function () use ($comprobante, $entrada) {
+                // Notificar por WhatsApp al cliente con PDF adjunto
+                $cliente = $comprobante->user;
+                if ($cliente && !empty($cliente->telefono)) {
+                    try {
+                        $num = preg_replace('/[^0-9]/', '', (string)$cliente->telefono);
+                        $telCliente = (strlen($num) == 10) ? '521' . $num : $num;
+                        $montoFormateado = number_format((float)$comprobante->monto, 2);
+
+                        $mensajeWa = "💰 ¡Hola {$cliente->name}! Se ha registrado tu Pago por la cantidad de \${$montoFormateado}.\n" .
+                                     "📄 Adjunto encontrarás tu Comprobante de Pago en PDF.\n\n" .
+                                     "¡Gracias por tu pago en El Bajón!";
+
+                        // Generar PDF del recibo individual
+                        $pdfPath = null;
+                        try {
+                            $pdfPath = \App\Services\PdfReceiptService::generateEntradaPdf($entrada);
+                        } catch (\Throwable $ePdf) {
+                            Log::error("Error generando PDF para Entrada #{$entrada->id} al aprobar comprobante #{$comprobante->id}: " . $ePdf->getMessage());
+                        }
+
+                        DB::table('whatsapp_pending_messages')->insert([
+                            'numero'     => $telCliente,
+                            'mensaje'    => $mensajeWa,
+                            'pdf_path'   => $pdfPath,
+                            'status'     => 'pendiente',
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                        Log::info("Notificación WhatsApp con PDF encolada para cliente {$telCliente} tras aprobar comprobante #{$comprobante->id}.");
+                    } catch (\Throwable $eWa) {
+                        Log::error("Error encolando WhatsApp de aprobación para Comprobante #{$comprobante->id}: " . $eWa->getMessage());
+                    }
+                }
+
+                // Notificar Push al cliente
+                if ($cliente) {
+                    try {
+                        $montoFormateado = number_format((float)$comprobante->monto, 2);
+                        PushNotificationService::notifyUser(
+                            $cliente,
+                            "Pago Aprobado 🟢",
+                            "Su pago por \${$montoFormateado} ha sido acreditado exitosamente. ¡Gracias por su preferencia!",
+                            route('dashboard')
+                        );
+                    } catch (\Throwable $ePush) {
+                        Log::warning("Error enviando push notification al cliente #{$cliente->id}: " . $ePush->getMessage());
+                    }
+                }
+            });
+        });
+
+        return back()->with('success', 'Comprobante aprobado, entrada de capital registrada y recibo en PDF enviado por WhatsApp al cliente.');
     }
 
     /**
