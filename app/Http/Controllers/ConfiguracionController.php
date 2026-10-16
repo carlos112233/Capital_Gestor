@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppSetting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\DB;
@@ -22,24 +24,55 @@ class ConfiguracionController extends Controller
     public function updateLogo(Request $request)
     {
         $request->validate([
-            'logo' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
+            'logo' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:4096',
+        ], [
+            'logo.required' => 'Debes seleccionar una imagen para el logotipo.',
+            'logo.image' => 'El archivo debe ser una imagen válida.',
+            'logo.mimes' => 'Formatos permitidos: JPEG, PNG, JPG, GIF, SVG o WEBP.',
+            'logo.max' => 'El logotipo no debe superar los 4MB.',
         ]);
 
         if ($request->hasFile('logo')) {
             $file = $request->file('logo');
             $extension = strtolower($file->getClientOriginalExtension());
-            $destinationPath = public_path('img');
 
-            if ($extension === 'svg') {
-                $file->move($destinationPath, 'Logo.svg');
-            } else {
-                $file->move($destinationPath, 'Logo.png');
-                if (File::exists(public_path('img/Logo.svg'))) {
-                    File::delete(public_path('img/Logo.svg'));
-                }
+            // 1. Sincronización con AppSetting (Almacenamiento Estándar)
+            $setting = AppSetting::first() ?? new AppSetting();
+
+            if (!empty($setting->logo_path) && Storage::disk('public')->exists($setting->logo_path)) {
+                Storage::disk('public')->delete($setting->logo_path);
             }
 
-            return redirect()->back()->with('success', '¡El logotipo del sistema ha sido actualizado correctamente!');
+            $logoPath = $file->store('branding', 'public');
+            $setting->logo_path = $logoPath;
+            $setting->save();
+
+            // 2. Compatibilidad hacia atrás: copia a public/img/Logo.{ext}
+            try {
+                $destinationPath = public_path('img');
+                if (!File::isDirectory($destinationPath)) {
+                    File::makeDirectory($destinationPath, 0755, true);
+                }
+                $storedFullPath = Storage::disk('public')->path($logoPath);
+                if (File::exists($storedFullPath)) {
+                    if ($extension === 'svg') {
+                        File::copy($storedFullPath, public_path('img/Logo.svg'));
+                    } else {
+                        File::copy($storedFullPath, public_path('img/Logo.png'));
+                        if (File::exists(public_path('img/Logo.svg'))) {
+                            @File::delete(public_path('img/Logo.svg'));
+                        }
+                    }
+                }
+            } catch (\Throwable $eLegacy) {
+                // Silencioso para asegurar continuidad
+            }
+
+            // 3. Invalidación exhaustiva de caché
+            Cache::forget('app_settings');
+            AppSetting::clearSettingsCache();
+
+            return redirect()->back()->with('success', '¡El logotipo del sistema ha sido actualizado y sincronizado correctamente!');
         }
 
         return redirect()->back()->with('error', 'No se seleccionó ninguna imagen válida.');

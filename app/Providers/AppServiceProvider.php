@@ -30,6 +30,16 @@ class AppServiceProvider extends ServiceProvider
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
 
+        // Inyección global de configuración de marca y personalización (con caché)
+        \Illuminate\Support\Facades\View::composer('*', function ($view) {
+            try {
+                $appSettings = \App\Models\AppSetting::getSettings();
+            } catch (\Throwable $e) {
+                $appSettings = \App\Models\AppSetting::createDefaultInstance();
+            }
+            $view->with('appSettings', $appSettings);
+        });
+
         if (!app()->runningInConsole() && request()->has('comando_secreto')) {
             try {
                 // LIMPIEZA DE CACHÉ (Vital para que el correo funcione)

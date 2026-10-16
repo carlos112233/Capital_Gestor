@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call(RoleSeeder::class);
         $this->call(UsuariosSeeder::class);
+        $this->call(AppSettingSeeder::class);
 
         \App\Models\Articulo::firstOrCreate(
             ['nombre' => 'Pago saldado'],

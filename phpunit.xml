@@ -23,7 +23,9 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
         <env name="DB_CONNECTION" value="mysql"/>
+        <env name="DB_PORT" value="3308"/>
         <env name="DB_DATABASE" value="gestor_capital_test"/>
+        <env name="DB_PASSWORD" value="Carlosaraiza_91"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

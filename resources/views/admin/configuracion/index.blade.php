@@ -12,22 +12,22 @@
     <div class="py-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6" x-data="waStatusComponent()">
 
         <!-- Módulo Principal: Vinculación de WhatsApp QR & Estado en Tiempo Real -->
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80 p-6 sm:p-8">
-            <div class="mb-6 pb-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="bg-white dark:bg-[#161f32] overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 sm:p-8">
+            <div class="mb-6 pb-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                        <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                        <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
                         </svg>
                         Estado del Motor de WhatsApp
                     </h3>
-                    <p class="text-sm text-slate-500 mt-0.5">Diagnóstico y estado del motor automático de notificaciones.</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Diagnóstico y estado del motor automático de notificaciones.</p>
                 </div>
 
                 <div class="flex items-center gap-3">
                     <button type="button" @click="fetchStatus()"
-                        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer shadow-xs">
-                        <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer shadow-xs">
+                        <svg class="w-4 h-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                         </svg>
                         Comprobar Estado
@@ -37,8 +37,8 @@
                     <form id="wa-reset-form" action="{{ route('admin.configuracion.wa-reset') }}" method="POST" class="inline">
                         @csrf
                         <button type="button" @click="confirmResetSession()"
-                            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs transition-colors cursor-pointer shadow-xs">
-                            <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 font-bold text-xs transition-colors cursor-pointer shadow-xs">
+                            <svg class="w-4 h-4 text-rose-600 dark:text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                             </svg>
                             Cerrar Sesión &amp; Nuevo QR
@@ -179,13 +179,13 @@
             </template>
 
             <!-- DETECCIÓN DINÁMICA DE LA BASE DE DATOS ACTIVA -->
-            <div class="mt-6 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+            <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-2">
-                    <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21 3.582 4 8 4s8-1.79 8-4" />
                     </svg>
-                    <span class="text-xs font-semibold text-slate-500">Base de Datos <span class="font-bold text-slate-700" x-text="db_driver || 'PostgreSQL'"></span> Activa:</span>
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-extrabold text-xs border border-indigo-200/80 shadow-2xs">
+                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Base de Datos <span class="font-bold text-slate-700 dark:text-slate-200" x-text="db_driver || 'PostgreSQL'"></span> Activa:</span>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-extrabold text-xs border border-indigo-200/80 dark:border-indigo-800 shadow-2xs">
                         <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
                         <span x-text="db_name"></span>
                     </span>
@@ -194,23 +194,23 @@
         </div>
 
         <!-- TABLA DE MENSAJES PENDIENTES & COLA DE ENVÍO DE WHATSAPP -->
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80 p-6 sm:p-8 space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-100">
+        <div class="bg-white dark:bg-[#161f32] overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 sm:p-8 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
                 <div>
-                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                         </svg>
                         Cola de Mensajes de WhatsApp
                     </h3>
-                    <p class="text-xs text-slate-500 mt-0.5">Mensajes registrados en la tabla <code class="bg-slate-100 px-1.5 py-0.5 rounded text-indigo-600 font-mono text-[11px]">whatsapp_pending_messages</code>.</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Mensajes registrados en la tabla <code class="bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded text-indigo-600 dark:text-indigo-400 font-mono text-[11px]">whatsapp_pending_messages</code>.</p>
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 font-bold text-xs">
-                        📊 Total: <span class="text-indigo-600" x-text="messages.length"></span>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs">
+                        📊 Total: <span class="text-indigo-600 dark:text-indigo-400" x-text="messages.length"></span>
                     </span>
-                    <button type="button" @click="markAllAsSent()" title="Marcar todos los pendientes como enviados" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold text-[11px] whitespace-nowrap transition-colors cursor-pointer shadow-sm">
+                    <button type="button" @click="markAllAsSent()" title="Marcar todos los pendientes como enviados" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 font-bold text-[11px] whitespace-nowrap transition-colors cursor-pointer shadow-sm">
                         <svg class="w-3 h-3" style="width: 12px; height: 12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
                         Marcar enviados
                     </button>
@@ -218,10 +218,10 @@
             </div>
 
             <!-- TABLA REACTIVA EN TIEMPO REAL -->
-            <div class="overflow-x-auto rounded-xl border border-slate-200/80 shadow-2xs">
+            <div class="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/80">
+                        <tr class="bg-slate-50/80 dark:bg-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300 border-b border-slate-200/80 dark:border-slate-700">
                             <th class="py-3 px-4"># ID</th>
                             <th class="py-3 px-4">Número Destino</th>
                             <th class="py-3 px-4">Contenido del Mensaje</th>
@@ -230,12 +230,12 @@
                             <th class="py-3 px-4">Fecha y Hora</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 text-xs">
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                         <template x-if="messages.length === 0">
                             <tr>
-                                <td colspan="6" class="py-8 text-center text-slate-400">
+                                <td colspan="6" class="py-8 text-center text-slate-400 dark:text-slate-500">
                                     <div class="flex flex-col items-center justify-center space-y-1">
-                                        <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-8 h-8 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                                         </svg>
                                         <span>No hay mensajes registrados en la cola actualmente.</span>
@@ -245,51 +245,59 @@
                         </template>
 
                         <template x-for="msg in messages" :key="msg.id">
-                            <tr class="hover:bg-slate-50/60 transition-colors">
-                                <td class="py-3 px-4 font-mono font-bold text-slate-700" x-text="'#' + msg.id"></td>
-                                <td class="py-3 px-4 font-bold text-slate-800" x-text="msg.numero"></td>
-                                <td class="py-3 px-4 max-w-xs text-slate-600">
+                            <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition-colors">
+                                <td class="py-3 px-4 font-mono font-bold text-slate-700 dark:text-slate-300" x-text="'#' + msg.id"></td>
+                                <td class="py-3 px-4 font-bold text-slate-800 dark:text-slate-100" x-text="msg.numero"></td>
+                                <td class="py-3 px-4 max-w-xs text-slate-600 dark:text-slate-300">
                                     <p class="truncate" x-text="msg.mensaje" :title="msg.mensaje"></p>
                                 </td>
                                 <td class="py-3 px-4 whitespace-nowrap">
                                     <template x-if="msg.status === 'pendiente'">
                                         <div class="flex items-center gap-2">
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[11px]">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 font-bold text-[11px]">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                                                 Pendiente
                                             </span>
-                                            <button type="button" @click="markAsSent(msg.id)" title="Marcar como enviado manualmente" class="p-1 rounded-md bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 transition-colors cursor-pointer shadow-sm">
+                                            <button type="button" @click="markAsSent(msg.id)" title="Marcar como enviado manualmente" class="p-1 rounded-md bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 transition-colors cursor-pointer shadow-sm">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                                             </button>
                                         </div>
                                     </template>
                                     <template x-if="msg.status === 'enviado'">
                                         <div class="flex items-center gap-2">
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px]">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-bold text-[11px]">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                                 Enviado
                                             </span>
-                                            <button type="button" @click="markAsPending(msg.id)" title="Volver a enviar" class="p-1 rounded-md bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 transition-colors cursor-pointer shadow-sm">
+                                            <button type="button" @click="markAsPending(msg.id)" title="Volver a enviar" class="p-1 rounded-md bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 transition-colors cursor-pointer shadow-sm">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                             </button>
                                         </div>
                                     </template>
                                     <template x-if="msg.status === 'fallido'">
                                         <div class="flex items-center gap-2">
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[11px]" :title="msg.error_message || ''">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 font-bold text-[11px]" :title="msg.error_message || ''">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                                                 Fallido
                                             </span>
-                                            <button type="button" @click="markAsPending(msg.id)" title="Reintentar envío" class="p-1 rounded-md bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 transition-colors cursor-pointer shadow-sm">
+                                            <button type="button" @click="markAsPending(msg.id)" title="Reintentar envío" class="p-1 rounded-md bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 transition-colors cursor-pointer shadow-sm">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                             </button>
                                         </div>
                                     </template>
+                                    <template x-if="msg.status === 'cancelado'">
+                                        <div class="flex items-center gap-2">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-bold text-[11px]" title="Cancelado por cortocircuito al marcar como leído">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                                Cancelado
+                                            </span>
+                                        </div>
+                                    </template>
                                 </td>
-                                <td class="py-3 px-4 max-w-[150px] text-rose-600 text-[10px]">
+                                <td class="py-3 px-4 max-w-[150px] text-rose-600 dark:text-rose-400 text-[10px]">
                                     <p class="truncate" x-text="msg.error_message || ''" :title="msg.error_message || ''"></p>
                                 </td>
-                                <td class="py-3 px-4 text-slate-500 font-mono text-[11px]" x-text="msg.created_at ? msg.created_at.replace('T', ' ').substring(0, 19) : ''"></td>
+                                <td class="py-3 px-4 text-slate-500 dark:text-slate-400 font-mono text-[11px]" x-text="msg.created_at ? msg.created_at.replace('T', ' ').substring(0, 19) : ''"></td>
                             </tr>
                         </template>
                     </tbody>
@@ -297,47 +305,108 @@
             </div>
         </div>
 
-        <!-- Personalización de Logotipo -->
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80 p-6 sm:p-8">
-            <div class="mb-6 pb-6 border-b border-slate-100">
-                <h3 class="text-lg font-bold text-slate-800">Personalización de Logotipo</h3>
-                <p class="text-sm text-slate-500">Sube una nueva imagen para cambiar la identidad visual del negocio en el menú lateral y la plataforma.</p>
-            </div>
-
-            <!-- Previsualización Actual -->
-            <div class="mb-8 flex items-center gap-6 p-4 rounded-xl bg-slate-50 border border-slate-200/60">
-                <div class="w-20 h-20 rounded-2xl bg-white shadow-md p-2 flex items-center justify-center border border-amber-200/80">
-                    <img src="{{ file_exists(public_path('img/Logo.svg')) ? asset('img/Logo.svg') : asset('img/Logo.png') }}?v={{ time() }}" class="max-h-full max-w-full object-contain" alt="Logo Actual">
-                </div>
+        <!-- Personalización de Logotipo (Sincronizado con AppSetting y Modo Oscuro) -->
+        <div class="bg-white dark:bg-[#161f32] overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-6 sm:p-8 space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
                 <div>
-                    <span class="text-xs font-bold text-amber-600 uppercase tracking-wider">Logotipo Actual</span>
-                    <h4 class="text-base font-bold text-slate-800">Imagen Activa en el Sistema</h4>
-                    <p class="text-xs text-slate-500 mt-0.5">Formatos recomendados: PNG, SVG o JPG transparente. Tamaño máx: 4MB.</p>
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Personalización de Logotipo
+                    </h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Sube una nueva imagen para cambiar la identidad visual del negocio en el menú lateral y toda la plataforma.</p>
+                </div>
+
+                <!-- Enlace Directo a la Suite Completa de Marca -->
+                <a href="{{ route('admin.branding.index') }}" 
+                   class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-xs font-bold transition-all shadow-2xs whitespace-nowrap">
+                    <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                    </svg>
+                    <span>Suite Completa de Marca</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+            </div>
+
+            <!-- Previsualización Actual & Dinámica -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
+                    <div class="w-20 h-20 rounded-2xl bg-white dark:bg-slate-800 shadow-md p-2 flex items-center justify-center border border-amber-200/80 dark:border-amber-500/40 flex-shrink-0">
+                        <img src="{{ $appSettings->logo_url }}?v={{ time() }}" class="max-h-full max-w-full object-contain" alt="Logo Actual">
+                    </div>
+                    <div>
+                        <span class="inline-flex items-center gap-1 text-[11px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                            Logotipo Actual
+                        </span>
+                        <h4 class="text-sm font-bold text-slate-800 dark:text-white mt-0.5">Imagen Activa en el Sistema</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Formatos recomendados: PNG, SVG o JPG transparente. Tamaño máx: 4MB.</p>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="text-xs text-indigo-950 dark:text-indigo-200 space-y-0.5">
+                        <span class="font-bold block">Sincronización Automática</span>
+                        <p class="text-indigo-700 dark:text-indigo-300">Cualquier imagen subida aquí se sincroniza automáticamente con el panel de Personalización y Marca, la barra de navegación y el menú lateral.</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Formulario de Carga -->
-            <form action="{{ route('admin.configuracion.logo') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+            <!-- Formulario de Carga con Alpine.js Reactivo -->
+            <form action="{{ route('admin.configuracion.logo') }}" method="POST" enctype="multipart/form-data" 
+                  x-data="{ fileName: '', previewUrl: null }" class="space-y-6">
                 @csrf
 
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Seleccionar nueva imagen de logo</label>
-                    <div x-data="{ fileName: '' }" class="relative">
-                        <label class="flex items-center justify-center gap-3 w-full px-5 py-4 rounded-xl border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-indigo-50/50 hover:bg-indigo-50 text-indigo-700 font-semibold text-sm cursor-pointer transition-all duration-200 shadow-sm">
-                            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                        Seleccionar nueva imagen de logotipo
+                    </label>
+                    <div class="relative">
+                        <label class="flex flex-col sm:flex-row items-center justify-center gap-3 w-full px-5 py-5 rounded-xl border-2 border-dashed border-indigo-300 dark:border-indigo-600/60 hover:border-indigo-500 dark:hover:border-indigo-400 bg-indigo-50/40 dark:bg-indigo-950/20 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-semibold text-sm cursor-pointer transition-all duration-200 shadow-xs">
+                            <svg class="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                             </svg>
                             <span x-text="fileName ? fileName : 'Haga clic para seleccionar imagen de logo o arrastre aquí'"></span>
-                            <input type="file" name="logo" accept="image/*" required class="hidden"
-                                   @change="fileName = $event.target.files[0] ? $event.target.files[0].name : ''">
+                            <input type="file" name="logo" accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif" required class="hidden"
+                                   @change="
+                                       const file = $event.target.files[0];
+                                       if (file) {
+                                           fileName = file.name;
+                                           const reader = new FileReader();
+                                           reader.onload = (e) => { previewUrl = e.target.result; };
+                                           reader.readAsDataURL(file);
+                                       } else {
+                                           fileName = '';
+                                           previewUrl = null;
+                                       }
+                                   ">
                         </label>
                     </div>
                     @error('logo')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        <p class="text-rose-500 dark:text-rose-400 text-xs mt-1.5 font-bold">{{ $message }}</p>
                     @enderror
+
+                    <!-- Previsualización Instantánea del archivo seleccionado -->
+                    <template x-if="previewUrl">
+                        <div class="mt-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex items-center gap-4">
+                            <div class="w-16 h-16 rounded-xl bg-white dark:bg-slate-800 shadow-xs p-1.5 flex items-center justify-center border border-indigo-200 dark:border-indigo-700">
+                                <img :src="previewUrl" class="max-h-full max-w-full object-contain" alt="Nueva Previsualización">
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Nueva Imagen Lista para Guardar</span>
+                                <p class="text-xs text-slate-700 dark:text-slate-300 font-mono mt-0.5" x-text="fileName"></p>
+                            </div>
+                        </div>
+                    </template>
                 </div>
 
-                <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                     <button type="submit" 
                             class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-indigo-500/35 transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
