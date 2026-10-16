@@ -3,13 +3,39 @@
         <tr>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">ID</th>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Usuario</th>
+            <th id="tour-col-rol" class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Rol</th>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Teléfono</th>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Email</th>
-            <th class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Acciones</th>
+            <th id="tour-col-acciones" class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Acciones</th>
         </tr>
     </thead>
     <tbody class="bg-white divide-y divide-gray-200">
         @forelse($clientes as $cliente)
+            @php
+                $rolActual = strtolower($cliente->roles->first()?->name ?? 'cliente');
+                $badgeConfig = match ($rolActual) {
+                    'admin' => [
+                        'label' => 'Administrador',
+                        'classes' => 'bg-purple-100 text-purple-800 border-purple-200',
+                        'dot' => 'bg-purple-600',
+                    ],
+                    'vendedor' => [
+                        'label' => 'Vendedor',
+                        'classes' => 'bg-blue-100 text-blue-800 border-blue-200',
+                        'dot' => 'bg-blue-600',
+                    ],
+                    'cocina' => [
+                        'label' => 'Cocina',
+                        'classes' => 'bg-orange-100 text-orange-800 border-orange-200',
+                        'dot' => 'bg-orange-500',
+                    ],
+                    default => [
+                        'label' => 'Cliente',
+                        'classes' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                        'dot' => 'bg-emerald-600',
+                    ],
+                };
+            @endphp
             <tr>
                 <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                     {{ $cliente->id }}</td>
@@ -27,12 +53,16 @@
                         </span>
                     @endif
                 </td>
+                <td class="px-6 py-4 text-center whitespace-nowrap">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-2xs {{ $badgeConfig['classes'] }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $badgeConfig['dot'] }}"></span>
+                        {{ $badgeConfig['label'] }}
+                    </span>
+                </td>
                 <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                     {{ $cliente->telefono }}</td>
                 <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-gray-900">
                     {{ $cliente->email }}</td>
-                {{-- <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $cliente->telefono }}</td>
-                                    <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">{{ $cliente->direccion }}</td> --}}
                 <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-500">
                     <div class="flex items-center justify-center gap-3">
                         {{-- Botón Enviar WhatsApp --}}
@@ -60,7 +90,7 @@
                             {{-- Botón Activar --}}
                             <form id="activate-cliente-{{ $cliente->id }}" class="inline-block"
                                 action="{{ route('admin.clientes.activar', $cliente->id) }}" method="POST"
-                                onsubmit="return confirmDelete(this, 'este cliente (reactivarlo)');">
+                                onsubmit="return confirmDelete(this, 'este usuario (reactivarlo)');">
                                 @csrf
                                 <button type="submit"
                                     class="text-green-600 hover:text-green-900 font-semibold cursor-pointer">
@@ -71,7 +101,7 @@
                             {{-- Botón Eliminar con SweetAlert2 --}}
                             <form id="delete-cliente-{{ $cliente->id }}" class="contents"
                                 action="{{ route('admin.clientes.destroy', $cliente->id) }}" method="POST"
-                                onsubmit="return confirmDelete(this, 'este cliente');">
+                                onsubmit="return confirmDelete(this, 'este usuario');">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit"
@@ -104,6 +134,7 @@
                                 <div class="bg-gray-50 rounded-xl p-3 border mb-4 text-xs text-gray-700 space-y-1">
                                     <p><strong>Teléfono:</strong> {{ $cliente->telefono }}</p>
                                     <p><strong>Email / Usuario:</strong> {{ $cliente->email }}</p>
+                                    <p><strong>Rol Asignado:</strong> {{ $badgeConfig['label'] }}</p>
                                 </div>
 
                                 <form method="POST"
@@ -117,7 +148,7 @@
                                             placeholder="Dejar en blanco para mantener la contraseña actual"
                                             class="w-full border-gray-300 rounded-lg text-sm focus:ring-emerald-500 focus:border-emerald-500">
                                         <p class="text-xs text-gray-500 mt-1">Si ingresas un texto aquí, la contraseña
-                                            del cliente se actualizará a este valor y se enviará por WhatsApp.</p>
+                                            del usuario se actualizará a este valor y se enviará por WhatsApp.</p>
                                     </div>
 
                                     <div class="flex justify-end gap-3 mt-6">
@@ -135,11 +166,11 @@
                         </x-modal>
                     @endif
 
-                    <!-- Modal Editar Cliente -->
+                    <!-- Modal Editar Usuario -->
                     <x-modal name="edit-cliente-{{ $cliente->id }}">
                         <div class="p-6 text-left">
                             <div class="flex justify-between items-center pb-3 border-b mb-4">
-                                <h3 class="text-lg font-bold text-gray-900">Editar Cliente: {{ $cliente->name }}</h3>
+                                <h3 class="text-lg font-bold text-gray-900">Editar Usuario: {{ $cliente->name }}</h3>
                                 <button type="button" onclick="closeModal('edit-cliente-{{ $cliente->id }}')"
                                     class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
                             </div>
@@ -155,7 +186,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="7" class="px-4 py-8 border-b text-center text-gray-500 bg-gray-50/50">
+                <td colspan="6" class="px-4 py-8 border-b text-center text-gray-500 bg-gray-50/50">
                     <div class="flex flex-col items-center justify-center">
                         <svg class="w-10 h-10 text-gray-400 mb-2" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
@@ -163,12 +194,12 @@
                                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                         @if (request()->filled('q'))
-                            <span class="font-medium text-gray-700">No se encontraron clientes que coincidan con
+                            <span class="font-medium text-gray-700">No se encontraron usuarios que coincidan con
                                 "{{ request()->q }}"</span>
                             <span class="text-sm mt-1">Intenta buscar con otro término.</span>
                         @else
-                            <span class="font-medium text-gray-700">Utiliza el buscador para encontrar clientes</span>
-                            <span class="text-sm mt-1">Escribe el nombre, correo o teléfono del cliente.</span>
+                            <span class="font-medium text-gray-700">Utiliza el buscador para encontrar usuarios</span>
+                            <span class="text-sm mt-1">Escribe el nombre, correo o teléfono del usuario.</span>
                         @endif
                     </div>
                 </td>

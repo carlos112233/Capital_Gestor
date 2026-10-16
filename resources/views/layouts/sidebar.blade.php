@@ -159,7 +159,15 @@
                         <svg class="w-5 h-5 flex-shrink-0 {{ request()->routeIs('admin.clientes.*') ? 'text-white' : 'text-teal-400 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
-                        <span x-show="sidebarOpen" x-transition class="ml-3 whitespace-nowrap">Clientes</span>
+                        <span x-show="sidebarOpen" x-transition class="ml-3 whitespace-nowrap">Usuarios</span>
+                    </a>
+
+                    <a href="{{ route('admin.pagos-vendedores.index') }}"
+                       class="flex items-center px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group {{ request()->routeIs('admin.pagos-vendedores.*') ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                        <svg class="w-5 h-5 flex-shrink-0 {{ request()->routeIs('admin.pagos-vendedores.*') ? 'text-white' : 'text-amber-400 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span x-show="sidebarOpen" x-transition class="ml-3 whitespace-nowrap">Nómina y Liquidaciones</span>
                     </a>
                 </nav>
             </div>
@@ -381,7 +389,15 @@
                         <svg class="w-5 h-5 flex-shrink-0 mr-3 {{ request()->routeIs('admin.clientes.*') ? 'text-white' : 'text-teal-400 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
-                        <span>Clientes</span>
+                        <span>Usuarios</span>
+                    </a>
+
+                    <a href="{{ route('admin.pagos-vendedores.index') }}"
+                       class="flex items-center px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group {{ request()->routeIs('admin.pagos-vendedores.*') ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                        <svg class="w-5 h-5 flex-shrink-0 mr-3 {{ request()->routeIs('admin.pagos-vendedores.*') ? 'text-white' : 'text-amber-400 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span>Nómina y Liquidaciones</span>
                     </a>
                 </nav>
             </div>
