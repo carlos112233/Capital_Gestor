@@ -525,7 +525,7 @@
                                 Liquidación a Vendedores
                             </h3>
                             <p class="text-xs text-slate-500 mt-0.5">
-                                Supervisión de total vendido, comisión estimada (20% configurable) y dispersión de liquidaciones.
+                                Supervisión de total vendido, retención empresa (20% configurable), ganancia neta del vendedor (80%) y dispersión de liquidaciones.
                             </p>
                         </div>
                         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
@@ -540,7 +540,8 @@
                                 <tr>
                                     <th class="px-5 py-3.5 text-left">Vendedor</th>
                                     <th class="px-5 py-3.5 text-right">Total Vendido</th>
-                                    <th class="px-5 py-3.5 text-right">Comisión Est. (20%)</th>
+                                    <th class="px-5 py-3.5 text-right">Retención (20%)</th>
+                                    <th class="px-5 py-3.5 text-right">Ganancia Neta (80%)</th>
                                     <th class="px-5 py-3.5 text-right">Pagos Realizados</th>
                                     <th class="px-5 py-3.5 text-right">Saldo Pendiente</th>
                                     <th class="px-5 py-3.5 text-center">Acción</th>
@@ -563,8 +564,11 @@
                                             ${{ number_format($v->total_vendido, 2) }}
                                             <div class="text-[11px] text-slate-400 font-normal">{{ $v->ventas_operador_count ?? 0 }} ventas</div>
                                         </td>
+                                        <td class="px-5 py-4 text-right whitespace-nowrap font-semibold text-slate-500 text-sm">
+                                            ${{ number_format($v->monto_retenido ?? 0, 2) }}
+                                        </td>
                                         <td class="px-5 py-4 text-right whitespace-nowrap font-bold text-amber-600 text-sm">
-                                            ${{ number_format($v->comision_estimada, 2) }}
+                                            ${{ number_format($v->ganancia_neta ?? $v->comision_estimada, 2) }}
                                         </td>
                                         <td class="px-5 py-4 text-right whitespace-nowrap font-bold text-emerald-600 text-sm">
                                             ${{ number_format($v->total_pagado_neto, 2) }}
@@ -576,7 +580,7 @@
                                         </td>
                                         <td class="px-5 py-4 text-center whitespace-nowrap">
                                             <button type="button"
-                                                    onclick="openLiquidacionModal({{ $v->id }}, '{{ addslashes($v->name) }}', {{ $v->base_pendiente }}, {{ $v->total_vendido }}, {{ $v->comision_estimada }}, {{ $v->saldo_pendiente }})"
+                                                    onclick="openLiquidacionModal({{ $v->id }}, '{{ addslashes($v->name) }}', {{ $v->base_pendiente }}, {{ $v->total_vendido }}, {{ $v->ganancia_neta ?? $v->comision_estimada }}, {{ $v->saldo_pendiente }})"
                                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs hover:shadow transition-all cursor-pointer">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -587,7 +591,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="px-6 py-8 text-center text-slate-400">
+                                        <td colspan="7" class="px-6 py-8 text-center text-slate-400">
                                             No hay usuarios con el rol 'vendedor' registrados en el sistema.
                                         </td>
                                     </tr>
@@ -747,7 +751,7 @@
                     {{-- Porcentaje y Retención Calculada --}}
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-700 mb-1">% Comisión</label>
+                            <label class="block text-xs font-bold uppercase text-slate-700 mb-1">% Retención Empresa</label>
                             <div class="relative">
                                 <input type="number" step="0.5" min="0" max="100" name="porcentaje_retencion" id="liq_porcentaje" value="20.00" oninput="recalcularLiquidacion()" required
                                        class="w-full text-base font-bold text-slate-900 rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 pr-8">
@@ -764,13 +768,13 @@
 
                     {{-- Monto Neto a Pagar al Vendedor --}}
                     <div class="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-100">
-                        <label class="block text-xs font-bold uppercase text-indigo-900 mb-1">Monto Neto a Pagar al Vendedor ($)</label>
+                        <label class="block text-xs font-bold uppercase text-indigo-900 mb-1">Monto Neto a Pagar al Vendedor (80%) ($)</label>
                         <div class="flex items-center gap-1 text-2xl font-black text-indigo-700">
                             <span>$</span>
                             <input type="number" step="0.01" min="0.01" name="monto_neto_pagado" id="liq_monto_neto" oninput="ajustarNetoManual()" required
                                    class="w-full text-2xl font-black text-indigo-700 bg-transparent border-none p-0 focus:ring-0">
                         </div>
-                        <p class="text-[11px] text-indigo-500 mt-0.5 font-medium">Monto efectivo a transferir o entregar al vendedor.</p>
+                        <p class="text-[11px] text-indigo-500 mt-0.5 font-medium">Monto efectivo a transferir o entregar al vendedor (Total Vendido − Retención).</p>
                     </div>
 
                     {{-- Método de Pago --}}
@@ -809,7 +813,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script>
-    function openLiquidacionModal(vendedorId, vendedorNombre, basePendiente, totalVendido, comisionEstimada, saldoPendiente) {
+    function openLiquidacionModal(vendedorId, vendedorNombre, basePendiente, totalVendido, gananciaNeta, saldoPendiente) {
         document.getElementById('liq_vendedor_id').value = vendedorId;
         document.getElementById('liq_vendedor_nombre').innerText = vendedorNombre;
 
@@ -823,12 +827,12 @@
 
     function recalcularLiquidacion() {
         const totalBase = parseFloat(document.getElementById('liq_total_vendido').value) || 0;
-        const porcentaje = parseFloat(document.getElementById('liq_porcentaje').value) || 0;
-        const montoComision = Math.round((totalBase * (porcentaje / 100)) * 100) / 100;
-        const montoRetenido = Math.max(0, Math.round((totalBase - montoComision) * 100) / 100);
+        const porcentajeRetencion = parseFloat(document.getElementById('liq_porcentaje').value) || 0;
+        const montoRetenido = Math.round((totalBase * (porcentajeRetencion / 100)) * 100) / 100;
+        const montoNeto = Math.max(0, Math.round((totalBase - montoRetenido) * 100) / 100);
 
-        document.getElementById('liq_monto_neto').value = montoComision.toFixed(2);
         document.getElementById('liq_monto_retenido').value = montoRetenido.toFixed(2);
+        document.getElementById('liq_monto_neto').value = montoNeto.toFixed(2);
     }
 
     function ajustarNetoManual() {

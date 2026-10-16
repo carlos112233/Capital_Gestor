@@ -147,14 +147,19 @@ class DashboardController extends Controller
                 $totalPagadoNeto = (float) ($v->pagos_recibidos_sum ?? 0);
                 $totalBaseLiquidada = (float) ($v->base_liquidada_sum ?? 0);
 
-                $comisionEstimada20 = round($totalVendido * 0.20, 2);
+                $porcentajeRetencion = 20.00;
+                $montoRetenido20 = round($totalVendido * ($porcentajeRetencion / 100), 2);
+                $gananciaNeta80 = round($totalVendido * (1 - ($porcentajeRetencion / 100)), 2);
+
                 $basePendiente = max(0.0, $totalVendido - $totalBaseLiquidada);
-                $saldoPendienteCobro = max(0.0, $comisionEstimada20 - $totalPagadoNeto);
+                $saldoPendienteCobro = max(0.0, $gananciaNeta80 - $totalPagadoNeto);
 
                 $v->total_vendido = $totalVendido;
+                $v->monto_retenido = $montoRetenido20;
+                $v->ganancia_neta = $gananciaNeta80;
+                $v->comision_estimada = $gananciaNeta80;
                 $v->total_pagado_neto = $totalPagadoNeto;
                 $v->total_base_liquidada = $totalBaseLiquidada;
-                $v->comision_estimada = $comisionEstimada20;
                 $v->base_pendiente = $basePendiente;
                 $v->saldo_pendiente = $saldoPendienteCobro;
 
@@ -180,9 +185,14 @@ class DashboardController extends Controller
         // 1. Total Vendido: Acumulado de ventas donde comprador_id = $vendedor->id
         $totalVendido = (float) \App\Models\Venta::where('comprador_id', $vendedor->id)->sum('total_venta');
 
-        // 2. Comisión/Ganancia estimada (20% sobre total vendido)
-        $porcentajeComision = 20.00;
-        $comisionEstimada = round($totalVendido * ($porcentajeComision / 100), 2);
+        // 2. Retención Empresa (20%) y Ganancia Neta Vendedor (80%)
+        $porcentajeRetencion = 20.00;
+        $porcentajeGanancia = 100.00 - $porcentajeRetencion;
+        $montoRetenido = round($totalVendido * ($porcentajeRetencion / 100), 2);
+        $gananciaNeta = round($totalVendido * (1 - ($porcentajeRetencion / 100)), 2);
+
+        $porcentajeComision = $porcentajeGanancia;
+        $comisionEstimada = $gananciaNeta;
 
         // 3. Pagos Recibidos: Historial de liquidaciones emitidas por el admin
         $historialPagos = \App\Models\PagoVendedor::with('registradoPor:id,name')
@@ -193,8 +203,8 @@ class DashboardController extends Controller
         $totalPagadoNeto = (float) $historialPagos->sum('monto_neto_pagado');
         $totalBaseLiquidada = (float) $historialPagos->sum('total_vendido');
 
-        // 4. Saldo Pendiente por Cobrar
-        $saldoPendienteCobro = max(0.0, $comisionEstimada - $totalPagadoNeto);
+        // 4. Saldo Pendiente por Cobrar (basado en el neto acumulado del 80% menos pagos recibidos)
+        $saldoPendienteCobro = max(0.0, $gananciaNeta - $totalPagadoNeto);
 
         // Ventas recientes efectuadas por este vendedor
         $ventasRecientes = \App\Models\Venta::with(['user:id,name', 'articulo:id,nombre'])
@@ -211,6 +221,10 @@ class DashboardController extends Controller
         return view('dashboardVendedor', compact(
             'vendedor',
             'totalVendido',
+            'porcentajeRetencion',
+            'porcentajeGanancia',
+            'montoRetenido',
+            'gananciaNeta',
             'porcentajeComision',
             'comisionEstimada',
             'totalPagadoNeto',
