@@ -55,7 +55,11 @@ class VentaController extends Controller
             ->where('stock', '>', 0)
             ->orderBy('nombre', 'asc')
             ->get();
-        $clientes = User::select('id', 'name')->orderBy('name', 'asc')->get();
+        $clientes = User::whereHas('roles', function ($query) {
+            $query->where('name', 'cliente');
+        })->whereDoesntHave('roles', function ($query) {
+            $query->whereIn('name', ['admin', 'vendedor', 'cocina']);
+        })->orderBy('name')->get(['id', 'name']);
 
         if ($request->ajax()) {
             return view('ventas._tabla', compact('ventas', 'articulos', 'clientes'))->render();
@@ -72,7 +76,11 @@ class VentaController extends Controller
             ->whereNotIn('nombre', ['Pago saldado', 'saldo', 'Saldo', 'Abono', 'abono'])
             ->orderBy('nombre', 'asc')
             ->get();
-        $clientes = User::orderBy('name', 'asc')->get();
+        $clientes = User::whereHas('roles', function ($query) {
+            $query->where('name', 'cliente');
+        })->whereDoesntHave('roles', function ($query) {
+            $query->whereIn('name', ['admin', 'vendedor', 'cocina']);
+        })->orderBy('name')->get(['id', 'name']);
         $articuloId = $request->get('articulo_id');
 
         return view('ventas.create', compact('articulos', 'clientes', 'articuloId'));
@@ -104,8 +112,9 @@ class VentaController extends Controller
                     ]);
                 }
 
-                // 3. Resolución de identidad del comprador
-                $finalUserId = (Auth::user()->hasRole('admin') && $request->filled('cliente_id'))
+                // 3. Resolución de identidad del cliente (user_id) y operador (comprador_id)
+                $isOperadorVenta = Auth::user()->hasRole('admin') || Auth::user()->hasRole('vendedor');
+                $finalUserId = ($isOperadorVenta && $request->filled('cliente_id'))
                     ? (int) $validated['cliente_id']
                     : (int) Auth::id();
 
@@ -193,6 +202,7 @@ class VentaController extends Controller
             return DB::transaction(function () use ($validated, $request): RedirectResponse {
                 $ventasData = $validated['ventas'];
                 $isAdmin = Auth::user()->hasRole('admin');
+                $isOperadorVenta = $isAdmin || Auth::user()->hasRole('vendedor');
                 $authUserId = (int) Auth::id();
                 
                 $ventasCreadasParaResumen = [];
@@ -208,7 +218,7 @@ class VentaController extends Controller
                         ]);
                     }
 
-                    $finalUserId = ($isAdmin && !empty($ventaData['user_id'])) ? (int) $ventaData['user_id'] : $authUserId;
+                    $finalUserId = ($isOperadorVenta && !empty($ventaData['user_id'])) ? (int) $ventaData['user_id'] : $authUserId;
 
                     $articulo->decrement('stock', $cantidadVenta);
                     if ($articulo->stock <= 0) {
@@ -286,7 +296,11 @@ class VentaController extends Controller
             $articulos = Articulo::whereNotIn('nombre', ['Pago saldado', 'saldo', 'Saldo', 'Abono', 'abono'])
                 ->orderBy('nombre', 'asc')
                 ->get();
-            $clientes = User::orderBy('name', 'asc')->get();
+            $clientes = User::whereHas('roles', function ($query) {
+                $query->where('name', 'cliente');
+            })->whereDoesntHave('roles', function ($query) {
+                $query->whereIn('name', ['admin', 'vendedor', 'cocina']);
+            })->orderBy('name')->get(['id', 'name']);
         } catch (\Throwable $e) {
             Log::critical("Error en Edit Venta: " . $e->getMessage());
             return redirect()->back()->with('error', 'Error en base de datos.');
@@ -315,7 +329,8 @@ class VentaController extends Controller
 
         try {
             return DB::transaction(function () use ($validated, $request, $venta, $authUser): RedirectResponse {
-                $userId = ($authUser->hasRole('admin') && $request->filled('cliente_id'))
+                $isOperadorVenta = $authUser->hasRole('admin') || $authUser->hasRole('vendedor');
+                $userId = ($isOperadorVenta && $request->filled('cliente_id'))
                     ? (int) $validated['cliente_id']
                     : (int) ($venta->user_id ?? $authUser->id);
 

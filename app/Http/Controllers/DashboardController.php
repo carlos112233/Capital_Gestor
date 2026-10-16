@@ -122,7 +122,11 @@ class DashboardController extends Controller
         $resumen = $resumen->sortBy('name')->values();
 
         $articulos = \App\Models\Articulo::select('id', 'nombre', 'precio')->orderBy('nombre', 'asc')->get();
-        $users = User::select('id', 'name')->orderBy('name', 'asc')->get();
+        $users = User::whereHas('roles', function ($query) {
+            $query->where('name', 'cliente');
+        })->whereDoesntHave('roles', function ($query) {
+            $query->whereIn('name', ['admin', 'vendedor', 'cocina']);
+        })->orderBy('name')->get(['id', 'name']);
 
         $comprobantesPendientes = \App\Models\Comprobante::with('user')
             ->whereIn('status', ['procesando_pago', 'pendiente'])

@@ -27,7 +27,11 @@ class ArticuloController extends Controller
             return view('admin.articulos._tabla', compact('articulos'))->render();
         }
 
-        $clientes = \App\Models\User::orderBy('name', 'asc')->select(['id', 'name'])->get();
+        $clientes = \App\Models\User::whereHas('roles', function ($query) {
+            $query->where('name', 'cliente');
+        })->whereDoesntHave('roles', function ($query) {
+            $query->whereIn('name', ['admin', 'vendedor', 'cocina']);
+        })->orderBy('name')->get(['id', 'name']);
         return view('admin.articulos.index', compact('articulos', 'clientes'));
     }
 

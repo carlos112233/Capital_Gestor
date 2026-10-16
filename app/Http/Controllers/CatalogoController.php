@@ -24,7 +24,11 @@ class CatalogoController extends Controller
         }
 
         $articulos = $query->get();
-        $clientes = \App\Models\User::select('id', 'name')->orderBy('name', 'asc')->get();
+        $clientes = \App\Models\User::whereHas('roles', function ($query) {
+            $query->where('name', 'cliente');
+        })->whereDoesntHave('roles', function ($query) {
+            $query->whereIn('name', ['admin', 'vendedor', 'cocina']);
+        })->orderBy('name')->get(['id', 'name']);
 
         // Si la petición es AJAX, devolvemos solo el partial (HTML) del grid
         if ($request->ajax() || $request->boolean('ajax')) {
@@ -43,15 +47,15 @@ class CatalogoController extends Controller
         $validated = $request->validate([
             'articulo_id' => 'required|exists:articulos,id',
             'cantidad' => 'required|integer|min:1',
-            'cliente_id' => 'required|exists:clientes,id',
+            'cliente_id' => 'nullable|exists:users,id',
             'precio_venta' => 'required|numeric|min:0',
             'descripcion' => 'nullable|string',
         ]);
 
         try {
-            DB::transaction(function () use ($validated) {
+            DB::transaction(function () use ($validated, $request) {
                 $articulo = Articulo::lockForUpdate()->find($validated['articulo_id']);
-                $cantidadVenta = $validated['cantidad'];
+                $cantidadVenta = (int) $validated['cantidad'];
 
                 // Validar que hay suficiente stock
                 if ($articulo->stock < $cantidadVenta) {
@@ -61,16 +65,23 @@ class CatalogoController extends Controller
                     ]);
                 }
 
+                $isOperadorVenta = Auth::user()->hasRole('admin') || Auth::user()->hasRole('vendedor');
+                $finalUserId = ($isOperadorVenta && $request->filled('cliente_id'))
+                    ? (int) $validated['cliente_id']
+                    : (int) Auth::id();
+
                 // 1. Disminuir el stock del artículo
                 $articulo->decrement('stock', $cantidadVenta);
 
                 // 2. Registrar la venta en la tabla 'ventas'
+                $precioUnitario = (float) $validated['precio_venta'];
                 $venta = $articulo->ventas()->create([
-                    'user_id'      => Auth::id(),
-                    'comprador_id' => Auth::id(),
+                    'user_id'      => $finalUserId,
+                    'comprador_id' => (int) Auth::id(),
                     'cantidad'     => $cantidadVenta,
-                    'precio_venta' => $articulo->precio,
-                    'total_venta'  => $articulo->precio * $cantidadVenta,
+                    'precio_venta' => $precioUnitario,
+                    'total_venta'  => $precioUnitario * $cantidadVenta,
+                    'descripcion'  => $validated['descripcion'] ?? null,
                 ]);
 
                 // Alerta por WhatsApp al Administrador al realizar compra

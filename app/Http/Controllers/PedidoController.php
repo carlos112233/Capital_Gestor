@@ -46,7 +46,11 @@ class PedidoController extends Controller
             $query->where('disponible', true);
         }
         $articulos = $query->get();
-        $users = User::select('id', 'name')->orderBy('name', 'asc')->get();
+        $users = User::whereHas('roles', function ($query) {
+            $query->where('name', 'cliente');
+        })->whereDoesntHave('roles', function ($query) {
+            $query->whereIn('name', ['admin', 'vendedor', 'cocina']);
+        })->orderBy('name')->get(['id', 'name']);
 
         return view('pedidos.index', compact('pedidos', 'articulos', 'users'));
     }
@@ -59,7 +63,11 @@ class PedidoController extends Controller
             $query->where('disponible', true);
         }
         $articulos = $query->get();
-        $users = User::orderBy('name', 'asc')->get();
+        $users = User::whereHas('roles', function ($query) {
+            $query->where('name', 'cliente');
+        })->whereDoesntHave('roles', function ($query) {
+            $query->whereIn('name', ['admin', 'vendedor', 'cocina']);
+        })->orderBy('name')->get(['id', 'name']);
         $articuloId = null; // o algún valor por defecto, por ejemplo el primer artículo
         return view('pedidos.create', compact('articulos', 'articuloId', 'users'));
     }
@@ -297,7 +305,11 @@ class PedidoController extends Controller
         }
 
         $articulos = Articulo::all();
-        $users  = User::orderBy('name', 'asc')->get();
+        $users = User::whereHas('roles', function ($query) {
+            $query->where('name', 'cliente');
+        })->whereDoesntHave('roles', function ($query) {
+            $query->whereIn('name', ['admin', 'vendedor', 'cocina']);
+        })->orderBy('name')->get(['id', 'name']);
         return view('pedidos.edit', compact('pedido', 'articulos', 'users'));
     }
 
