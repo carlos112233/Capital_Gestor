@@ -116,3 +116,77 @@ A partir de esta intervención, cualquier modificación al código debe regirse 
    * Prohibido el uso de `include`, `require` o `include_once` procedurales dentro de controladores o servicios. Todas las dependencias se importan mediante `use` y se inyectan en constructores o métodos.
    * La entidad `Cliente` queda formalmente `@deprecated`. Todo nuevo desarrollo referente a clientes debe utilizar el modelo `User` validando o asignando el rol correspondiente en `role_user`.
 
+---
+
+## 5. Arquitectura de los 4 Roles Oficiales del Sistema
+
+El control de acceso basado en roles (RBAC) opera sobre la relación muchos-a-muchos `users` $\leftrightarrow$ `role_user` $\leftrightarrow$ `roles`. Toda consulta de listado de usuarios implementa `User::with('roles')` para prevenir consultas N+1.
+
+| Rol Oficial | Distintivo Visual (Badge UI) | Propósito Operativo y Alcance | Restricciones Clave |
+| :--- | :--- | :--- | :--- |
+| **`admin`** | **Púrpura** (`bg-purple-100 text-purple-800`) | Supervisión ejecutiva, gestión integral de usuarios y roles, inventario, entradas de capital, nómina/liquidación de vendedores y motor WhatsApp. | Sin carrito de compras personal; opera como despachador directo en catálogo y ventas. |
+| **`vendedor`** | **Azul** (`bg-blue-100 text-blue-800`) | Operador de Punto de Venta (POS). Despacha ventas individuales y múltiples asignándolas a cuentas de clientes (`cliente`). Consulta su **Panel de Vendedor** de solo lectura. | Sin carrito de compras. No puede eliminar ventas directamente (debe usar **Solicitar Anulación**). |
+| **`cocina`** | **Naranja** (`bg-orange-100 text-orange-800`) | Gestión de preparación y despacho de órdenes en tiempo real desde el módulo de Cocina (`/cocina`). | Sin acceso a módulos financieros, nómina ni administración de usuarios. |
+| **`cliente`** | **Esmeralda** (`bg-emerald-100 text-emerald-800`) | Comprador final. Utiliza el carrito de compras, consulta su saldo/estado de cuenta en PDF con QR y sube comprobantes de pago. | Único rol seleccionable como cuenta deudora (`user_id`) en los modales de venta POS. |
+
+### 5.1 Trazabilidad Transaccional en Punto de Venta (POS)
+En `VentaController` (`store`, `storeMultiple`) y `CatalogoController` (`vender`):
+* **`user_id` (Cuenta Cliente / Deudor):** Recibe el ID del cliente seleccionado en el modal (`$request->cliente_id`), cuya lista está estrictamente filtrada para incluir únicamente usuarios con rol `cliente` y excluir `admin`, `vendedor` y `cocina`.
+* **`comprador_id` (Operador / Despachador):** Registra siempre `Auth::id()`, permitiendo auditar qué vendedor o administrador ejecutó la transacción y alimentar el cálculo de comisiones/nómina del vendedor.
+
+---
+
+## 6. Flujo Contable: Ventas, Retenciones (20% / 80%) y Nómina de Vendedores
+
+### 6.1 Regla Matemática Estricta
+Sobre el total acumulado de ventas despachadas por un vendedor (`ventas.comprador_id = vendedor.id`), el sistema aplica la siguiente fórmula contable configurable (por defecto **20%** de retención para la empresa y **80%** de ganancia neta para el vendedor):
+
+$$\text{Monto Retenido (Empresa)} = \text{Total Vendido} \times \left(\frac{\text{\% Retención}}{100}\right)$$
+
+$$\text{Monto Neto a Pagar (Vendedor)} = \text{Total Vendido} - \text{Monto Retenido} = \text{Total Vendido} \times \left(1 - \frac{\text{\% Retención}}{100}\right)$$
+
+$$\text{Saldo Pendiente por Cobrar} = \max\left(0,\; \text{Monto Neto a Pagar} - \sum \text{Pagos Netos Liquidados}\right)$$
+
+### 6.2 Módulo Dedicado de Nómina y Liquidaciones (`/admin/pagos-vendedores`)
+Para mantener el `dashboardAdmin` como un panel puramente ejecutivo y crediticio, la gestión de comisiones y pagos a vendedores reside en su propio módulo dedicado (`PagoVendedorController`):
+1. **KPIs Globales y Resumen de Vendedores Activos (`PagoVendedorController@index`):**
+   * Pre-carga agregados SQL (`withSum`, `withCount`) en una sola consulta sin N+1.
+   * Permite inspeccionar el panel individual de cada vendedor (`/dashboard/vendedor?vendedor_id={id}`) y ejecutar liquidaciones inmediatas.
+2. **Configuración Dinámica de % de Retención (`PagoVendedorController@updateRetencion`):**
+   * Permite al Administrador actualizar el porcentaje de retención global o individual por vendedor (persistido en `storage/app/retencion_vendedores.json`), sincronizado automáticamente con `DashboardController::vendedorDashboard()`.
+3. **Registro de Liquidación y Notificación WhatsApp (`PagoVendedorController@store`):**
+   * Registra el pago auditable en `pagos_vendedores` dentro de `DB::transaction()`.
+   * Mediante `DB::afterCommit()`, invoca `PagoVendedorController::notificarLiquidacionWhatsApp()`, normalizando el teléfono del vendedor (`521...`) y encolando el comprobante desglosado en `whatsapp_pending_messages` dentro de un bloque `try/catch` no bloqueante.
+
+```mermaid
+sequenceDiagram
+    actor Admin as Administrador
+    participant Nomina as PagoVendedorController
+    participant DB as MySQL (pagos_vendedores)
+    participant Queue as whatsapp_pending_messages
+
+    Admin->>Nomina: POST /pagos-vendedores (Liquidar Vendedor)
+    Nomina->>DB: DB::transaction() -> Insert PagoVendedor (Folio #ID)
+    DB-->>Nomina: COMMIT Exitoso
+    Nomina->>Queue: DB::afterCommit() -> Encolar Comprobante WhatsApp (80% Neto / 20% Retención)
+    Nomina-->>Admin: Redirect con confirmación y bitácora actualizada
+```
+
+---
+
+## 7. Mapa de Rutas, Permisos de Sidebar y Guías Interactivas (`Driver.js`)
+
+| Módulo / Vista | Ruta Principal | Controlador | Roles con Acceso | Guía Interactiva (`tutorial_name`) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Dashboard Ejecutivo** | `GET /dashboardAdmin` | `DashboardController@indexAdmin` | `admin` | `dashboard` |
+| **Panel de Vendedor** | `GET /dashboard/vendedor` | `DashboardController@index` | `vendedor`, `admin` | `panel_vendedor` |
+| **Dashboard Cliente** | `GET /dashboard` | `DashboardController@index` | `cliente` | `dashboard`, `carrito`, `notificaciones` |
+| **Catálogo / Existencias (POS)** | `GET /catalogo` | `CatalogoController@index` | `admin`, `vendedor`, `cliente` | `catalogo` |
+| **Ventas / Compras Realizadas** | `GET /ventas` | `VentaController@index` | `admin`, `vendedor`, `cliente` | `ventas` |
+| **Solicitud de Anulación** | `POST /ventas/{venta}/solicitar-anulacion` | `VentaController@solicitarAnulacion` | `vendedor`, `admin` | — |
+| **Gestión de Usuarios** | `GET /admin/clientes` | `ClienteController@index` | `admin` | `usuarios` |
+| **Nómina y Liquidaciones** | `GET /admin/pagos-vendedores` | `PagoVendedorController@index` | `admin` | `nomina_vendedores` |
+| **Ajuste % Retención** | `POST /admin/pagos-vendedores/retencion` | `PagoVendedorController@updateRetencion` | `admin` | `nomina_vendedores` |
+| **Manual de Usuario** | `GET /manual-usuario` | `TutorialController@index` | Todos los autenticados | Selector central de recorridos |
+
+
