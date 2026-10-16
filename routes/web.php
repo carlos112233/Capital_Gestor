@@ -98,6 +98,10 @@ Route::middleware('auth')->group(function () {
 
         // Estado de Cuenta PDF Admin
         Route::get('clientes/{cliente}/estado-cuenta/pdf', [\App\Http\Controllers\EstadoCuentaController::class, 'descargarPdfAdmin'])->name('clientes.estado-cuenta.pdf');
+
+        // Nómina y Liquidaciones de Vendedores
+        Route::get('pagos-vendedores', [\App\Http\Controllers\PagoVendedorController::class, 'index'])->name('pagos-vendedores.index');
+        Route::post('pagos-vendedores/retencion', [\App\Http\Controllers\PagoVendedorController::class, 'updateRetencion'])->name('pagos-vendedores.retencion');
     });
 
 

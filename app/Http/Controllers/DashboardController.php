@@ -133,40 +133,7 @@ class DashboardController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
 
-        // ─── Liquidaciones a Vendedores (Pre-carga de agregados para erradicar N+1) ───
-        $vendedores = User::whereHas('roles', fn($q) => $q->where('name', 'vendedor'))
-            ->select('id', 'name', 'email', 'image', DB::raw('image IS NOT NULL as has_image'))
-            ->withSum('comprasRealizadas as ventas_operador_sum', 'total_venta')
-            ->withCount('comprasRealizadas as ventas_operador_count')
-            ->withSum('pagosRecibidos as pagos_recibidos_sum', 'monto_neto_pagado')
-            ->withSum('pagosRecibidos as base_liquidada_sum', 'total_vendido')
-            ->orderBy('name')
-            ->get()
-            ->map(function ($v) {
-                $totalVendido = (float) ($v->ventas_operador_sum ?? 0);
-                $totalPagadoNeto = (float) ($v->pagos_recibidos_sum ?? 0);
-                $totalBaseLiquidada = (float) ($v->base_liquidada_sum ?? 0);
-
-                $porcentajeRetencion = 20.00;
-                $montoRetenido20 = round($totalVendido * ($porcentajeRetencion / 100), 2);
-                $gananciaNeta80 = round($totalVendido * (1 - ($porcentajeRetencion / 100)), 2);
-
-                $basePendiente = max(0.0, $totalVendido - $totalBaseLiquidada);
-                $saldoPendienteCobro = max(0.0, $gananciaNeta80 - $totalPagadoNeto);
-
-                $v->total_vendido = $totalVendido;
-                $v->monto_retenido = $montoRetenido20;
-                $v->ganancia_neta = $gananciaNeta80;
-                $v->comision_estimada = $gananciaNeta80;
-                $v->total_pagado_neto = $totalPagadoNeto;
-                $v->total_base_liquidada = $totalBaseLiquidada;
-                $v->base_pendiente = $basePendiente;
-                $v->saldo_pendiente = $saldoPendienteCobro;
-
-                return $v;
-            });
-
-        return view('dashboardAdmin', compact('resumen', 'totalSaldo', 'articulos', 'users', 'comprobantesPendientes', 'vendedores'));
+        return view('dashboardAdmin', compact('resumen', 'totalSaldo', 'articulos', 'users', 'comprobantesPendientes'));
     }
 
     /**
@@ -185,9 +152,9 @@ class DashboardController extends Controller
         // 1. Total Vendido: Acumulado de ventas donde comprador_id = $vendedor->id
         $totalVendido = (float) \App\Models\Venta::where('comprador_id', $vendedor->id)->sum('total_venta');
 
-        // 2. Retención Empresa (20%) y Ganancia Neta Vendedor (80%)
-        $porcentajeRetencion = 20.00;
-        $porcentajeGanancia = 100.00 - $porcentajeRetencion;
+        // 2. Retención Empresa (20% por defecto o configurada) y Ganancia Neta Vendedor (80%)
+        $porcentajeRetencion = PagoVendedorController::getPorcentajeRetencion((int) $vendedor->id);
+        $porcentajeGanancia = round(100.00 - $porcentajeRetencion, 2);
         $montoRetenido = round($totalVendido * ($porcentajeRetencion / 100), 2);
         $gananciaNeta = round($totalVendido * (1 - ($porcentajeRetencion / 100)), 2);
 
