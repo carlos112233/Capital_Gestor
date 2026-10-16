@@ -16,7 +16,16 @@
                 </p>
             </div>
 
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3">
+                <button type="button" onclick="window.iniciarTourPanelVendedor()"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs border border-slate-200 shadow-xs transition-all cursor-pointer"
+                    title="Ver guía interactiva del Panel de Vendedor">
+                    <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Guía Interactiva</span>
+                </button>
+
                 {{-- Selector de vendedor si el Administrador está supervisando --}}
                 @if(Auth::user()->hasRole('admin') && $vendedores->count() > 0)
                     <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs text-xs">
@@ -72,7 +81,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 
                 {{-- 1. Total Vendido --}}
-                <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200/80 hover:shadow-md transition-shadow relative overflow-hidden">
+                <div id="tour-vendedor-card-total" class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200/80 hover:shadow-md transition-shadow relative overflow-hidden">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Vendido</span>
                         <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -90,7 +99,7 @@
                 </div>
 
                 {{-- 2. Ganancia Neta (80%) --}}
-                <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200/80 hover:shadow-md transition-shadow relative overflow-hidden">
+                <div id="tour-vendedor-card-neto" class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200/80 hover:shadow-md transition-shadow relative overflow-hidden">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Ganancia Neta ({{ number_format($porcentajeGanancia ?? 80, 0) }}%)</span>
                         <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
@@ -108,7 +117,7 @@
                 </div>
 
                 {{-- 3. Pagos Recibidos --}}
-                <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200/80 hover:shadow-md transition-shadow relative overflow-hidden">
+                <div id="tour-vendedor-card-pagos" class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200/80 hover:shadow-md transition-shadow relative overflow-hidden">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pagos Recibidos</span>
                         <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
@@ -126,7 +135,7 @@
                 </div>
 
                 {{-- 4. Saldo Pendiente por Cobrar --}}
-                <div class="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl p-5 shadow-md text-white relative overflow-hidden">
+                <div id="tour-vendedor-card-saldo" class="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl p-5 shadow-md text-white relative overflow-hidden">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-xs font-bold text-indigo-200 uppercase tracking-wider">Saldo por Cobrar</span>
                         <div class="w-9 h-9 rounded-xl bg-white/10 text-indigo-300 flex items-center justify-center backdrop-blur-xs">
@@ -170,7 +179,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 
                 {{-- Tabla 1: Historial de Pagos Recibidos --}}
-                <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden flex flex-col">
+                <div id="tour-vendedor-tabla-pagos" class="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden flex flex-col">
                     <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                         <h4 class="font-bold text-sm text-slate-800 flex items-center gap-2">
                             <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -187,8 +196,8 @@
                                 <tr>
                                     <th class="px-4 py-3 text-left">Fecha</th>
                                     <th class="px-4 py-3 text-right">Base Vendida</th>
-                                    <th class="px-4 py-3 text-center">Retención (20%)</th>
-                                    <th class="px-4 py-3 text-right">Neto Recibido (80%)</th>
+                                    <th class="px-4 py-3 text-center">Retención ({{ number_format($porcentajeRetencion ?? 20, 0) }}%)</th>
+                                    <th class="px-4 py-3 text-right">Neto Recibido ({{ number_format($porcentajeGanancia ?? 80, 0) }}%)</th>
                                     <th class="px-4 py-3 text-center">Método</th>
                                 </tr>
                             </thead>
@@ -226,7 +235,7 @@
                 </div>
 
                 {{-- Tabla 2: Ventas Recientes del Vendedor --}}
-                <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden flex flex-col">
+                <div id="tour-vendedor-tabla-ventas" class="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden flex flex-col">
                     <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                         <h4 class="font-bold text-sm text-slate-800 flex items-center gap-2">
                             <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -286,3 +295,103 @@
         </div>
     </div>
 </x-app-layout>
+
+@php
+    $hasSeenTutorialVendedor = Auth::check() && Auth::user()->tutorials()->where('tutorial_name', 'panel_vendedor')->exists();
+@endphp
+
+<script>
+    window.iniciarTourPanelVendedor = function() {
+        if (!window.driver || !window.driver.js) return;
+        const driverObj = window.driver.js.driver({
+            showProgress: true,
+            nextBtnText: 'Siguiente ➔',
+            prevBtnText: '⬅ Anterior',
+            doneBtnText: '¡Entendido!',
+            steps: [
+                {
+                    element: '#tour-vendedor-card-total',
+                    popover: {
+                        title: '1. Total Vendido',
+                        description: 'Muestra la suma acumulada del 100% de las ventas que has despachado desde el catálogo o punto de venta.',
+                        side: 'bottom',
+                        align: 'start'
+                    }
+                },
+                {
+                    element: '#tour-vendedor-card-neto',
+                    popover: {
+                        title: '2. Ganancia Neta (80%)',
+                        description: 'Representa tu ganancia neta tras descontar el 20% de retención de la empresa sobre el total vendido.',
+                        side: 'bottom',
+                        align: 'start'
+                    }
+                },
+                {
+                    element: '#tour-vendedor-card-pagos',
+                    popover: {
+                        title: '3. Pagos Recibidos',
+                        description: 'Suma de todas las liquidaciones y pagos que la Administración ya te ha entregado o transferido.',
+                        side: 'bottom',
+                        align: 'start'
+                    }
+                },
+                {
+                    element: '#tour-vendedor-card-saldo',
+                    popover: {
+                        title: '4. Saldo por Cobrar',
+                        description: 'Es el monto neto disponible pendiente por liquidar a tu favor (Ganancia Neta menos Pagos Recibidos).',
+                        side: 'bottom',
+                        align: 'end'
+                    }
+                },
+                {
+                    element: '#tour-vendedor-tabla-pagos',
+                    popover: {
+                        title: 'Historial de Pagos Recibidos',
+                        description: 'Aquí puedes auditar cada liquidación recibida: fecha, base vendida, retención aplicada, neto pagado y método de pago.',
+                        side: 'top',
+                        align: 'start'
+                    }
+                },
+                {
+                    element: '#tour-vendedor-tabla-ventas',
+                    popover: {
+                        title: 'Últimas Ventas Realizadas',
+                        description: 'Consulta rápidamente tus últimas operaciones despachadas a clientes o haz clic en "Ver todas" para ir al historial completo.',
+                        side: 'top',
+                        align: 'end'
+                    }
+                }
+            ],
+            onDestroyStarted: () => {
+                driverObj.destroy();
+                fetch('{{ route("tutorial.marcar-visto") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ tutorial_name: 'panel_vendedor' })
+                }).catch(() => {});
+            }
+        });
+        driverObj.drive();
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const hasSeen = @json($hasSeenTutorialVendedor);
+        const forceTutorial = new URLSearchParams(window.location.search).get('tutorial') === 'true';
+
+        if (!hasSeen || forceTutorial) {
+            if (forceTutorial) {
+                const url = new URL(window.location);
+                url.searchParams.delete('tutorial');
+                window.history.replaceState({}, '', url);
+            }
+            setTimeout(() => {
+                window.iniciarTourPanelVendedor();
+            }, 600);
+        }
+    });
+</script>

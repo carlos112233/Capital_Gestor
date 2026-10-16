@@ -125,6 +125,46 @@
                             </a>
                         </div>
 
+                        @if(Auth::user()->hasRole('vendedor') || Auth::user()->hasRole('admin'))
+                        <!-- Tarjeta: Panel de Vendedor -->
+                        <div class="bg-slate-50 rounded-xl border border-blue-200 p-6 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300">
+                            <div>
+                                <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center text-2xl mb-4">💼</div>
+                                <h4 class="text-xl font-bold text-slate-800 mb-2">Panel de Vendedor</h4>
+                                <p class="text-sm text-slate-500 mb-6">Conoce tus 4 métricas clave (Total Vendido, Ganancia Neta 80%, Pagos Recibidos y Saldo por Cobrar) y tus tablas de historial.</p>
+                            </div>
+                            <a href="{{ route('dashboardVendedor') }}?tutorial=true" class="w-full text-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm transition-colors">
+                                Iniciar Recorrido
+                            </a>
+                        </div>
+                        @endif
+
+                        @if(Auth::user()->hasRole('admin'))
+                        <!-- Tarjeta: Gestión de Usuarios -->
+                        <div class="bg-slate-50 rounded-xl border border-purple-200 p-6 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300">
+                            <div>
+                                <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center text-2xl mb-4">👥</div>
+                                <h4 class="text-xl font-bold text-slate-800 mb-2">Gestión de Usuarios</h4>
+                                <p class="text-sm text-slate-500 mb-6">Aprende a registrar usuarios, asignar cualquiera de los 4 roles oficiales y enviar credenciales por WhatsApp.</p>
+                            </div>
+                            <a href="{{ route('admin.clientes.index') }}?tutorial=true" class="w-full text-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm transition-colors">
+                                Iniciar Recorrido
+                            </a>
+                        </div>
+
+                        <!-- Tarjeta: Nómina y Liquidaciones -->
+                        <div class="bg-slate-50 rounded-xl border border-amber-200 p-6 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300">
+                            <div>
+                                <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center text-2xl mb-4">💵</div>
+                                <h4 class="text-xl font-bold text-slate-800 mb-2">Nómina y Liquidaciones</h4>
+                                <p class="text-sm text-slate-500 mb-6">Domina el cálculo de retención del 20%, el ajuste de porcentajes, la dispersión de pagos y la bitácora auditable.</p>
+                            </div>
+                            <a href="{{ route('admin.pagos-vendedores.index') }}?tutorial=true" class="w-full text-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm transition-colors">
+                                Iniciar Recorrido
+                            </a>
+                        </div>
+                        @endif
+
                     </div>
                 </div>
             </div>
