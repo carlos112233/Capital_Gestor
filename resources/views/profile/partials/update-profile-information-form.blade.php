@@ -1,12 +1,12 @@
 <section>
     <header class="mb-6">
-        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <h2 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
             Información del Perfil
         </h2>
-        <p class="mt-1 text-sm text-slate-500 font-medium">
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400 font-medium">
             Actualiza el nombre, número de teléfono y dirección de correo electrónico asociada a tu cuenta.
         </p>
     </header>
@@ -20,37 +20,37 @@
         @method('patch')
 
         <div>
-            <label for="name" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Nombre Completo</label>
+            <label for="name" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Nombre Completo</label>
             <input id="name" name="name" type="text" value="{{ old('name', $user->name) }}" required autofocus autocomplete="name"
-                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 text-sm font-medium transition-all outline-none bg-slate-50/50 hover:bg-white focus:bg-white">
+                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 dark:text-white text-sm font-medium transition-all outline-none bg-slate-50/50 hover:bg-white focus:bg-white dark:bg-slate-900 dark:hover:bg-slate-900 dark:focus:bg-slate-900">
             <x-input-error class="mt-1.5 text-xs text-rose-500 font-semibold" :messages="$errors->get('name')" />
         </div>
 
         <div>
-            <label for="telefono" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Teléfono / WhatsApp</label>
+            <label for="telefono" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Teléfono / WhatsApp</label>
             <input id="telefono" name="telefono" type="text" value="{{ old('telefono', $user->telefono) }}" required autocomplete="tel"
                 placeholder="Ej. 5512345678"
-                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 text-sm font-medium transition-all outline-none bg-slate-50/50 hover:bg-white focus:bg-white">
+                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 dark:text-white text-sm font-medium transition-all outline-none bg-slate-50/50 hover:bg-white focus:bg-white dark:bg-slate-900 dark:hover:bg-slate-900 dark:focus:bg-slate-900">
             <x-input-error class="mt-1.5 text-xs text-rose-500 font-semibold" :messages="$errors->get('telefono')" />
         </div>
 
         <div>
-            <label for="email" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Correo Electrónico</label>
+            <label for="email" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Correo Electrónico</label>
             <input id="email" name="email" type="email" value="{{ old('email', $user->email) }}" required autocomplete="username"
-                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 text-sm font-medium transition-all outline-none bg-slate-50/50 hover:bg-white focus:bg-white">
+                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 dark:text-white text-sm font-medium transition-all outline-none bg-slate-50/50 hover:bg-white focus:bg-white dark:bg-slate-900 dark:hover:bg-slate-900 dark:focus:bg-slate-900">
             <x-input-error class="mt-1.5 text-xs text-rose-500 font-semibold" :messages="$errors->get('email')" />
 
             @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
                 <div class="mt-2">
-                    <p class="text-sm text-slate-700">
+                    <p class="text-sm text-slate-700 dark:text-slate-300">
                         Tu correo electrónico no está verificado.
-                        <button form="send-verification" class="underline text-sm text-indigo-600 hover:text-indigo-800 font-bold">
+                        <button form="send-verification" class="underline text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-bold">
                             Haz clic aquí para reenviar el correo de verificación.
                         </button>
                     </p>
 
                     @if (session('status') === 'verification-link-sent')
-                        <p class="mt-2 font-semibold text-sm text-emerald-600">
+                        <p class="mt-2 font-semibold text-sm text-emerald-600 dark:text-emerald-400">
                             Se ha enviado un nuevo enlace de verificación a tu correo.
                         </p>
                     @endif
@@ -59,10 +59,10 @@
         </div>
 
         <div>
-            <label for="image" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Foto de Perfil</label>
+            <label for="image" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Foto de Perfil</label>
             <div x-data="{ fileName: '' }" class="relative">
-                <label class="flex items-center justify-center gap-3 w-full px-4 py-3 rounded-xl border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-indigo-50/50 hover:bg-indigo-50 text-indigo-700 font-semibold text-sm cursor-pointer transition-all duration-200 shadow-sm">
-                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <label class="flex items-center justify-center gap-3 w-full px-4 py-3 rounded-xl border-2 border-dashed border-indigo-300 dark:border-indigo-600 hover:border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/40 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-semibold text-sm cursor-pointer transition-all duration-200 shadow-sm">
+                    <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                     </svg>
                     <span x-text="fileName ? fileName : 'Haga clic para seleccionar imagen de perfil o arrastre aquí'"></span>
@@ -70,7 +70,7 @@
                            @change="fileName = $event.target.files[0] ? $event.target.files[0].name : ''">
                 </label>
             </div>
-            <p class="text-slate-500 text-xs mt-1">Formatos permitidos: JPG, PNG. Máximo 2MB.</p>
+            <p class="text-slate-500 dark:text-slate-400 text-xs mt-1">Formatos permitidos: JPG, PNG. Máximo 2MB.</p>
             <x-input-error class="mt-1.5 text-xs text-rose-500 font-semibold" :messages="$errors->get('image')" />
 
             @if ($user->image)

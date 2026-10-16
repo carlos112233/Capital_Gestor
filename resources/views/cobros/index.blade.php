@@ -23,6 +23,47 @@
         @endif
     </div>
 
+    @if($isAdminUser)
+    <!-- Panel Analítico Ejecutivo & Scoring Crediticio -->
+    <div class="mb-6 bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-5 border-b border-slate-800 gap-4">
+            <div>
+                <h3 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                    <span>📊</span> Panel Analítico Ejecutivo y Scoring
+                </h3>
+                <p class="text-xs text-slate-400 mt-1">Métricas en tiempo real, comportamiento de cobros y evaluación crediticia de clientes</p>
+            </div>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                🔒 Exclusivo Administrador
+            </span>
+        </div>
+
+        <!-- 2 KPI Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+            <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-sm">
+                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Clientes VIP / Platino</div>
+                <div class="text-2xl font-black text-indigo-400 mt-1" id="kpi-count-vip">{{ $countVip }}</div>
+                <div class="text-[11px] text-indigo-400/80 mt-1">Score ≥ 80 pts</div>
+            </div>
+            <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-sm">
+                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Clientes en Riesgo</div>
+                <div class="text-2xl font-black text-red-400 mt-1" id="kpi-count-riesgo">{{ $countRiesgo }}</div>
+                <div class="text-[11px] text-red-400/80 mt-1">Score &lt; 50 pts</div>
+            </div>
+        </div>
+
+        <!-- Gráficos de Tendencia de Cobros vs Ventas -->
+        <div class="mt-6">
+            <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+                <h4 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                    <span>📈</span> Tendencia de Cobros vs Ventas
+                </h4>
+                <div id="chart-ingresos-deuda" class="min-h-[260px]"></div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Tarjetas de Métricas KPI -->
     <div class="grid grid-cols-1 sm:grid-cols-2 {{ $isAdminUser ? 'lg:grid-cols-4' : 'lg:grid-cols-3' }} gap-4 mb-6">
         
@@ -244,5 +285,65 @@
             </form>
         </div>
     </x-modal>
+    @endif
+
+    @if($isAdminUser)
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chartEl = document.querySelector("#chart-ingresos-deuda");
+            if (chartEl && typeof ApexCharts !== 'undefined') {
+                const optionsTrend = {
+                    series: [
+                        {
+                            name: 'Ventas Totales',
+                            type: 'column',
+                            data: {!! json_encode($chartVentas ?? []) !!}
+                        },
+                        {
+                            name: 'Cobros (Entradas)',
+                            type: 'line',
+                            data: {!! json_encode($chartCobros ?? []) !!}
+                        }
+                    ],
+                    chart: {
+                        height: 260,
+                        type: 'line',
+                        toolbar: { show: false },
+                        background: 'transparent'
+                    },
+                    stroke: {
+                        width: [0, 3],
+                        curve: 'smooth'
+                    },
+                    plotOptions: {
+                        bar: {
+                            columnWidth: '45%',
+                            borderRadius: 6
+                        }
+                    },
+                    colors: ['#6366f1', '#10b981'],
+                    labels: {!! json_encode($chartCategories ?? []) !!},
+                    theme: {
+                        mode: 'dark'
+                    },
+                    xaxis: {
+                        labels: {
+                            style: { colors: '#94a3b8' }
+                        }
+                    },
+                    yaxis: {
+                        labels: {
+                            style: { colors: '#94a3b8' },
+                            formatter: (val) => '$' + Number(val).toLocaleString()
+                        }
+                    },
+                    tooltip: {
+                        theme: 'dark'
+                    }
+                };
+                new ApexCharts(chartEl, optionsTrend).render();
+            }
+        });
+    </script>
     @endif
 </x-app-layout>

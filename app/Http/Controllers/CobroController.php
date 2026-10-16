@@ -6,6 +6,7 @@ use App\Models\Venta;
 use App\Models\Entrada;
 use App\Models\Pedido;
 use App\Models\User;
+use App\Services\ClientScoringService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -162,6 +163,13 @@ class CobroController extends Controller
             $todosLosRegistros = $todosLosRegistros->where('estado', 'PENDIENTE')->values();
         }
 
+        // Métricas de Scoring y Gráfica Analítica para Administrador
+        $countVip = 0;
+        $countRiesgo = 0;
+        $chartCategories = [];
+        $chartVentas = [];
+        $chartCobros = [];
+
         // Calcular Métricas KPI exactas desde base de datos
         if ($isAdmin) {
             $totalCobrado = (float) Venta::sum('total_venta') +
@@ -169,8 +177,8 @@ class CobroController extends Controller
                             (float) Pedido::whereNotNull('venta_id')->sum('costo');
             $inicioMes = now()->startOfMonth();
             $cobrosMes = (float) Venta::where('created_at', '>=', $inicioMes)->sum('total_venta') +
-                         (float) Entrada::where('created_at', '>=', $inicioMes)->sum('precio_venta') +
-                         (float) Pedido::whereNotNull('venta_id')->where('created_at', '>=', $inicioMes)->sum('costo');
+                          (float) Entrada::where('created_at', '>=', $inicioMes)->sum('precio_venta') +
+                          (float) Pedido::whereNotNull('venta_id')->where('created_at', '>=', $inicioMes)->sum('costo');
 
             // Calcular Sumatoria a Favor igual que en el Dashboard Admin
             $resumenUsuarios = User::select('id')
@@ -182,6 +190,80 @@ class CobroController extends Controller
                 $totalPagado = (float) ($u->entradas_sum_precio_venta ?? 0);
                 return max(0, $totalDeuda - $totalPagado);
             });
+
+            // 1. Conteo de Clientes VIP y en Riesgo con pre-carga eficiente (cero N+1)
+            $clientesScoring = User::whereHas('roles', function ($q) {
+                $q->where('name', 'cliente');
+            })->whereDoesntHave('roles', function ($q) {
+                $q->whereIn('name', ['admin', 'vendedor', 'cocina']);
+            })->select(
+                'id', 'name', 'override_score', 'score_manual', 'score_calculado', 'notas_scoring'
+            )->withSaldos()->get();
+
+            $scoringUserIds = $clientesScoring->pluck('id');
+
+            $compStats = DB::table('comprobantes')
+                ->whereIn('user_id', $scoringUserIds)
+                ->selectRaw('user_id,
+                    SUM(status = "aprobado") as aprobados,
+                    SUM(status = "rechazado") as rechazados')
+                ->groupBy('user_id')
+                ->get()
+                ->keyBy('user_id');
+
+            $pedidoStats = DB::table('pedidos')
+                ->whereIn('user_id', $scoringUserIds)
+                ->where('created_at', '>=', now()->subDays(30))
+                ->selectRaw('user_id, COUNT(*) as total')
+                ->groupBy('user_id')
+                ->get()
+                ->keyBy('user_id');
+
+            foreach ($clientesScoring as $c) {
+                $totalDeuda = (float) ($c->ventas_sum_total_venta ?? 0);
+                $totalPagado = (float) ($c->entradas_sum_precio_venta ?? 0);
+                $saldo = $totalDeuda - $totalPagado;
+
+                $scoring = ClientScoringService::getScoringFromData(
+                    $c,
+                    (int) ($compStats[$c->id]->aprobados ?? 0),
+                    (int) ($compStats[$c->id]->rechazados ?? 0),
+                    (int) ($pedidoStats[$c->id]->total ?? 0),
+                    $saldo
+                );
+
+                if ($scoring['tier'] === 'platino' || $scoring['score'] >= 80) {
+                    $countVip++;
+                } elseif ($scoring['tier'] === 'riesgo' || $scoring['score'] < 50) {
+                    $countRiesgo++;
+                }
+            }
+
+            // 2. Tendencia histórica de 6 meses para la gráfica (Cobros vs Ventas)
+            // Agrupación ultra-eficiente en 2 únicas consultas agrupadas por mes
+            $hace6Meses = now()->subMonths(5)->startOfMonth();
+
+            $ventasAgrupadas = DB::table('ventas')
+                ->where('created_at', '>=', $hace6Meses)
+                ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as ym, SUM(total_venta) as total')
+                ->groupBy('ym')
+                ->pluck('total', 'ym');
+
+            $entradasAgrupadas = DB::table('entradas')
+                ->where('created_at', '>=', $hace6Meses)
+                ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as ym, SUM(precio_venta) as total')
+                ->groupBy('ym')
+                ->pluck('total', 'ym');
+
+            for ($i = 5; $i >= 0; $i--) {
+                $date = now()->subMonths($i);
+                $ymKey = $date->format('Y-m');
+                $label = ucfirst($date->translatedFormat('M Y'));
+
+                $chartCategories[] = $label;
+                $chartVentas[] = round((float) ($ventasAgrupadas[$ymKey] ?? 0), 2);
+                $chartCobros[] = round((float) ($entradasAgrupadas[$ymKey] ?? 0), 2);
+            }
         } else {
             $totalCobrado = (float) Venta::where('user_id', $user->id)->sum('total_venta') +
                             (float) Entrada::where(function ($q) use ($user) { $q->where('user_id', $user->id)->orWhere('cliente_id', $user->id); })->sum('precio_venta') +
@@ -216,7 +298,12 @@ class CobroController extends Controller
             'totalCobrado',
             'cobrosMes',
             'cobrosPendientes',
-            'totalTransacciones'
+            'totalTransacciones',
+            'countVip',
+            'countRiesgo',
+            'chartCategories',
+            'chartVentas',
+            'chartCobros'
         ));
     }
 }

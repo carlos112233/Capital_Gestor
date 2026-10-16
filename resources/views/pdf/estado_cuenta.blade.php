@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Estado de Cuenta - EL BAJÓN</title>
+    <title>Estado de Cuenta - {{ $appSettings->app_name ?? 'EL BAJÓN' }}</title>
     <style>
         @page {
             margin: 20px 25px;
@@ -197,13 +197,13 @@
         <tr>
             <td class="logo-box" style="width: 50%;">
                 @if(!empty($logoBase64))
-                    <img src="data:image/svg+xml;base64,{{ $logoBase64 }}" class="logo-img" alt="Logo EL BAJÓN">
+                    <img src="data:image/svg+xml;base64,{{ $logoBase64 }}" class="logo-img" alt="Logo {{ $appSettings->app_name ?? 'EL BAJÓN' }}">
                 @else
-                    <div class="brand-title">EL BAJÓN</div>
+                    <div class="brand-title">{{ $appSettings->app_name ?? 'EL BAJÓN' }}</div>
                 @endif
             </td>
             <td class="header-right" style="width: 50%;">
-                <div class="brand-title">EL BAJÓN</div>
+                <div class="brand-title">{{ $appSettings->app_name ?? 'EL BAJÓN' }}</div>
                 <div class="doc-subtitle">Estado de Cuenta</div>
                 <div class="date-text">Fecha de Emisión: {{ $fechaEmision }}</div>
             </td>
@@ -320,7 +320,7 @@
                             <td style="width: 70%; vertical-align: middle;">
                                 <div class="bank-header">Información de Transferencia Bancaria</div>
                                 <div class="bank-row"><strong>BBVA Acuunt:</strong> 0123 4567 8901 2345 6789</div>
-                                <div class="bank-row"><strong>Mercado Pago User:</strong> El Bajon Pagos</div>
+                                <div class="bank-row"><strong>Mercado Pago User:</strong> {{ $appSettings->app_name ?? 'El Bajón' }} Pagos</div>
                             </td>
                         </tr>
                     </table>
@@ -339,7 +339,7 @@
 
     <!-- Footer -->
     <div class="footer">
-        Documento oficial emitido por EL BAJÓN &copy; {{ date('Y') }}. Todos los derechos reservados.
+        Documento oficial emitido por {{ $appSettings->app_name ?? 'EL BAJÓN' }} &copy; {{ date('Y') }}. Todos los derechos reservados.
     </div>
 
 </body>

@@ -5,15 +5,15 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'El bajon') }}</title>
-        <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-        <link rel="icon" type="image/png" href="{{ asset('img/Logo.png') }}">
+        <title>{{ $appSettings->app_name ?? config('app.name', 'El Bajón') }}</title>
+        <link rel="icon" type="image/x-icon" href="{{ $appSettings->favicon_url ?? asset('favicon.ico') }}">
+        <link rel="icon" type="image/png" href="{{ $appSettings->favicon_url ?? asset('favicon.ico') }}">
         <link rel="manifest" href="{{ asset('manifest.json') }}">
-        <meta name="theme-color" content="#4f46e5">
-        <link rel="apple-touch-icon" href="{{ asset('img/icon-192.png') }}">
+        <meta name="theme-color" content="{{ $appSettings->primary_color ?? '#4f46e5' }}">
+        <link rel="apple-touch-icon" href="{{ $appSettings->logo_url ?? asset('img/icon-192.png') }}">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-        <meta name="apple-mobile-web-app-title" content="El bajon">
+        <meta name="apple-mobile-web-app-title" content="{{ $appSettings->app_name ?? 'El Bajón' }}">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -266,15 +266,15 @@
                 <a href="/" class="inline-flex items-center gap-3 group text-decoration-none" style="display: inline-flex; align-items: center; gap: 0.75rem; text-decoration: none;">
                     <!-- Logo oficial compacto y nítido -->
                     <div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                        <img src="{{ file_exists(public_path('img/Logo.svg')) ? asset('img/Logo.svg') : asset('img/Logo.png') }}?v={{ time() }}" 
+                        <img src="{{ !empty($appSettings->logo_url) ? $appSettings->logo_url : (file_exists(public_path('img/Logo.svg')) ? asset('img/Logo.svg') : asset('img/Logo.png')) }}?v={{ time() }}" 
                              style="width: 100%; height: 100%; object-fit: contain; display: block;" 
-                             alt="El bajon Logo">
+                             alt="{{ $appSettings->app_name ?? 'El Bajón' }} Logo">
                     </div>
 
                     <!-- Texto de la Marca perfectamente agrupado junto al logo -->
                     <div style="display: flex; flex-direction: column; justify-content: center;">
                         <span class="text-white font-black tracking-wider text-base uppercase leading-tight" style="color: #ffffff; font-weight: 900; letter-spacing: 0.05em; font-size: 1rem; text-transform: uppercase; line-height: 1.1; margin: 0;">
-                            EL BAJÓN
+                            {{ $appSettings->app_name ?? 'EL BAJÓN' }}
                         </span>
                         <span class="text-amber-400 font-extrabold text-[10px] tracking-widest uppercase mt-0.5" style="color: #fbbf24; font-weight: 800; font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; line-height: 1;">
                             HAMBURGUESAS &amp; PANADERÍA
@@ -317,7 +317,7 @@
 
                 <!-- Copyright -->
                 <div class="text-center text-slate-400">
-                    &copy; {{ date('Y') }} El bajon &bull; Todos los derechos reservados
+                    &copy; {{ date('Y') }} {{ $appSettings->app_name ?? 'El Bajón' }} &bull; Todos los derechos reservados
                 </div>
 
                 <!-- Versión y Región -->

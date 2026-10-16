@@ -53,6 +53,8 @@ public/.wwebjs_cache/
 /storage/*.key
 /storage/pail
 storage/backups/
+storage/app/backups/
+storage/app/temp_pdfs/
 *.sql
 *.mp3
 *.wav

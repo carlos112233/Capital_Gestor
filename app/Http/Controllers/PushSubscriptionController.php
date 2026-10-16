@@ -46,16 +46,43 @@ class PushSubscriptionController extends Controller
     }
 
     /**
-     * Marcar todas las notificaciones de base de datos como leídas.
+     * Marcar una notificación individual de base de datos como leída con cortocircuito de envíos programados.
+     */
+    public function markAsRead(Request $request, string $id)
+    {
+        $user = Auth::user();
+        $notification = $user->notifications()->where('id', $id)->firstOrFail();
+
+        $result = \App\Services\NotificationCircuitBreakerService::markNotificationAsRead($notification, $user);
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Notificación marcada como leída.',
+                'cancelled_deliveries' => $result['cancelled_messages'],
+            ]);
+        }
+
+        $redirectUrl = $notification->data['action_url'] ?? route('dashboard');
+        return redirect($redirectUrl);
+    }
+
+    /**
+     * Marcar todas las notificaciones de base de datos como leídas con cortocircuito de envíos programados.
      */
     public function markAllRead(Request $request)
     {
-        Auth::user()->unreadNotifications()->update(['read_at' => now()]);
-        
+        $user = Auth::user();
+        $result = \App\Services\NotificationCircuitBreakerService::markAllNotificationsAsRead($user);
+
         if ($request->expectsJson() || $request->ajax()) {
-            return response()->json(['success' => true, 'message' => 'Notificaciones leídas.']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Todas las notificaciones marcadas como leídas.',
+                'cancelled_deliveries' => $result['cancelled_messages'],
+            ]);
         }
-        
-        return back()->with('success', 'Todas las notificaciones marcadas como leídas.');
+
+        return back()->with('success', 'Todas las notificaciones marcadas como leídas y recordatorios programados cancelados.');
     }
 }

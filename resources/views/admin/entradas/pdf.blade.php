@@ -119,7 +119,7 @@
     <table class="header-table">
         <tr>
             <td style="vertical-align: top;">
-                <div class="logo-title">EL BAJÓN</div>
+                <div class="logo-title">{{ $appSettings->app_name ?? 'EL BAJÓN' }}</div>
                 <div class="subtitle">Comprobante de Pago Saldado / Abono</div>
             </td>
             <td style="text-align: right; vertical-align: top;">
@@ -185,7 +185,7 @@
 
     <div class="footer">
         <p style="margin: 0; font-weight: bold;">¡Gracias por su pago!</p>
-        <p style="margin: 3px 0 0 0;">El Bajón</p>
+        <p style="margin: 3px 0 0 0;">{{ $appSettings->app_name ?? 'El Bajón' }}</p>
     </div>
 </body>
 </html>

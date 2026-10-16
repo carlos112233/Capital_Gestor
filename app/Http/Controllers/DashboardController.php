@@ -62,36 +62,12 @@ class DashboardController extends Controller
     {
         $resumen = User::select(
                 'id', 'name', 'email', 'telefono', 'updated_at', 'image',
-                'override_score', 'score_manual', 'score_calculado', 'notas_scoring',
                 DB::raw('image IS NOT NULL as has_image')
             )
             ->withSaldos()
             ->get();
 
-        // ─── Pre-carga masiva de scoring (evita N+1: pasa de ~220 queries a 2) ───
-        $userIds = $resumen->pluck('id');
-
-        // 1 sola query para comprobantes aprobados/rechazados de todos los usuarios
-        $compStats = DB::table('comprobantes')
-            ->whereIn('user_id', $userIds)
-            ->selectRaw('user_id,
-                SUM(status = "aprobado") as aprobados,
-                SUM(status = "rechazado") as rechazados')
-            ->groupBy('user_id')
-            ->get()
-            ->keyBy('user_id');
-
-        // 1 sola query para pedidos recientes (últimos 30 días) de todos los usuarios
-        $pedidoStats = DB::table('pedidos')
-            ->whereIn('user_id', $userIds)
-            ->where('created_at', '>=', now()->subDays(30))
-            ->selectRaw('user_id, COUNT(*) as total')
-            ->groupBy('user_id')
-            ->get()
-            ->keyBy('user_id');
-        // ────────────────────────────────────────────────────────────────────────
-
-        $resumen = $resumen->map(function ($User) use ($compStats, $pedidoStats) {
+        $resumen = $resumen->map(function ($User) {
             $totalDeuda = (float) ($User->ventas_sum_total_venta ?? 0);
             $totalPagado = (float) ($User->entradas_sum_precio_venta ?? 0);
             $ventasCorte = (float) ($User->ventas_corte_sum ?? 0);
@@ -105,15 +81,6 @@ class DashboardController extends Controller
             $User->saldo = $saldo;
             $User->saldo_corte_anterior = $saldoAnterior;
             $User->saldo_corte_actual = $saldoActual;
-
-            // Calcular scoring usando datos ya pre-cargados (sin queries adicionales)
-            $User->scoring = \App\Services\ClientScoringService::getScoringFromData(
-                $User,
-                (int) ($compStats[$User->id]->aprobados ?? 0),
-                (int) ($compStats[$User->id]->rechazados ?? 0),
-                (int) ($pedidoStats[$User->id]->total ?? 0),
-                $saldo
-            );
 
             return $User;
         });

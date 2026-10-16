@@ -45,10 +45,10 @@
                 <div class="flex justify-between items-start border-b-[1.5px] border-slate-300 pb-4 mb-5">
                     <div class="w-1/2">
                         <!-- Espacio para el logo -->
-                        <div class="text-[22px] font-extrabold text-slate-800 uppercase tracking-wide">EL BAJÓN</div>
+                        <div class="text-[22px] font-extrabold text-slate-800 uppercase tracking-wide">{{ $appSettings->app_name ?? 'EL BAJÓN' }}</div>
                     </div>
                     <div class="w-1/2 text-right">
-                        <div class="text-[22px] font-extrabold text-slate-800 uppercase tracking-wide">EL BAJÓN</div>
+                        <div class="text-[22px] font-extrabold text-slate-800 uppercase tracking-wide">{{ $appSettings->app_name ?? 'EL BAJÓN' }}</div>
                         <div class="text-sm font-bold text-black mt-0.5">Comprobante de Venta</div>
                         <div class="text-[11px] text-slate-600 mt-1">Fecha de Emisión: {{ $venta->created_at ? $venta->created_at->format('d/m/Y') : now()->format('d/m/Y') }}</div>
                     </div>
@@ -103,7 +103,7 @@
 
                 <!-- Footer -->
                 <div class="text-center text-[10px] text-slate-500 mt-6 pt-4 border-t border-slate-200">
-                    Documento oficial emitido por EL BAJÓN © {{ date('Y') }}. Todos los derechos reservados.
+                    Documento oficial emitido por {{ $appSettings->app_name ?? 'EL BAJÓN' }} © {{ date('Y') }}. Todos los derechos reservados.
                 </div>
 
             </div>

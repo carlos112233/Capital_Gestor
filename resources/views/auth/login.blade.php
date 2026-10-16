@@ -6,17 +6,17 @@
     <div class="flex justify-center mb-2" style="display: flex; justify-content: center; margin-bottom: 0.4rem;">
         <div class="w-14 h-14 rounded-2xl bg-[#FFF8E7] border border-amber-200/80 shadow-xs flex items-center justify-center p-2 transition-transform duration-300 hover:scale-105"
              style="width: 3.4rem; height: 3.4rem; border-radius: 0.9rem; background-color: #FFF8E7; border: 1px solid rgba(251, 191, 36, 0.5); display: flex; align-items: center; justify-content: center; padding: 0.5rem;">
-            <img src="{{ file_exists(public_path('img/Logo.svg')) ? asset('img/Logo.svg') : asset('img/Logo.png') }}?v={{ time() }}" 
+            <img src="{{ $appSettings->logo_url ?? (file_exists(public_path('img/Logo.svg')) ? asset('img/Logo.svg') : asset('img/Logo.png')) }}?v={{ time() }}" 
                  class="w-full h-full object-contain" 
                  style="width: 100%; height: 100%; object-fit: contain;"
-                 alt="El bajon Logo">
+                 alt="{{ $appSettings->app_name ?? 'El Bajón' }} Logo">
         </div>
     </div>
 
     <!-- Título Institucional y Slogan -->
     <div class="text-center" style="text-align: center;">
         <span class="block text-xs font-black tracking-wider text-slate-800 uppercase leading-none" style="display: block; font-size: 0.75rem; font-weight: 900; letter-spacing: 0.05em; color: #1e293b; text-transform: uppercase;">
-            EL BAJÓN
+            {{ $appSettings->app_name ?? 'EL BAJÓN' }}
         </span>
         <span class="block text-[9px] font-extrabold tracking-widest text-amber-600 uppercase mt-1" style="display: block; font-size: 8.5px; font-weight: 800; letter-spacing: 0.1em; color: #d97706; text-transform: uppercase; margin-top: 0.2rem;">
             HAMBURGUESAS &bull; TORTAS &bull; CEMITAS &bull; PAN DE DULCE

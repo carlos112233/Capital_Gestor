@@ -1,14 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-white leading-tight">
                 {{ __('Gestión de Usuarios') }}
             </h2>
             <div class="flex items-center gap-2.5">
                 <button type="button" onclick="window.iniciarTourUsuarios()"
-                    class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs border border-slate-200 shadow-xs transition-all cursor-pointer"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs border border-slate-200 dark:border-slate-700 shadow-xs transition-all cursor-pointer"
                     title="Ver guía interactiva de este módulo">
-                    <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <span>Guía Interactiva</span>
@@ -34,12 +34,12 @@
                         </svg>
                     </div>
                     <input type="text" name="q" id="q" value="{{ request('q') }}"
-                        class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200 shadow-sm"
+                        class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200 shadow-sm"
                         placeholder="Buscar usuario por nombre, correo o teléfono..." autocomplete="off" />
                 </div>
             </form>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg border border-slate-200 dark:border-slate-700">
                 <div class="overflow-x-auto">
                     <div id="contenedor-tabla" class="mt-4 overflow-x-auto">
                         @include('admin.clientes._tabla', ['clientes' => $clientes])
@@ -54,10 +54,10 @@
 
     <!-- Modal Nuevo Usuario -->
     <x-modal name="create-cliente">
-        <div class="p-6">
-            <div class="flex justify-between items-center pb-3 border-b mb-4">
-                <h3 class="text-lg font-bold text-gray-900">Registrar Nuevo Usuario</h3>
-                <button type="button" onclick="closeModal('create-cliente')" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+        <div class="p-6 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-700 mb-4">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Registrar Nuevo Usuario</h3>
+                <button type="button" onclick="closeModal('create-cliente')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white font-bold text-xl cursor-pointer">&times;</button>
             </div>
             <form method="POST" action="{{ route('admin.clientes.store') }}" enctype="multipart/form-data">
                 @csrf

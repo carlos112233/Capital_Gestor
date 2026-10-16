@@ -33,14 +33,14 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
 // En caso de que no existan tablas o error de BD
 }
 @endphp
-<header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs transition-all duration-300">
+<header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-xs transition-all duration-300">
     <div class="px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
 
         <!-- Izquierda: Botón Hamburguesa & Marca Móvil -->
         <div class="flex items-center gap-3">
             <!-- Botón Toggle Sidebar (Desktop) -->
             <button @click="sidebarOpen = !sidebarOpen"
-                class="hidden lg:inline-flex p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 focus:outline-none transition-colors"
+                class="hidden lg:inline-flex p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800 focus:outline-none transition-colors"
                 title="Alternar Menú">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -49,7 +49,7 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
 
             <!-- Botón Toggle Sidebar (Mobile) -->
             <button @click="mobileOpen = !mobileOpen"
-                class="lg:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none">
+                class="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
@@ -57,7 +57,7 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
 
             <!-- Título de la Plataforma o Módulo Actual -->
             <div class="flex flex-col">
-                <h1 class="text-lg font-bold text-slate-800 tracking-tight leading-none">
+                <h1 class="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight leading-none">
                     @if(Auth::user()->hasRole('admin'))
                         PANEL ADMINISTRATIVO
                     @elseif(Auth::user()->hasRole('vendedor'))
@@ -75,7 +75,7 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
             <!-- Botón PWA Install -->
             <button id="pwa-install-btn" style="display: none;"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition-all duration-200 cursor-pointer"
-                title="Instalar App El bajon">
+                title="Instalar App {{ $appSettings->app_name ?? 'El Bajón' }}">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8l-8 8-8-8" />
                 </svg>
@@ -86,7 +86,7 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
             @if(!Auth::user()->hasRole('admin') && !Auth::user()->hasRole('vendedor'))
             <div class="relative" x-data="shoppingCart()" @add-to-cart.window="addItem($event.detail)">
                 <button id="tour-btn-carrito" @click="cartOpen = !cartOpen" @click.away="cartOpen = false"
-                    class="relative p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
+                    class="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none cursor-pointer"
                     title="Carrito de Compras">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -103,29 +103,29 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
                     x-transition:leave="transition ease-in duration-75"
                     x-transition:leave-start="transform opacity-100 scale-100"
                     x-transition:leave-end="transform opacity-0 scale-95"
-                    class="absolute -right-12 sm:right-0 mt-2 w-[320px] sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-2 z-[60] overflow-hidden"
+                    class="absolute -right-12 sm:right-0 mt-2 w-[320px] sm:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-800 py-2 z-[60] overflow-hidden"
                     style="display: none;">
                     
-                    <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                        <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
                             <span class="w-2 h-2 rounded-full bg-rose-500"></span>
                             Tu Carrito
                         </h4>
                         <button @click="clearCart()" class="text-[10px] font-bold text-rose-600 hover:text-rose-800">Vaciar</button>
                     </div>
 
-                    <div class="max-h-72 overflow-y-auto divide-y divide-slate-100 text-xs">
+                    <div class="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                         <template x-if="items.length === 0">
                             <div class="p-4 text-center text-slate-500">El carrito está vacío.</div>
                         </template>
                         <template x-for="(item, index) in items" :key="index">
-                            <div class="p-3.5 flex items-start justify-between gap-3 bg-white hover:bg-slate-50 transition-colors">
+                            <div class="p-3.5 flex items-start justify-between gap-3 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                                 <div class="flex-1">
-                                    <p class="font-bold text-slate-800" x-text="item.nombre"></p>
-                                    <p class="text-slate-600 font-medium mt-0.5" x-text="'$ ' + parseFloat(item.precio).toFixed(2)"></p>
+                                    <p class="font-bold text-slate-800 dark:text-slate-100" x-text="item.nombre"></p>
+                                    <p class="text-slate-600 dark:text-slate-400 font-medium mt-0.5" x-text="'$ ' + parseFloat(item.precio).toFixed(2)"></p>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <input type="number" x-model.number="item.cantidad" @change="saveCart()" min="1" class="w-16 h-7 text-xs border-slate-200 rounded-md text-center py-0 px-1">
+                                    <input type="number" x-model.number="item.cantidad" @change="saveCart()" min="1" class="w-16 h-7 text-xs border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-md text-center py-0 px-1">
                                     <button @click="removeItem(index)" class="text-rose-500 hover:text-rose-700 p-1">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                     </button>
@@ -134,9 +134,9 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
                         </template>
                     </div>
 
-                    <div class="px-4 py-3 bg-slate-50 border-t border-slate-100">
+                    <div class="px-4 py-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800">
                         <div class="flex justify-between items-center mb-3">
-                            <span class="font-bold text-slate-700">Total:</span>
+                            <span class="font-bold text-slate-700 dark:text-slate-300">Total:</span>
                             <span class="font-bold text-lg text-indigo-600" x-text="'$ ' + total.toFixed(2)"></span>
                         </div>
                         <form method="POST" action="{{ route('ventas.storeMultiple') }}">
@@ -165,7 +165,7 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
                     $unreadCount = Auth::user()->unreadNotifications->count();
                 @endphp
                 <button id="tour-btn-notificaciones" @click="notifOpen = !notifOpen" @click.away="notifOpen = false"
-                    class="relative p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
+                    class="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none cursor-pointer"
                     title="Notificaciones">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9" />
@@ -184,41 +184,51 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
                     x-transition:leave="transition ease-in duration-75"
                     x-transition:leave-start="transform opacity-100 scale-100"
                     x-transition:leave-end="transform opacity-0 scale-95"
-                    class="absolute -right-12 sm:right-0 mt-2 w-[300px] sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-2 z-[60] overflow-hidden"
+                    class="absolute -right-12 sm:right-0 mt-2 w-[300px] sm:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-800 py-2 z-[60] overflow-hidden"
                     style="display: none;">
 
-                    <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                        <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
                             <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                             Tus Notificaciones
                         </h4>
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800">
                             {{ $unreadCount > 0 ? $unreadCount . ' Nuevas' : 'Al día' }}
                         </span>
                     </div>
 
-                    <div class="max-h-72 overflow-y-auto divide-y divide-slate-100 text-xs">
+                    <div class="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                         @forelse(Auth::user()->unreadNotifications as $notification)
-                            <a href="{{ $notification->data['action_url'] ?? '#' }}" class="p-3.5 hover:bg-slate-50 transition-colors flex items-start gap-3 bg-indigo-50/30 block">
-                                <div class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <img src="{{ $notification->data['icon_url'] ?? '/img/icon-192.png' }}" class="w-5 h-5 rounded-md" alt="icon">
-                                </div>
-                                <div class="flex-1">
-                                    <p class="font-bold text-slate-800">{{ $notification->data['title'] ?? 'Nueva Notificación' }}</p>
-                                    <p class="text-slate-600 font-medium mt-0.5">{{ $notification->data['message'] ?? '' }}</p>
-                                    <span class="text-[10px] text-slate-400 mt-1 block">
-                                        {{ $notification->created_at->diffForHumans() }}
-                                    </span>
-                                </div>
-                            </a>
+                            <div id="notif-item-{{ $notification->id }}" class="group relative p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors flex items-start gap-3 bg-indigo-50/30 dark:bg-indigo-950/20">
+                                <a href="{{ $notification->data['action_url'] ?? '#' }}" 
+                                   onclick="markSingleNotificationRead(event, '{{ $notification->id }}', '{{ $notification->data['action_url'] ?? '#' }}')" 
+                                   class="flex items-start gap-3 flex-1 min-w-0">
+                                    <div class="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <img src="{{ $notification->data['icon_url'] ?? '/img/icon-192.png' }}" class="w-5 h-5 rounded-md" alt="icon">
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-bold text-slate-800 dark:text-slate-100 truncate">{{ $notification->data['title'] ?? 'Nueva Notificación' }}</p>
+                                        <p class="text-slate-600 dark:text-slate-400 font-medium mt-0.5">{{ $notification->data['message'] ?? '' }}</p>
+                                        <span class="text-[10px] text-slate-400 mt-1 block">
+                                            {{ $notification->created_at->diffForHumans() }}
+                                        </span>
+                                    </div>
+                                </a>
+                                <button type="button" 
+                                        onclick="markSingleNotificationRead(event, '{{ $notification->id }}', null)" 
+                                        title="Marcar como leída y cancelar recordatorios pendientes" 
+                                        class="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-700 rounded transition-all cursor-pointer">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                </button>
+                            </div>
                         @empty
-                            <div class="p-4 text-center text-slate-500">
+                            <div class="p-4 text-center text-slate-500 dark:text-slate-400">
                                 No tienes notificaciones nuevas.
                             </div>
                         @endforelse
                     </div>
 
-                    <div class="px-4 py-2 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+                    <div class="px-4 py-2 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
                         <button id="enable-push-btn" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-800" style="display: none;">
                             Activar Alertas Push
                         </button>
@@ -232,21 +242,21 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
                 </div>
             </div>
 
-            <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+            <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
 
             <!-- Botón Foto de Perfil / Modal -->
             <div class="flex items-center mr-1">
                 <button @click="$dispatch('open-global-photo-modal')" class="block flex-shrink-0 focus:outline-none cursor-pointer transform hover:scale-105 transition-transform" title="Ver foto de perfil">
-                    <img src="{{ Auth::user()->image_url }}" onerror="this.onerror=null; this.src='{{ asset('img/default_user.svg') }}';" class="w-9 h-9 rounded-xl object-cover shadow-sm border border-slate-200 flex-shrink-0 block" alt="Foto de perfil">
+                    <img src="{{ Auth::user()->image_url }}" onerror="this.onerror=null; this.src='{{ asset('img/default_user.svg') }}';" class="w-9 h-9 rounded-xl object-cover shadow-sm border border-slate-200 dark:border-slate-700 flex-shrink-0 block" alt="Foto de perfil">
                 </button>
             </div>
 
             <!-- Dropdown Perfil de Usuario -->
             <x-dropdown align="right" width="48">
                 <x-slot name="trigger">
-                    <button class="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer">
-                        <span class="hidden sm:inline-block font-semibold text-sm text-slate-700 ml-1">{{ Auth::user()->name }}</span>
-                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button class="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none cursor-pointer">
+                        <span class="hidden sm:inline-block font-semibold text-sm text-slate-700 dark:text-slate-200 ml-1">{{ Auth::user()->name }}</span>
+                        <svg class="w-4 h-4 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
@@ -272,6 +282,48 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
 
     </div>
 </header>
+
+<!-- Toast Flotante Global No Invasivo (Alpine.js) -->
+<div x-data="{
+        show: false,
+        title: '¡Envíos completados!',
+        message: 'Se han enviado todos los mensajes pendientes',
+        timer: null,
+        init() {
+            @if(session('wa_completed'))
+                this.show = true;
+                this.timer = setTimeout(() => { this.show = false; }, 3000);
+            @endif
+        },
+        openToast(t, m) {
+            this.title = t || this.title;
+            this.message = m || this.message;
+            this.show = true;
+            if (this.timer) clearTimeout(this.timer);
+            this.timer = setTimeout(() => { this.show = false; }, 3000);
+        }
+     }"
+     @system-toast.window="openToast($event.detail.title, $event.detail.message)"
+     x-show="show"
+     x-transition
+     style="display: none;"
+     class="fixed top-20 right-4 z-40 pointer-events-none">
+    <div class="pointer-events-auto flex items-start gap-3 p-4 rounded-2xl bg-white dark:bg-slate-800 border border-emerald-500/40 shadow-xl max-w-sm">
+        <div class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+            </svg>
+        </div>
+        <div class="flex-1 min-w-0 pr-1">
+            <h4 class="text-xs font-bold text-slate-900 dark:text-white" x-text="title"></h4>
+            <p class="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 leading-snug" x-text="message"></p>
+        </div>
+        <button type="button" @click="show = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg focus:outline-none cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         @if($isAdminNav)
@@ -299,20 +351,14 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
                         }
                     }
 
-                    // Si el conteo anterior era > 0 y acaba de terminar (llegó a 0), lanzamos notificación flotante
+                    // Si el conteo anterior era > 0 y acaba de terminar (llegó a 0), lanzamos notificación flotante Alpine
                     if (lastPendingWa > 0 && pendientes === 0) {
-                        if (typeof Swal !== 'undefined') {
-                            Swal.fire({
-                                toast: true,
-                                position: 'top-end',
-                                icon: 'success',
+                        window.dispatchEvent(new CustomEvent('system-toast', {
+                            detail: {
                                 title: '¡Envíos completados!',
-                                text: 'Se han enviado todos los mensajes pendientes',
-                                showConfirmButton: false,
-                                timer: 5000,
-                                timerProgressBar: true
-                            });
-                        }
+                                message: 'Se han enviado todos los mensajes pendientes'
+                            }
+                        }));
                     }
                     lastPendingWa = pendientes;
                 })
@@ -625,6 +671,61 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
             }
         })
         .catch(error => console.error('Error:', error));
+    }
+
+    function markSingleNotificationRead(event, id, targetUrl) {
+        if (event && (!targetUrl || targetUrl === '#' || targetUrl === '')) {
+            event.preventDefault();
+        }
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') 
+            || document.querySelector('input[name="_token"]')?.value;
+
+        fetch(`/notifications/${id}/mark-read`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify({})
+        })
+        .then(res => res.json())
+        .then(data => {
+            const item = document.getElementById(`notif-item-${id}`);
+            if (item) item.remove();
+
+            const container = document.querySelector('.max-h-72.overflow-y-auto');
+            if (container && container.querySelectorAll('[id^="notif-item-"]').length === 0) {
+                container.innerHTML = '<div class="p-4 text-center text-slate-500">No tienes notificaciones nuevas.</div>';
+                const badge = document.querySelector('#tour-btn-notificaciones span.absolute');
+                if (badge) badge.remove();
+                const headerBadge = document.querySelector('.bg-indigo-50.text-indigo-600');
+                if (headerBadge) headerBadge.innerText = 'Al día';
+            }
+
+            if (targetUrl && targetUrl !== '#' && targetUrl !== '') {
+                window.location.href = targetUrl;
+            } else if (data.success && typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: data.cancelled_deliveries > 0 
+                        ? `${data.message} (${data.cancelled_deliveries} envíos cancelados)`
+                        : data.message,
+                    showConfirmButton: false,
+                    timer: 2500,
+                    timerProgressBar: true
+                });
+            }
+        })
+        .catch(err => {
+            console.error('Error al marcar notificación:', err);
+            if (targetUrl && targetUrl !== '#' && targetUrl !== '') {
+                window.location.href = targetUrl;
+            }
+        });
     }
 </script>
 

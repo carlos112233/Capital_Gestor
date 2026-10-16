@@ -2,13 +2,13 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-black text-slate-800 tracking-tight">
+                <h2 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
                     Mi Perfil
                 </h2>
-                <p class="text-sm text-slate-500 font-medium mt-0.5">Gestiona la información de tu cuenta y la configuración de seguridad</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">Gestiona la información de tu cuenta y la configuración de seguridad</p>
             </div>
-            <div class="px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 text-xs font-bold flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
+            <div class="px-4 py-2 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-800/60 rounded-xl text-indigo-700 dark:text-indigo-300 text-xs font-bold flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse"></span>
                 {{ Auth::user()->name }}
             </div>
         </div>
@@ -16,21 +16,21 @@
 
     <div class="py-6 space-y-6">
         <!-- Información Personal -->
-        <div class="p-6 sm:p-8 bg-white border border-slate-200/80 shadow-xs sm:rounded-2xl" id="tour-perfil-info">
+        <div class="p-6 sm:p-8 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-xs sm:rounded-2xl" id="tour-perfil-info">
             <div class="max-w-xl">
                 @include('profile.partials.update-profile-information-form')
             </div>
         </div>
 
         <!-- Seguridad y Contraseña -->
-        <div class="p-6 sm:p-8 bg-white border border-slate-200/80 shadow-xs sm:rounded-2xl" id="tour-perfil-password">
+        <div class="p-6 sm:p-8 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-xs sm:rounded-2xl" id="tour-perfil-password">
             <div class="max-w-xl">
                 @include('profile.partials.update-password-form')
             </div>
         </div>
 
         <!-- Zona de Peligro: Eliminar Cuenta -->
-        <div class="p-6 sm:p-8 bg-rose-50/50 border border-rose-100 shadow-xs sm:rounded-2xl">
+        <div class="p-6 sm:p-8 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/50 shadow-xs sm:rounded-2xl">
             <div class="max-w-xl">
                 @include('profile.partials.delete-user-form')
             </div>

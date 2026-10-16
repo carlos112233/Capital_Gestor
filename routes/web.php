@@ -8,7 +8,6 @@ use App\Http\Controllers\CatalogoController;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\ClienteController;
-use App\Http\Controllers\TransferenciaController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\DashboardController;
 use App\Notifications\GeneralNotification;
@@ -49,7 +48,7 @@ Route::middleware('auth')->group(function () {
     Route::post('ventas/multiples', [VentaController::class, 'storeMultiple'])->name('ventas.storeMultiple');
     Route::post('ventas/{venta}/solicitar-anulacion', [VentaController::class, 'solicitarAnulacion'])->name('ventas.solicitar-anulacion');
     Route::resource('ventas', VentaController::class);
-    Route::resource('datos', TransferenciaController::class);
+    Route::redirect('datos', '/dashboard');
     Route::get('cobros', [\App\Http\Controllers\CobroController::class, 'index'])->name('cobros.index');
 
     // Quejas, Comentarios y Sugerencias (Feedback del usuario)
@@ -102,6 +101,11 @@ Route::middleware('auth')->group(function () {
         // Nómina y Liquidaciones de Vendedores
         Route::get('pagos-vendedores', [\App\Http\Controllers\PagoVendedorController::class, 'index'])->name('pagos-vendedores.index');
         Route::post('pagos-vendedores/retencion', [\App\Http\Controllers\PagoVendedorController::class, 'updateRetencion'])->name('pagos-vendedores.retencion');
+
+        // Personalización y Marca Blanca
+        Route::get('personalizacion', [\App\Http\Controllers\BrandingController::class, 'index'])->name('branding.index');
+        Route::post('personalizacion', [\App\Http\Controllers\BrandingController::class, 'update'])->name('branding.update');
+        Route::post('personalizacion/reset', [\App\Http\Controllers\BrandingController::class, 'reset'])->name('branding.reset');
     });
 
 
@@ -117,6 +121,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/push/subscribe', [\App\Http\Controllers\PushSubscriptionController::class, 'store'])->name('push.subscribe');
     Route::post('/push/unsubscribe', [\App\Http\Controllers\PushSubscriptionController::class, 'destroy'])->name('push.unsubscribe');
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\PushSubscriptionController::class, 'markAllRead'])->name('notifications.markAllRead');
+    Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\PushSubscriptionController::class, 'markAsRead'])->name('notifications.markRead');
 
     // -------------------------------------------------------------
     // Sistema de Tutoriales Interactivos

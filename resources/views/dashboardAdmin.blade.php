@@ -1,14 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-white leading-tight">
             {{ __('Resumen semanal') }}
         </h2>
     </x-slot>
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-12" style="padding:  0px 35px">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-slate-900">
+            <div class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg border border-slate-200 dark:border-slate-700">
+                <div class="p-6 text-slate-900 dark:text-slate-100">
 
 
                     <div class="mb-5 flex flex-col sm:flex-row items-center gap-3">
@@ -21,7 +21,7 @@
                                 </svg>
                             </div>
                             <input type="text" id="search"
-                                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200 shadow-sm"
+                                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200 shadow-sm"
                                 placeholder="Buscar cliente por nombre o correo..." autocomplete="off" />
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
@@ -45,8 +45,8 @@
                     </div>
 
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 border" id="tabla-resumen">
-                            <thead class="bg-gray-50">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700 border border-slate-200 dark:border-slate-700" id="tabla-resumen">
+                            <thead class="bg-gray-50 dark:bg-slate-900">
                                 <tr>
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -82,7 +82,7 @@
 
                             </thead>
 
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
                                 @forelse($resumen as $r)
                                     @php
                                         $entrada[] = $r->saldo;
@@ -341,10 +341,10 @@
                             </tbody>
 
                             {{-- Fila de sumatoria --}}
-                            <tfoot class="bg-gray-100 font-bold">
+                            <tfoot class="bg-white dark:bg-[#161f32] border-t-2 border-slate-200 dark:border-slate-700 font-bold">
                                 <tr>
-                                    <td colspan="4" class="px-6 py-4 text-center">Sumatoria a favor:</td>
-                                    <td class="px-6 py-4 text-center text-green-600">
+                                    <td colspan="4" class="px-6 py-4 text-center text-slate-700 dark:text-slate-200 font-bold uppercase tracking-wider text-xs sm:text-sm">Sumatoria a favor:</td>
+                                    <td class="px-6 py-4 text-center text-emerald-600 dark:text-emerald-400 font-black text-lg">
                                         ${{ number_format($totalSaldo, 2) }}
                                     </td>
                                     <td colspan="4" class="px-6 py-4 text-center"></td>
@@ -357,10 +357,10 @@
             </div>
 
             @if (isset($comprobantesPendientes) && count($comprobantesPendientes) > 0)
-                <div class="mt-8 bg-white overflow-hidden shadow-sm sm:rounded-lg border border-amber-200">
-                    <div class="p-6 text-gray-900 bg-amber-50/50">
-                        <h3 class="text-lg font-bold text-amber-800 flex items-center gap-2 mb-4">
-                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor"
+                <div class="mt-8 bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg border border-amber-200 dark:border-amber-800/40">
+                    <div class="p-6 text-gray-900 dark:text-slate-100 bg-amber-50/50 dark:bg-slate-800/90">
+                        <h3 class="text-lg font-bold text-amber-800 dark:text-amber-400 flex items-center gap-2 mb-4">
+                            <svg class="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -369,66 +369,150 @@
                         </h3>
 
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-amber-200">
-                                <thead>
+                            <table class="min-w-full divide-y divide-amber-200 dark:divide-slate-700">
+                                <thead class="bg-amber-100/60 dark:bg-slate-900">
                                     <tr>
                                         <th
-                                            class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">
+                                            class="px-6 py-3 text-left text-xs font-medium text-amber-800 dark:text-amber-300 uppercase tracking-wider">
                                             Cliente</th>
                                         <th
-                                            class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">
+                                            class="px-6 py-3 text-left text-xs font-medium text-amber-800 dark:text-amber-300 uppercase tracking-wider">
                                             Estatus / Fecha</th>
                                         <th
-                                            class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">
+                                            class="px-6 py-3 text-left text-xs font-medium text-amber-800 dark:text-amber-300 uppercase tracking-wider">
                                             Monto</th>
                                         <th
-                                            class="px-6 py-3 text-left text-xs font-medium text-amber-700 uppercase tracking-wider">
+                                            class="px-6 py-3 text-left text-xs font-medium text-amber-800 dark:text-amber-300 uppercase tracking-wider">
                                             Datos OCR / Notas</th>
                                         <th
-                                            class="px-6 py-3 text-center text-xs font-medium text-amber-700 uppercase tracking-wider">
+                                            class="px-6 py-3 text-center text-xs font-medium text-amber-800 dark:text-amber-300 uppercase tracking-wider">
                                             Comprobante</th>
                                         <th
-                                            class="px-6 py-3 text-center text-xs font-medium text-amber-700 uppercase tracking-wider">
+                                            class="px-6 py-3 text-center text-xs font-medium text-amber-800 dark:text-amber-300 uppercase tracking-wider">
                                             Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-amber-200">
+                                <tbody class="divide-y divide-amber-200 dark:divide-slate-700">
                                     @foreach ($comprobantesPendientes as $comp)
                                         <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap font-bold">{{ $comp->user->name }}
+                                            <td class="px-6 py-4 whitespace-nowrap font-bold text-slate-900 dark:text-white">{{ $comp->user->name }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                                 <span
-                                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 mb-1">
+                                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40 mb-1">
                                                     {{ $comp->status === 'procesando_pago' ? 'Procesando Pago ⏳' : 'Pendiente' }}
                                                 </span>
-                                                <div class="text-xs text-slate-500">
+                                                <div class="text-xs text-slate-500 dark:text-slate-400">
                                                     {{ $comp->created_at->format('d/m/Y h:i A') }}</div>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700 dark:text-emerald-400">
                                                 ${{ number_format($comp->monto, 2) }}
                                                 @if ($comp->monto_extraido)
-                                                    <div class="text-xs text-slate-500 font-normal">Detectado OCR:
+                                                    <div class="text-xs text-slate-500 dark:text-slate-400 font-normal">Detectado OCR:
                                                         ${{ number_format($comp->monto_extraido, 2) }}</div>
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4 text-sm">
-                                                @if ($comp->banco || $comp->clave_rastreo)
-                                                    <div
-                                                        class="text-xs font-semibold text-indigo-700 bg-indigo-50 p-1.5 rounded mb-1">
-                                                        <span>🏦 {{ $comp->banco ?? 'Banco N/D' }}</span>
-                                                        @if ($comp->clave_rastreo)
-                                                            <span class="ml-2">| 🔑 Folio:
-                                                                {{ $comp->clave_rastreo }}</span>
+                                            <td class="px-6 py-4 text-sm max-w-md">
+                                                @php
+                                                    $ocr = is_array($comp->datos_ocr_json)
+                                                        ? $comp->datos_ocr_json
+                                                        : (json_decode($comp->datos_ocr_json ?? '', true) ?: []);
+
+                                                    $isValid = !empty($ocr['is_valid_receipt']);
+                                                    $montoDeclarado = (float) $comp->monto;
+                                                    $montoDetectado = isset($ocr['monto_extraido']) && $ocr['monto_extraido'] !== null
+                                                        ? (float) $ocr['monto_extraido']
+                                                        : ($comp->monto_extraido ? (float) $comp->monto_extraido : null);
+
+                                                    $montosCoinciden = ($montoDetectado !== null) && abs($montoDeclarado - $montoDetectado) < 0.01;
+                                                    $hayDiscrepancia = ($montoDetectado !== null) && !$montosCoinciden;
+
+                                                    $folio = $ocr['folio'] ?? $ocr['clave_rastreo'] ?? $comp->clave_rastreo;
+                                                    $banco = $ocr['banco'] ?? $ocr['tipo'] ?? $comp->banco;
+                                                    $destino = $ocr['destino'] ?? null;
+                                                    if ($destino && !empty($ocr['cuenta_destino'])) {
+                                                        $destino .= ' •' . $ocr['cuenta_destino'];
+                                                    }
+                                                    $origen = $ocr['origen'] ?? null;
+                                                    if ($origen && !empty($ocr['cuenta_origen'])) {
+                                                        $origen .= ' •' . $ocr['cuenta_origen'];
+                                                    }
+                                                    $fechaDetectada = $ocr['fecha_transferencia'] ?? $comp->fecha_transferencia;
+                                                    $concepto = $ocr['concepto'] ?? null;
+
+                                                    $estadoValido = $isValid && !$hayDiscrepancia;
+                                                    $notasUsuario = trim(preg_replace('/\[(🤖|⚠️|✅)[^\]]+\]/u', '', $comp->notas ?? ''));
+                                                @endphp
+
+                                                <div class="space-y-1.5">
+                                                    {{-- Ficha Técnica / Estado IA --}}
+                                                    <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                                                        @if ($estadoValido)
+                                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs">
+                                                                <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                                ✅ COMPROBANTE VÁLIDO
+                                                            </span>
+                                                        @else
+                                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 shadow-xs">
+                                                                <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                                                ⚠️ REVISIÓN MANUAL REQUERIDA
+                                                            </span>
+                                                        @endif
+
+                                                        @if ($folio)
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 font-medium text-[11px]">
+                                                                Folio: <b class="ml-1 font-mono text-indigo-700">{{ $folio }}</b>
+                                                            </span>
+                                                        @endif
+
+                                                        @if ($montoDetectado !== null)
+                                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded {{ $montosCoinciden ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200' }} border font-medium text-[11px]">
+                                                                Detectado: <b>${{ number_format($montoDetectado, 2) }}</b>
+                                                                @if ($montosCoinciden)
+                                                                    <span class="text-emerald-700 font-bold ml-0.5">(Coincide al 100%)</span>
+                                                                @else
+                                                                    <span class="text-rose-700 font-bold ml-0.5">(Discrepancia: ${{ number_format(abs($montoDeclarado - $montoDetectado), 2) }})</span>
+                                                                @endif
+                                                            </span>
+                                                        @else
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 text-[11px]">
+                                                                Declarado: <b>${{ number_format($montoDeclarado, 2) }}</b> (Sin monto OCR)
+                                                            </span>
                                                         @endif
                                                     </div>
-                                                @endif
-                                                <div class="text-xs text-slate-700 whitespace-pre-line">
-                                                    {{ $comp->notas ?: '-' }}</div>
+
+                                                    {{-- Ficha Técnica Compacta --}}
+                                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-1 text-[11px] text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-slate-900/80 p-2 rounded border border-amber-200/70 dark:border-slate-700 shadow-2xs">
+                                                        @if ($banco)
+                                                            <div><span class="text-slate-400 font-medium">Banco/Tipo:</span> <span class="font-semibold text-slate-800 dark:text-white">{{ $banco }}</span></div>
+                                                        @endif
+                                                        @if ($folio)
+                                                            <div><span class="text-slate-400 font-medium">Folio:</span> <span class="font-mono font-semibold text-indigo-700 dark:text-indigo-400">{{ $folio }}</span></div>
+                                                        @endif
+                                                        @if ($destino)
+                                                            <div><span class="text-slate-400 font-medium">Destino:</span> <span class="font-semibold text-slate-800 dark:text-white">{{ $destino }}</span></div>
+                                                        @endif
+                                                        @if ($origen)
+                                                            <div><span class="text-slate-400 font-medium">Origen:</span> <span class="font-medium text-slate-700 dark:text-slate-300">{{ $origen }}</span></div>
+                                                        @endif
+                                                        @if ($fechaDetectada)
+                                                            <div><span class="text-slate-400 font-medium">Fecha:</span> <span class="font-medium text-slate-700 dark:text-slate-300">{{ $fechaDetectada }}</span></div>
+                                                        @endif
+                                                        @if ($concepto)
+                                                            <div><span class="text-slate-400 font-medium">Concepto:</span> <span class="italic text-slate-700 dark:text-slate-300">{{ $concepto }}</span></div>
+                                                        @endif
+                                                    </div>
+
+                                                    @if (!empty($notasUsuario))
+                                                        <div class="text-[11px] text-slate-500 dark:text-slate-400 italic">
+                                                            <span class="font-semibold not-italic text-slate-600 dark:text-slate-300">Nota:</span> "{{ $notasUsuario }}"
+                                                        </div>
+                                                    @endif
+                                                </div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                                 <a href="{{ Storage::url($comp->imagen) }}" target="_blank"
-                                                    class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 hover:underline">
+                                                    class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -511,51 +595,6 @@
                 </div>
             @endif
 
-            <!-- Panel Analítico Ejecutivo & Scoring Crediticio -->
-            <div class="mt-8 mb-8 bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800">
-                <div
-                    class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-5 border-b border-slate-800 gap-4">
-                    <div>
-                        <h3 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                            <span>📊</span> Panel Analítico Ejecutivo y Scoring
-                        </h3>
-                        <p class="text-xs text-slate-400 mt-1">Métricas en tiempo real, comportamiento de cobros y
-                            evaluación crediticia de clientes</p>
-                    </div>
-                    <span
-                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                        🔒 Exclusivo Administrador
-                    </span>
-                </div>
-
-                <!-- 2 KPI Summary Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-                    <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-sm">
-                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Clientes VIP /
-                            Platino</div>
-                        <div class="text-2xl font-black text-indigo-400 mt-1" id="kpi-count-vip">0</div>
-                        <div class="text-[11px] text-indigo-400/80 mt-1">Score $\ge 80$ pts</div>
-                    </div>
-                    <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-sm">
-                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Clientes en Riesgo
-                        </div>
-                        <div class="text-2xl font-black text-red-400 mt-1" id="kpi-count-riesgo">0</div>
-                        <div class="text-[11px] text-red-400/80 mt-1">Score $< 50$ pts</div>
-                        </div>
-                    </div>
-
-                    <!-- Gráficos ApexCharts -->
-                    <div class="mt-6">
-                        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-                            <h4 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
-                                <span>📈</span> Tendencia de Cobros vs Ventas
-                            </h4>
-                            <div id="chart-ingresos-deuda" class="min-h-[250px]"></div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
         </div>
 
         {{-- Modal para Registrar Pago Saldado en DashboardAdmin --}}
@@ -797,106 +836,6 @@
                 }
             });
         });
-
-        // -----------------------------------------------------------------
-        // E. Cargar Analítica de ApexCharts y Scoring Crediticio
-        // -----------------------------------------------------------------
-        fetch("{{ route('admin.scoring.analytics') }}")
-            .then(res => res.json())
-            .then(data => {
-                // Actualizar KPIs
-
-                document.getElementById('kpi-count-vip').innerText = data.kpi.count_vip;
-                document.getElementById('kpi-count-riesgo').innerText = data.kpi.count_riesgo;
-
-                // 1. Gráfico de Tendencias Mensuales (Ingresos vs Ventas)
-                const optionsTrend = {
-                    series: [{
-                            name: 'Ventas Totales',
-                            type: 'column',
-                            data: data.trend.ventas
-                        },
-                        {
-                            name: 'Cobros (Entradas)',
-                            type: 'line',
-                            data: data.trend.entradas
-                        }
-                    ],
-                    chart: {
-                        height: 260,
-                        type: 'line',
-                        toolbar: {
-                            show: false
-                        },
-                        background: 'transparent'
-                    },
-                    stroke: {
-                        width: [0, 3],
-                        curve: 'smooth'
-                    },
-                    plotOptions: {
-                        bar: {
-                            columnWidth: '45%',
-                            borderRadius: 6
-                        }
-                    },
-                    colors: ['#6366f1', '#10b981'],
-                    labels: data.trend.categories,
-                    theme: {
-                        mode: 'dark'
-                    },
-                    xaxis: {
-                        labels: {
-                            style: {
-                                colors: '#94a3b8'
-                            }
-                        }
-                    },
-                    yaxis: {
-                        labels: {
-                            style: {
-                                colors: '#94a3b8'
-                            },
-                            formatter: (val) => '$' + Number(val).toLocaleString()
-                        }
-                    },
-                    tooltip: {
-                        theme: 'dark'
-                    }
-                };
-                new ApexCharts(document.querySelector("#chart-ingresos-deuda"), optionsTrend).render();
-
-                // 2. Donut Chart de Estatus de Comprobantes
-                const optionsDonut = {
-                    series: [
-                        data.donut.aprobado || 0,
-                        data.donut.procesando_pago || 0,
-                        data.donut.rechazado || 0,
-                        data.donut.pendiente || 0
-                    ],
-                    labels: ['Aprobados', 'Procesando Pago', 'Rechazados', 'Pendientes'],
-                    chart: {
-                        type: 'donut',
-                        height: 260,
-                        background: 'transparent'
-                    },
-                    colors: ['#10b981', '#f59e0b', '#ef4444', '#64748b'],
-                    theme: {
-                        mode: 'dark'
-                    },
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            colors: '#94a3b8'
-                        }
-                    },
-                    dataLabels: {
-                        enabled: true
-                    }
-                };
-                new ApexCharts(document.querySelector("#chart-estatus-pagos"), optionsDonut).render();
-            })
-            .catch(err => console.error("Error al cargar analítica ApexCharts:", err));
 
         // Function para modificar scoring manualmente con SweetAlert
         window.confirmModificarScoring = function(userId, userName, currentScore, isOverride, currentNotes) {
