@@ -22,7 +22,7 @@
                     </div>
 
                     <div class="flex items-center space-x-2">
-                        @if (Auth::user()->hasRole('admin'))
+                        @if (Auth::user()->hasRole('admin') || Auth::user()->hasRole('vendedor'))
                             <button type="button"
                                 onclick="openVentaModal({{ $articulo->id }}, '{{ addslashes($articulo->nombre) }}', {{ $articulo->precio }}, {{ $articulo->stock }})"
                                 class="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-indigo-500/35 transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none cursor-pointer">

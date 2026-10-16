@@ -40,7 +40,7 @@
     @enderror
 </div>
 
-@if (Auth::user()->hasRole('admin'))
+@if (Auth::user()->hasRole('admin') || Auth::user()->hasRole('vendedor'))
     <div class="mb-4">
         <label class="block text-gray-700 font-bold mb-2">Cliente</label>
         <select name="cliente_id" class="searchable-select w-full border-gray-300 rounded-lg shadow-sm" required>

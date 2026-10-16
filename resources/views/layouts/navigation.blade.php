@@ -83,7 +83,7 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
             </button>
 
             <!-- Carrito de Compras -->
-            @if(!Auth::user()->hasRole('admin'))
+            @if(!Auth::user()->hasRole('admin') && !Auth::user()->hasRole('vendedor'))
             <div class="relative" x-data="shoppingCart()" @add-to-cart.window="addItem($event.detail)">
                 <button id="tour-btn-carrito" @click="cartOpen = !cartOpen" @click.away="cartOpen = false"
                     class="relative p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors focus:outline-none cursor-pointer"
@@ -463,6 +463,7 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
         const hasSeenCarrito = @json($hasSeenCarrito);
         const hasSeenNotif = @json($hasSeenNotif);
 
+        @if(!Auth::user()->hasRole('admin') && !Auth::user()->hasRole('vendedor'))
         // Si se pide explícitamente el tutorial del carrito o si estamos en una página y nunca lo ha visto
         if (forceTutorial === 'carrito' || (forceTutorial === 'true' && !hasSeenCarrito)) {
             const driverObj = window.driver.js.driver({
@@ -501,6 +502,7 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
             // Pequeño delay para asegurar que Driver.js esté listo
             setTimeout(() => { if(document.getElementById('tour-btn-carrito')) driverObj.drive(); }, 500);
         }
+        @endif
 
         // Si se pide explícitamente el tutorial de notificaciones
         if (forceTutorial === 'notificaciones' || (forceTutorial === 'true' && !hasSeenNotif && window.location.pathname === '/dashboard')) {

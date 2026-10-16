@@ -4,7 +4,7 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Catálogo de Artículos') }}
             </h2>
-            @if(Auth::user()->hasRole('admin'))
+            @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('vendedor'))
             <button type="button" onclick="openModal('ventas-multiples-modal')"
                 class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/35 transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,7 +63,7 @@
         <div class="p-6 text-left">
             <div class="flex justify-between items-center pb-3 border-b mb-4">
                 <h3 class="text-lg font-bold text-gray-900" id="modal_vender_title">
-                    @if (Auth::user()->hasRole('admin')) Registrar Venta @else Realizar Compra @endif
+                    @if (Auth::user()->hasRole('admin') || Auth::user()->hasRole('vendedor')) Registrar Venta @else Realizar Compra @endif
                 </h3>
                 <button type="button" onclick="closeModal('vender-modal')" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
             </div>
@@ -77,7 +77,7 @@
                     <input type="text" id="modal_vender_articulo_nombre" class="w-full border-gray-300 rounded-lg shadow-sm bg-gray-100 font-semibold" readonly>
                 </div>
 
-                @if (Auth::user()->hasRole('admin'))
+                @if (Auth::user()->hasRole('admin') || Auth::user()->hasRole('vendedor'))
                     <div class="mb-4">
                         <label class="block text-gray-700 font-bold mb-2">Cliente</label>
                         <select name="cliente_id" id="modal_vender_cliente_id" class="searchable-select w-full border-gray-300 rounded-lg shadow-sm" required>
@@ -119,8 +119,8 @@
         </div>
     </x-modal>
 
-    @if(Auth::user()->hasRole('admin'))
-    <!-- Modal Ventas Múltiples (Para Admin en Catálogo) -->
+    @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('vendedor'))
+    <!-- Modal Ventas Múltiples (Para Admin y Vendedor en Catálogo) -->
     <x-modal name="ventas-multiples-modal">
         <div class="p-6">
             <div class="flex justify-between items-center pb-3 border-b mb-4">
@@ -193,7 +193,7 @@
 
     <!-- Búsqueda en vivo (vanilla JS + debounce) -->
     <script>
-        @if(Auth::user()->hasRole('admin'))
+        @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('vendedor'))
         // Lógica para Ventas Múltiples (Catálogo)
         (function() {
             const formVentas = document.getElementById('form-ventas-multiples');
@@ -328,12 +328,14 @@
 
     @php
         $hasSeenTutorial = Auth::check() && Auth::user()->tutorials()->where('tutorial_name', 'catalogo')->exists();
+        $isOperadorCatalogo = Auth::check() && (Auth::user()->hasRole('admin') || Auth::user()->hasRole('vendedor'));
     @endphp
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const forceTutorial = new URLSearchParams(window.location.search).get('tutorial') === 'true';
             const hasSeenTutorial = @json($hasSeenTutorial);
+            const isOperadorCatalogo = @json($isOperadorCatalogo);
 
             if (forceTutorial || !hasSeenTutorial) {
                 const driverObj = window.driver.js.driver({
@@ -346,8 +348,8 @@
                         {
                             element: '#tour-buscador-catalogo',
                             popover: {
-                                title: 'Busca tu producto',
-                                description: 'Puedes usar este buscador para encontrar rápidamente el artículo que deseas adquirir.',
+                                title: isOperadorCatalogo ? 'Busca un producto' : 'Busca tu producto',
+                                description: isOperadorCatalogo ? 'Usa este buscador para filtrar rápidamente el artículo a despachar.' : 'Puedes usar este buscador para encontrar rápidamente el artículo que deseas adquirir.',
                                 side: "bottom",
                                 align: 'start'
                             }
@@ -355,8 +357,8 @@
                         {
                             element: '#catalogo-content',
                             popover: {
-                                title: 'Explora nuestro Catálogo',
-                                description: 'Aquí verás todos los artículos disponibles. Puedes hacer clic en "Agregar al Carrito" para ir armando tu compra.',
+                                title: isOperadorCatalogo ? 'Punto de Venta (Existencias)' : 'Explora nuestro Catálogo',
+                                description: isOperadorCatalogo ? 'Haz clic en "Vender" sobre cualquier artículo disponible o usa el botón superior "Ventas Múltiples" para registrar órdenes a un cliente.' : 'Aquí verás todos los artículos disponibles. Puedes hacer clic en "Agregar al Carrito" para ir armando tu compra.',
                                 side: "top",
                                 align: 'start'
                             }
