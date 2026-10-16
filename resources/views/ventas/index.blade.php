@@ -9,7 +9,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
                 </svg>
-                {{ Auth::user()->hasRole('admin') ? __('Nueva venta') : __('Nueva compra') }}
+                {{ (Auth::user()->hasRole('admin') || Auth::user()->hasRole('vendedor')) ? __('Nueva venta') : __('Nueva compra') }}
             </button>
         </div>
     </x-slot>
@@ -104,17 +104,17 @@
                     <p class="text-[11px] text-slate-400 mt-1">Mínimo 10 caracteres requeridos.</p>
                 </div>
 
-                <div class="flex justify-end gap-3 pt-3 border-t">
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                     <button type="button" onclick="closeModal('solicitar-anulacion-modal')"
                         class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
                         Cancelar
                     </button>
                     <button type="submit"
-                        class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold text-xs shadow-md shadow-amber-500/20 hover:shadow-lg transition-all cursor-pointer inline-flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                         </svg>
-                        Enviar Solicitud al Administrador
+                        <span>Enviar Solicitud al Administrador</span>
                     </button>
                 </div>
             </form>
