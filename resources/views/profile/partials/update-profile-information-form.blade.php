@@ -59,28 +59,17 @@
         </div>
 
         <div>
-            <label for="image" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Foto de Perfil</label>
-            <div x-data="{ fileName: '' }" class="relative">
-                <label class="flex items-center justify-center gap-3 w-full px-4 py-3 rounded-xl border-2 border-dashed border-indigo-300 dark:border-indigo-600 hover:border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/40 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-semibold text-sm cursor-pointer transition-all duration-200 shadow-sm">
-                    <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
-                    </svg>
-                    <span x-text="fileName ? fileName : 'Haga clic para seleccionar imagen de perfil o arrastre aquí'"></span>
-                    <input type="file" name="image" id="image" accept="image/*" class="hidden"
-                           @change="fileName = $event.target.files[0] ? $event.target.files[0].name : ''">
-                </label>
-            </div>
-            <p class="text-slate-500 dark:text-slate-400 text-xs mt-1">Formatos permitidos: JPG, PNG. Máximo 2MB.</p>
+            <x-file-dropzone
+                name="image"
+                id="image"
+                label="Foto de Perfil"
+                accept="image/*"
+                placeholder="Haga clic para seleccionar foto de perfil o arrastre aquí"
+                help-text="Formatos permitidos: JPG, PNG, WEBP (Máx. 2MB)"
+                :current-image="$user->image ? $user->image_url : null"
+                current-image-label="Foto actual:"
+            />
             <x-input-error class="mt-1.5 text-xs text-rose-500 font-semibold" :messages="$errors->get('image')" />
-
-            @if ($user->image)
-                <div class="mt-3">
-                    <p class="text-sm text-slate-600 mb-1">Imagen actual:</p>
-                    <img src="{{ $user->image_url }}" 
-                         alt="{{ $user->name }}"
-                         class="w-32 h-32 object-cover rounded-lg border shadow-md">
-                </div>
-            @endif
         </div>
 
         <div class="flex items-center gap-4 pt-2">

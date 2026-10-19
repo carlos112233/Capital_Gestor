@@ -163,9 +163,14 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-gray-700 dark:text-slate-300 font-bold mb-2">Captura / Foto del comprobante</label>
-                    <input type="file" name="imagen" accept="image/*" class="w-full bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg shadow-sm" required>
-                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">Formatos soportados: JPG, PNG, JPEG. Máx 5MB.</p>
+                    <x-file-dropzone
+                        name="imagen"
+                        label="Captura / Foto del comprobante"
+                        accept="image/*"
+                        :required="true"
+                        placeholder="Haga clic para seleccionar comprobante o arrastre aquí"
+                        help-text="Formatos permitidos: JPG, PNG, WEBP (Máx. 5MB)"
+                    />
                 </div>
 
                 <div class="mb-4">

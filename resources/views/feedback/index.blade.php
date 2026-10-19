@@ -293,9 +293,14 @@
 
                         <!-- Adjuntar Imagen -->
                         <div class="mb-2">
-                            <label for="imagen" class="block text-sm font-semibold text-gray-700 mb-1">Adjuntar Foto o Captura de pantalla (Opcional)</label>
-                            <input type="file" name="imagen" id="imagen" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer border border-gray-200 rounded-lg">
-                            <p class="text-xs text-gray-400 mt-1">Formatos: JPG, PNG, WEBP. Máximo 5 MB.</p>
+                            <x-file-dropzone
+                                name="imagen"
+                                id="imagen"
+                                label="Adjuntar Foto o Captura de pantalla (Opcional)"
+                                accept="image/*"
+                                placeholder="Haga clic para seleccionar captura o arrastre aquí"
+                                help-text="Formatos: JPG, PNG, WEBP (Máximo 5MB)"
+                            />
                         </div>
                     </div>
 
