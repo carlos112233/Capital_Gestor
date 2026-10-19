@@ -128,6 +128,13 @@ Route::middleware('auth')->group(function () {
     // -------------------------------------------------------------
     Route::get('/manual-usuario', [\App\Http\Controllers\TutorialController::class, 'index'])->name('tutorial.index');
     Route::post('/tutorial/marcar-visto', [\App\Http\Controllers\TutorialController::class, 'markAsSeen'])->name('tutorial.marcar-visto');
+
+    // -------------------------------------------------------------
+    // Personalización Individual de Apariencia y Tema (Cliente, Vendedor, Cocina)
+    // -------------------------------------------------------------
+    Route::get('/mi-tema', [\App\Http\Controllers\UserThemeController::class, 'index'])->name('theme.index');
+    Route::post('/mi-tema', [\App\Http\Controllers\UserThemeController::class, 'update'])->name('theme.update');
+    Route::post('/mi-tema/reset', [\App\Http\Controllers\UserThemeController::class, 'reset'])->name('theme.reset');
 });
 
 require __DIR__ . '/auth.php';

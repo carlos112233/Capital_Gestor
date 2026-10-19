@@ -38,6 +38,8 @@ class User extends Authenticatable
         'score_manual',
         'override_score',
         'notas_scoring',
+        'theme_color',
+        'theme_mode',
     ];
 
     /**

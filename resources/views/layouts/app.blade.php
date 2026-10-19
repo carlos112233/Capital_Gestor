@@ -1,5 +1,23 @@
+@php
+    $activeColor = Auth::user()?->theme_color ?? ($appSettings->primary_color ?? '#6366f1');
+    $activeMode = Auth::user()?->theme_mode ?? ($appSettings->theme_mode ?? 'system');
+
+    $hexClean = ltrim($activeColor, '#');
+    if (strlen($hexClean) === 3) {
+        $r = hexdec(str_repeat(substr($hexClean, 0, 1), 2));
+        $g = hexdec(str_repeat(substr($hexClean, 1, 1), 2));
+        $b = hexdec(str_repeat(substr($hexClean, 2, 1), 2));
+    } elseif (strlen($hexClean) === 6) {
+        $r = hexdec(substr($hexClean, 0, 2));
+        $g = hexdec(substr($hexClean, 2, 2));
+        $b = hexdec(substr($hexClean, 4, 2));
+    } else {
+        $r = 99; $g = 102; $b = 241;
+    }
+    $activeColorRgb = "{$r}, {$g}, {$b}";
+@endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="{{ ($appSettings->theme_mode ?? 'light') === 'dark' ? 'dark' : '' }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="{{ $activeMode === 'dark' ? 'dark' : '' }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,7 +26,7 @@
         <!-- Anti-FOUC Dark Mode & Theme Evaluation Script -->
         <script>
             (function() {
-                const themeMode = '{{ $appSettings->theme_mode ?? 'light' }}';
+                const themeMode = '{{ $activeMode }}';
                 if (themeMode === 'dark' || (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                     document.documentElement.classList.add('dark');
                 } else if (themeMode === 'light') {
@@ -21,7 +39,7 @@
         <link rel="icon" type="image/x-icon" href="{{ $appSettings->favicon_url ?? asset('favicon.ico') }}">
         <link rel="icon" type="image/png" href="{{ $appSettings->favicon_url ?? asset('favicon.ico') }}">
         <link rel="manifest" href="{{ asset('manifest.json') }}">
-        <meta name="theme-color" content="{{ $appSettings->primary_color ?? '#6366f1' }}">
+        <meta name="theme-color" content="{{ $activeColor }}">
         <link rel="apple-touch-icon" href="{{ $appSettings->logo_url ?? asset('img/icon-192.png') }}">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -58,7 +76,9 @@
         <style>
             :root {
                 --color-sidebar: {{ $appSettings->sidebar_color ?? '#0f172a' }};
-                --color-primary: {{ $appSettings->primary_color ?? '#6366f1' }};
+                --color-primary: {{ $activeColor }};
+                --color-primary-rgb: {{ $activeColorRgb }};
+                --color-primary-hover: {{ $activeColor ? $activeColor.'cc' : '#4f46e5' }};
                 --color-secondary: {{ $appSettings->secondary_color ?? '#10b981' }};
                 --font-family: '{{ $appSettings->font_family ?? 'Inter' }}', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             }
