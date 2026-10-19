@@ -17,7 +17,7 @@ jobs:
 
       # 1. Descargar el código del commit actual
       - name: 📥 Checkout del código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # 2. Configurar PHP para la validación de sintaxis local
       - name: 🐘 Configurar PHP 8.2
