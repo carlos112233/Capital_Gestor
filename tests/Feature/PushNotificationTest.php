@@ -91,10 +91,114 @@ test('al crear un pedido un usuario cliente notifica al administrador via push',
     Notification::assertSentTo(
         [$admin],
         AppNotification::class,
-        function ($notification) {
-            return str_contains($notification->title, 'Nuevo Pedido Recibido');
+        function ($notification) use ($cliente) {
+            return str_contains($notification->title, 'Nuevo Pedido Recibido')
+                && str_contains($notification->message, "El cliente {$cliente->name} realizó un pedido de 1 producto(s)")
+                && str_contains($notification->message, "1x Cemita de Pollo Test");
         }
     );
+});
+
+test('notificarAdminWhatsApp envia push al admin indicando cuantos y cuales productos compro', function () {
+    Notification::fake();
+
+    $admin = User::factory()->create();
+    assignTestRole($admin, 'admin');
+
+    $cliente = User::factory()->create(['name' => 'Carlos Cliente']);
+    assignTestRole($cliente, 'cliente');
+
+    $articulo = Articulo::create([
+        'nombre' => 'Cemita Especial',
+        'precio' => 120.00,
+        'disponible' => true,
+    ]);
+
+    $venta = \App\Models\Venta::create([
+        'user_id'      => $cliente->id,
+        'comprador_id' => $cliente->id,
+        'articulo_id'  => $articulo->id,
+        'cantidad'     => 2,
+        'precio_venta' => 120.00,
+        'total_venta'  => 240.00,
+        'descripcion'  => 'Para llevar',
+    ]);
+
+    \App\Models\Venta::notificarAdminWhatsApp($venta);
+
+    Notification::assertSentTo(
+        [$admin],
+        AppNotification::class,
+        function ($notification) {
+            return $notification->title === 'Nueva Compra Registrada 🛒'
+                && str_contains($notification->message, "El cliente Carlos Cliente compró 2 producto(s)")
+                && str_contains($notification->message, "2x Cemita Especial")
+                && str_contains($notification->message, "240.00");
+        }
+    );
+});
+
+test('notificarCarritoAdminWhatsApp envia push al admin indicando cuantos y cuales productos compro en carrito', function () {
+    Notification::fake();
+
+    $admin = User::factory()->create();
+    assignTestRole($admin, 'admin');
+
+    $cliente = User::factory()->create(['name' => 'Maria Lopez']);
+    assignTestRole($cliente, 'cliente');
+
+    $art1 = Articulo::create([
+        'nombre' => 'Hamburguesa Doble',
+        'precio' => 95.00,
+        'disponible' => true,
+    ]);
+
+    $art2 = Articulo::create([
+        'nombre' => 'Refresco 600ml',
+        'precio' => 25.00,
+        'disponible' => true,
+    ]);
+
+    $venta1 = \App\Models\Venta::create([
+        'user_id'      => $cliente->id,
+        'comprador_id' => $cliente->id,
+        'articulo_id'  => $art1->id,
+        'cantidad'     => 2,
+        'precio_venta' => 95.00,
+        'total_venta'  => 190.00,
+    ]);
+
+    $venta2 = \App\Models\Venta::create([
+        'user_id'      => $cliente->id,
+        'comprador_id' => $cliente->id,
+        'articulo_id'  => $art2->id,
+        'cantidad'     => 3,
+        'precio_venta' => 25.00,
+        'total_venta'  => 75.00,
+    ]);
+
+    \App\Models\Venta::notificarCarritoAdminWhatsApp([$venta1, $venta2], 265.00);
+
+    Notification::assertSentTo(
+        [$admin],
+        AppNotification::class,
+        function ($notification) {
+            return $notification->title === 'Nueva Compra Múltiple (Carrito) 🛒'
+                && str_contains($notification->message, "El cliente Maria Lopez compró 5 producto(s)")
+                && str_contains($notification->message, "2x Hamburguesa Doble")
+                && str_contains($notification->message, "3x Refresco 600ml")
+                && str_contains($notification->message, "265.00");
+        }
+    );
+
+    $msg = \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')
+        ->where('numero', '5212222153410')
+        ->latest('id')
+        ->first();
+    $this->assertNotNull($msg);
+    $this->assertStringContainsString('• *Total de productos:* 5 unidad(es)', $msg->mensaje);
+    $this->assertStringContainsString('Hamburguesa Doble (x2)', $msg->mensaje);
+    $this->assertStringContainsString('Refresco 600ml (x3)', $msg->mensaje);
 });
 
 test('el administrador puede actualizar el estado del pedido en 1 clic y notifica al cliente', function () {
@@ -190,6 +294,8 @@ test('las alertas matutinas de entregas envian 1 notificacion independiente por 
         'cantidad' => 1,
         'status' => 'en_preparacion',
     ]);
+    $pedido1->created_at = now()->subDay();
+    $pedido1->save();
 
     $pedido2 = Pedido::create([
         'user_id' => $cliente->id,
@@ -198,6 +304,8 @@ test('las alertas matutinas de entregas envian 1 notificacion independiente por 
         'cantidad' => 1,
         'status' => 'en_preparacion',
     ]);
+    $pedido2->created_at = now()->subDay();
+    $pedido2->save();
 
     $count = PushNotificationService::sendScheduledDeliveryReminders();
 

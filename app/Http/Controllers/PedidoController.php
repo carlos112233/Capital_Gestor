@@ -190,13 +190,14 @@ class PedidoController extends Controller
 
                 // REGLA 2: Si el Admin realiza el pedido, SOLO se le envían mensajes individuales por cada cemita.
                 if ($isAdmin && $esCemita) {
-                    $mensajeWaIndiv = "*📦 NUEVO PEDIDO DE CEMITA #{$pedido->id} - El bajon*\n\n" .
+                    $appName = \App\Models\AppSetting::getSettings()->app_name ?? 'El Bajón';
+                    $mensajeWaIndiv = "*📦 NUEVO PEDIDO DE CEMITA #{$pedido->id} - {$appName}*\n\n" .
                                       "• *Cliente:* {$clienteNombre}\n" .
                                       "• *Artículo:* {$articuloNombre}\n" .
                                       "• *Cantidad:* {$pedido->cantidad}\n" .
                                       "• *Total:* \${$totalFormatted}\n" .
                                       "• *Notas:* {$notasStr}\n\n" .
-                                      "_Enviado por El bajon_";
+                                      "_Enviado por {$appName}_";
 
                     foreach ($adminPhones as $telAdmin) {
                         \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
@@ -224,12 +225,16 @@ class PedidoController extends Controller
 
         // 1. AL ADMIN: REGLA 1: Si es un usuario normal, se le avisa cualquier pedido que realizó el usuario (Mensaje Consolidado).
         if (!$isAdmin && count($itemsParaAdmin) > 0 && !empty($adminPhones)) {
+            $appName = \App\Models\AppSetting::getSettings()->app_name ?? 'El Bajón';
             $totalMonto = number_format($totalPedidoGlobal, 2);
-            $mensajeResumenAdmin = "*📦 NUEVO PEDIDO MÚLTIPLE - El bajon*\n\n" .
-                                   "• *Cliente:* {$clienteNombreResumen}\n\n*PRODUCTOS:*\n" .
+            $totalPiezasPedidos = array_sum(array_map(fn($p) => (int) ($p->cantidad ?? 1), $pedidosCreados));
+            $mensajeResumenAdmin = "*📦 NUEVO PEDIDO MÚLTIPLE - {$appName}*\n\n" .
+                                   "• *Cliente:* {$clienteNombreResumen}\n" .
+                                   "• *Total de productos:* {$totalPiezasPedidos} unidad(es)\n\n" .
+                                   "*PRODUCTOS:*\n" .
                                    implode("\n", $itemsParaAdmin) . "\n\n" .
                                    "*TOTAL DEL PEDIDO:* \${$totalMonto}\n\n" .
-                                   "_Enviado por El bajon_";
+                                   "_Enviado por {$appName}_";
 
             foreach ($adminPhones as $telAdmin) {
                 \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
@@ -241,7 +246,8 @@ class PedidoController extends Controller
         // 2. A COCINA: REGLA 4: Siempre se envía a cocina para realizar el pedido (Admin o Usuario normal).
         if ((!empty($itemsParaCocina) || $tieneCemitas) && !empty($cocinaPhones)) {
             try {
-                $mensajeResumenCocina = "*🧑‍🍳 NUEVA ORDEN COMPLETA - El bajon*\n\n" .
+                $appName = \App\Models\AppSetting::getSettings()->app_name ?? 'El Bajón';
+                $mensajeResumenCocina = "*🧑‍🍳 NUEVA ORDEN COMPLETA - {$appName}*\n\n" .
                                        "• *Cliente:* {$clienteNombreResumen}\n\n";
 
                 if (!empty($itemsParaCocina)) {
@@ -256,7 +262,7 @@ class PedidoController extends Controller
                                              "_(Las milanesas necesarias para todo este pedido)_\n\n";
                 }
 
-                $mensajeResumenCocina .= "_Enviado por El bajon_";
+                $mensajeResumenCocina .= "_Enviado por {$appName}_";
 
                 foreach ($cocinaPhones as $telCocina) {
                     \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
@@ -287,9 +293,18 @@ class PedidoController extends Controller
 
         // Enviar Notificación Push al Administrador al crear pedido
         if (!$isAdmin) {
+            $totalPiezasPedidos = array_sum(array_map(fn($p) => (int) ($p->cantidad ?? 1), $pedidosCreados));
+            $itemsNombres = array_map(function($p) {
+                $artNom = $p->articulo->nombre ?? 'Artículo';
+                $cant = (int) ($p->cantidad ?? 1);
+                return "{$cant}x {$artNom}";
+            }, $pedidosCreados);
+            $listaPedidos = \Illuminate\Support\Str::limit(implode(', ', $itemsNombres), 180, '...');
+            $totalMonto = number_format($totalPedidoGlobal, 2);
+
             \App\Services\PushNotificationService::notifyAdmins(
                 "Nuevo Pedido Recibido 📦",
-                "El usuario {$clienteNombreResumen} ha realizado un nuevo pedido. Toca para cambiar el estado.",
+                "El cliente {$clienteNombreResumen} realizó un pedido de {$totalPiezasPedidos} producto(s) por un total de \${$totalMonto}: {$listaPedidos}.",
                 route('pedidos.index')
             );
         }
@@ -427,13 +442,14 @@ class PedidoController extends Controller
                 }
 
                 $totalFormatted = number_format($pedidoParaMensaje->costo ?? 0, 2);
+                $appName = \App\Models\AppSetting::getSettings()->app_name ?? 'El Bajón';
                 $mensajeWa = "*🔄 ACTUALIZACIÓN DE PEDIDO #{$pedidoParaMensaje->id}*\n\n" .
                              "• *Cliente:* {$clienteNombre}\n" .
                              "• *Se modificó a:* {$articuloNombre}\n" .
                              "• *Cantidad:* {$pedidoParaMensaje->cantidad}\n" .
                              "• *Total modificado:* \${$totalFormatted}\n" .
                              "• *Notas:* " . ($pedidoParaMensaje->descripcion ?: 'Sin notas') . "\n\n" .
-                             "_Enviado por El bajon_";
+                             "_Enviado por {$appName}_";
 
                 $sendToAdmin = true;
                 if (Auth::user()->hasRole('admin') && !$esCemita) {

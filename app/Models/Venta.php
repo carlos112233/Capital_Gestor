@@ -77,13 +77,17 @@ class Venta extends Model
             $articuloNombre = $venta->articulo->nombre ?? 'N/A';
             $clienteNombre  = $venta->user->name ?? 'Cliente';
             $totalFormatted = number_format($venta->total_venta ?? 0, 2);
-            $mensajeWa = "*🛒 NUEVA COMPRA / VENTA #{$venta->id} - El bajon*\n\n" .
+            $cant           = (int) ($venta->cantidad ?? 1);
+            $appName        = \App\Models\AppSetting::getSettings()->app_name ?? 'El Bajón';
+
+            $mensajeWa = "*🛒 NUEVA COMPRA / VENTA #{$venta->id} - {$appName}*\n\n" .
                          "• *Cliente:* {$clienteNombre}\n" .
+                         "• *Total de productos:* {$cant} unidad(es)\n" .
                          "• *Artículo:* {$articuloNombre}\n" .
-                         "• *Cantidad:* {$venta->cantidad}\n" .
+                         "• *Cantidad:* {$cant}\n" .
                          "• *Total:* \${$totalFormatted}\n" .
                          "• *Notas:* " . ($venta->descripcion ?: 'Sin notas') . "\n\n" .
-                         "_Enviado por El bajon_";
+                         "_Enviado por {$appName}_";
 
             foreach ($adminPhones as $telAdmin) {
                 \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
@@ -100,7 +104,7 @@ class Venta extends Model
             try {
                 \App\Services\PushNotificationService::notifyAdmins(
                     "Nueva Compra Registrada 🛒",
-                    "El cliente {$clienteNombre} ha comprado {$venta->cantidad}x {$articuloNombre} (\${$totalFormatted}).",
+                    "El cliente {$clienteNombre} compró {$cant} producto(s) por un total de \${$totalFormatted}: {$cant}x {$articuloNombre}.",
                     route('ventas.index')
                 );
             } catch (\Throwable $ePush) {
@@ -141,20 +145,34 @@ class Venta extends Model
             if (empty($ventas)) return;
 
             $clienteNombre = $ventas[0]->user->name ?? 'Cliente';
+            $appName = \App\Models\AppSetting::getSettings()->app_name ?? 'El Bajón';
             
-            $mensajeWa = "*🛒 NUEVO CARRITO / COMPRA MÚLTIPLE - El bajon*\n\n" .
-                         "• *Cliente:* {$clienteNombre}\n\n*PRODUCTOS:*\n";
+            $totalUnidades = 0;
+            $itemsPush = [];
+            $lineasProductosWa = '';
 
             foreach ($ventas as $venta) {
+                $venta->loadMissing(['articulo', 'user']);
                 $articuloNombre = $venta->articulo->nombre ?? 'N/A';
+                $cant = (int) ($venta->cantidad ?? 1);
+                $totalUnidades += $cant;
                 $totalItem = number_format($venta->total_venta ?? 0, 2);
-                $mensajeWa .= "• {$articuloNombre} (x{$venta->cantidad}) = \${$totalItem}\n" .
-                              "  _Notas:_ " . ($venta->descripcion ?: 'Sin notas') . "\n";
+
+                $itemsPush[] = "{$cant}x {$articuloNombre}";
+                $lineasProductosWa .= "• {$articuloNombre} (x{$cant}) = \${$totalItem}\n" .
+                                      "  _Notas:_ " . ($venta->descripcion ?: 'Sin notas') . "\n";
             }
 
             $totalFormatted = number_format($totalCarrito, 2);
-            $mensajeWa .= "\n*TOTAL DEL CARRITO:* \${$totalFormatted}\n\n" .
-                         "_Enviado por El bajon_";
+            $listaProductosPush = \Illuminate\Support\Str::limit(implode(', ', $itemsPush), 180, '...');
+
+            $mensajeWa = "*🛒 NUEVO CARRITO / COMPRA MÚLTIPLE - {$appName}*\n\n" .
+                         "• *Cliente:* {$clienteNombre}\n" .
+                         "• *Total de productos:* {$totalUnidades} unidad(es)\n\n" .
+                         "*PRODUCTOS:*\n" .
+                         $lineasProductosWa . "\n" .
+                         "*TOTAL DEL CARRITO:* \${$totalFormatted}\n\n" .
+                         "_Enviado por {$appName}_";
 
             foreach ($adminPhones as $telAdmin) {
                 \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
@@ -170,10 +188,9 @@ class Venta extends Model
 
             // Notificación Push a Administradores (Campana web, WebSockets y navegador)
             try {
-                $cantArticulos = count($ventas);
                 \App\Services\PushNotificationService::notifyAdmins(
                     "Nueva Compra Múltiple (Carrito) 🛒",
-                    "El cliente {$clienteNombre} ha realizado una compra de {$cantArticulos} artículo(s) por un total de \${$totalFormatted}.",
+                    "El cliente {$clienteNombre} compró {$totalUnidades} producto(s) por un total de \${$totalFormatted}: {$listaProductosPush}.",
                     route('ventas.index')
                 );
             } catch (\Throwable $ePush) {
