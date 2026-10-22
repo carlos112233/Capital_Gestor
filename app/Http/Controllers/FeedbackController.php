@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Notifications\AppNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class FeedbackController extends Controller
 {
@@ -79,13 +80,14 @@ class FeedbackController extends Controller
             'tipo'    => 'required|in:queja,comentario,sugerencia',
             'asunto'  => 'nullable|string|max:150',
             'mensaje' => 'required|string|max:4000',
-            'imagen'  => 'nullable|image|max:5120', // Hasta 5 MB
+            'imagen'  => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120', // Hasta 5 MB
         ]);
 
         $imagenPath = null;
         if ($request->hasFile('imagen')) {
             $file = $request->file('imagen');
-            $filename = 'feedback_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $safeExtension = $file->guessExtension() ?: 'jpg';
+            $filename = 'feedback_' . time() . '_' . Str::random(16) . '.' . $safeExtension;
             $file->move(public_path('uploads/feedbacks'), $filename);
             $imagenPath = 'uploads/feedbacks/' . $filename;
         }
@@ -170,14 +172,15 @@ class FeedbackController extends Controller
 
         $validated = $request->validate([
             'mensaje' => 'required|string|max:4000',
-            'imagen'  => 'nullable|image|max:5120',
+            'imagen'  => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
             'estatus' => 'nullable|in:enviado,leyendo,leido',
         ]);
 
         $imagenPath = null;
         if ($request->hasFile('imagen')) {
             $file = $request->file('imagen');
-            $filename = 'reply_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $safeExtension = $file->guessExtension() ?: 'jpg';
+            $filename = 'reply_' . time() . '_' . Str::random(16) . '.' . $safeExtension;
             $file->move(public_path('uploads/feedbacks'), $filename);
             $imagenPath = 'uploads/feedbacks/' . $filename;
         }

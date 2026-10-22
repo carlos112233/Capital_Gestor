@@ -21,7 +21,7 @@ class ComprobanteController extends Controller
     {
         $request->validate([
             'monto' => 'nullable|numeric|min:0',
-            'imagen' => 'required|image|max:5120', // Max 5MB
+            'imagen' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120', // Max 5MB sin SVG
             'notas' => 'nullable|string'
         ]);
 

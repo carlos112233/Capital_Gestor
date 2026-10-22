@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Cabeceras HTTP de protección y hardening global
+        $middleware->append(\App\Http\Middleware\SecurityHeadersMiddleware::class);
+
         // Redirección de dominio antiguo a nuevo
         $middleware->append(\App\Http\Middleware\BlockOldDomain::class);
 

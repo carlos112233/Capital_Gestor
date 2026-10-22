@@ -13,7 +13,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardApiController;
 
 // --- RUTAS PÚBLICAS ---
-Route::post('/login', [AuthController::class, 'login']); // Ruta para obtener el token
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1'); // Ruta protegida con rate limiting contra fuerza bruta
 
 
 // --- RUTAS PROTEGIDAS (Cualquier usuario autenticado) ---
