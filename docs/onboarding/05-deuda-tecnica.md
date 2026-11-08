@@ -1,20 +1,31 @@
-# 05 - Bitácora Viva de Deuda Técnica
+# 05 — Bitácora Viva de Deuda Técnica
 
-## Registro de hallazgos
+> Bitácora viva de deuda técnica, riesgos de seguridad e inconsistencias arquitectónicas.
+> Regla: Al resolver o encontrar un ítem, actualizar este documento citando `archivo:línea`.
+> Convenciones: **[HECHO]** · **[INFERENCIA]** · **[DUDA]** · `❓ NO DETERMINABLE CON EL CÓDIGO`.
 
-| ID | Estado | Severidad | Archivo:línea | Hallazgo |
-| --- | --- | --- | --- | --- |
-| DT-01 | RESUELTA | ALTA | `app/Providers/AppServiceProvider.php:43-56` | Se eliminó la ejecución de mantenimiento desde una request web con `comando_secreto`; la operación queda formalizada en un comando Artisan (`php artisan app:mantenimiento-cache`) para evitar backdoors operativos. |
-| DT-02 | RESUELTA | ALTA | `resources/views/layouts/guest.blade.php:279-286` | Se reemplazó el texto hardcodeado por una lectura dinámica desde `$appSettings->tagline ?? $appSettings->nombre_empresa ?? 'SERVICIO AUTOMOTRIZ'`, alineando la marca con la configuración del sistema. |
-| DT-03 | RESUELTA | MEDIA | `database/seeders/UsuariosSeeder.php:17-32` | Se reemplazó la generación aleatoria y predecible de contraseñas por cuentas deterministas parametrizadas por entorno (`ADMIN_DEFAULT_*`, `VENDEDOR_DEFAULT_*`, `COCINA_DEFAULT_*`, `CLIENTE_DEFAULT_*`) y se volvió el seeder idempotente con `updateOrCreate` y `syncWithoutDetaching`. |
-| DT-04 | RESUELTA | MEDIA | `app/Http/Controllers/ConfiguracionController.php:82-118` | Se eliminó el uso de `shell_exec`/`exec` para arrancar y verificar `wa-motor`, y se reemplazó por validación defensiva de rutas y el Facade `Illuminate\Support\Facades\Process` con timeouts controlados y manejo estructurado de errores. |
-| DT-05 | ABIERTA | MEDIA | `database/migrations/2026_05_29_125352_create_whatsapp_pending_messages_table.php:8-28` | La cola de mensajes `whatsapp_pending_messages` se usa como bucle operacional, pero no se ve evidencia clara del consumidor final en el repositorio; su acoplamiento con el motor y el tratamiento de fallo no queda documentado en un contrato único. |
-| DT-06 | EN PROGRESO | BAJA | `database/migrations/2026_09_24_100409_add_performance_indexes_to_articulos_table.php:8-61` | El proyecto ya está corrigiendo índices de rendimiento, pero los índices del negocio siguen dispersos por migraciones; la evolución del esquema requiere control de compatibilidad para no romper queries históricas. |
-| DT-07 | ABIERTA | MEDIA | `app/Http/Controllers/BrandingController.php:58-90` | La lógica de uploads permite tipos y tamaños de imagen específicos, pero la política de eliminación previa, copia a `public/img` y caché de marca requiere revisión para evitar inconsistencias entre storage, public y cache. |
+---
 
-## Comentarios adicionales
+## Catálogo de Deuda Técnica
 
-- `DT-01` y `DT-04` requieren prioridad porque operan directamente sobre infraestructura, caché y procesos del sistema.
-- `DT-02` no falla funcionalmente, pero es una deuda visible de marca y un síntoma de configuración fragmentada.
-- `DT-03` afecta entorno local y pruebas; se recomienda registrarlo en la guía de despliegue y usar valores consistentes de administradores.
-- `DT-05` es una deuda de observabilidad y contratabilidad del flujo de WhatsApp; si la integración cambia, la cola queda como único punto de verdad y requiere trazabilidad formal.
+| ID | Severidad | Estado | Título | Archivo:Línea | Descripción Técnica |
+|---|---|---|---|---|---|
+| **DT-01** | **CRÍTICA** | `ABIERTA` | Backdoor RCE/Mantenimiento vía URL pública | `app/Providers/AppServiceProvider.php:43-63` | El parámetro `?comando_secreto` en cualquier URL ejecuta `migrate --force`, limpieza de cachés y `die()` sin autenticación. |
+| **DT-02** | **CRÍTICA** | `ABIERTA` | Descarga no autenticada de bitácora del sistema | `routes/web.php:142-150` | La ruta `GET /descargar-log-secreto` expone públicamente `storage/logs/laravel.log` conteniendo trazas y datos sensibles. |
+| **DT-03** | **CRÍTICA** | `ABIERTA` | Credenciales de producción e historial en git | `.env.example:3,28,54-55`, `.env.txt`, `deploy_remote.py:8-12` | Claves activas expuestas: `APP_KEY`, contraseña SMTP de Gmail, scripts con credenciales SSH en texto plano y dumps de BD versionados. |
+| **DT-04** | **CRÍTICA** | `ABIERTA` | Contraseñas en texto plano en cola de WhatsApp | `app/Http/Controllers/ClienteController.php:63,133,185-199` | Se insertan contraseñas sin hashear dentro del cuerpo de texto de `whatsapp_pending_messages`. |
+| **DT-05** | **ALTA** | `ABIERTA` | Incompatibilidad de dialecto SQL (ILIKE en MySQL) | `app/Http/Controllers/Api/VentaApiController.php:42`, `Api/EntradaApiController.php:45`, `Api/ClienteApiController.php:30-32` | Uso del operador `ILIKE` exclusivo de PostgreSQL, lo cual lanza error de sintaxis SQL al correr sobre MySQL 8.0. |
+| **DT-06** | **ALTA** | `ABIERTA` | Precios arbitrarios controlados por el cliente | `app/Http/Controllers/CatalogoController.php:53,84`, `VentaController.php:98,135` | La petición HTTP define el `precio_venta` que se cobra y almacena, en lugar de consultar el precio maestro de `articulos.precio`. |
+| **DT-07** | **ALTA** | `ABIERTA` | Falta de rate limiting en formulario de login web | `app/Http/Controllers/Auth/AuthenticatedSessionController.php:27-30` | No utiliza `LoginRequest` ni middleware `throttle`, permitiendo ataques de fuerza bruta al panel web. |
+| **DT-08** | **ALTA** | `ABIERTA` | Permisos permisivos e inseguros en despliegue Render | `docker-start.sh:11` | Comando `chmod -R 777` masivo sobre directorios públicos, almacenamiento y código fuente. |
+| **DT-09** | **ALTA** | `ABIERTA` | Ausencia de índices en cola de alta concurrencia | `database/migrations/2026_05_29_125352_create_whatsapp_pending_messages_table.php:14-20` | `whatsapp_pending_messages` no tiene índices en `status` ni `created_at`, a pesar de ser consultada por polling cada 5 segundos por el motor de WhatsApp. |
+| **DT-10** | **MEDIA** | `ABIERTA` | Inconsistencia de stock en registro de pedidos | `app/Http/Controllers/PedidoController.php:76-136` | `PedidoController@store` genera una `Venta` sin usar transacciones (`DB::transaction`) ni descontar existencias de `articulos.stock`. |
+| **DT-11** | **MEDIA** | `ABIERTA` | Semillas de usuario con contraseñas triviales | `database/seeders/UsuariosSeeder.php:53-54` | Correos generados aleatoriamente con Faker y contraseñas fijas de 1 dígito (`$index % 8 + 1`), imposibilitando el acceso administrativo predecible. |
+| **DT-12** | **MEDIA** | `ABIERTA` | Comprobantes bancarios expuestos en disco público | `app/Http/Controllers/ComprobanteController.php:29` | Se almacenan datos financieros sensibles en `public/storage/comprobantes` con acceso web directo no autenticado. |
+| **DT-13** | **MEDIA** | `ABIERTA` | Riesgo de XSS por subida de vectores SVG | `app/Http/Controllers/BrandingController.php:82`, `ConfiguracionController.php:27` | Se permite el tipo MIME `svg` sin proceso de desinfección ni filtrado de etiquetas JavaScript. |
+| **DT-14** | **MEDIA** | `ABIERTA` | Dependencia de artículo comodín no garantizado | `app/Http/Controllers/ComprobanteController.php:161-168` | Al aprobar comprobantes se busca `nombre LIKE '%pago saldado%'`; si no existe, la creación de `Entrada` arroja excepción SQL por `articulo_id` nulo. |
+| **DT-15** | **MEDIA** | `ABIERTA` | Deuda artificial hardcodeada en PDFs | `app/Services/PdfReceiptService.php:149-151` | Asignación forzada de `$totalAdeudo = 4250.00` cuando no se detectan movimientos contables. |
+| **DT-16** | **BAJA** | `ABIERTA` | Teléfonos de administrador hardcodeados en código | `app/Models/Venta.php:73,142`, `Feedback.php:85`, `PedidoController.php:106,355` | Número telefónico `'5212222153410'` acoplado directamente en múltiples clases como fallback. |
+| **DT-17** | **BAJA** | `ABIERTA` | Rutas locales de desarrollo acopladas en wa-motor | `wa-motor/index.js:371,404` | Ruta `/home/araiza/.../qr.png` codificada fijamente para escribir la imagen QR. |
+| **DT-18** | **BAJA** | `ABIERTA` | Textos residuales de marca previa en layouts | `resources/views/layouts/guest.blade.php:280` | Presencia del rótulo `HAMBURGUESAS & PANADERÍA` en vistas de autenticación. |
+| **DT-19 (MP-05)** | **MEDIA** | `RESUELTA` | Contrato de cola WhatsApp y reintentos no formalizados | `app/Services/WhatsAppNotificationService.php`, `app/Console/Commands/ProcessWhatsAppQueueCommand.php`, `wa-motor/index.js` | Se centralizó el encolamiento Laravel, se documentó el consumidor Node y se agregó un comando de supervisión para reencolar fallos con intentos acotados, sin competir por los mensajes pendientes. |

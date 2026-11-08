@@ -1,49 +1,71 @@
-# Tech Steering
+# Tech Steering — Capital Gestor (Taller Velázquez)
 
-## Stack consolidado
+> Gobernanza técnica, infraestructura y directrices de desarrollo · Última actualización: 2026-11-07
+> Convenciones: **[HECHO]** · **[INFERENCIA]** · **[DUDA]** · `❓ NO DETERMINABLE CON EL CÓDIGO`.
 
-- PHP 8.2+ (`composer.json:6-35`), contenedor Apache/PHP 8.3 en `Dockerfile:1-56`.
-- Laravel 12 (`composer.json:6-35`).
-- MySQL 8.0 con Docker (`docker-compose.yml:39-62`).
-- Nginx como front-end (`docker-compose.yml:5-17`).
-- Vite/Tailwind para frontend (`package.json:1-20`).
-- Node.js para `wa-motor` y scripts adicionales (`Dockerfile:14-30`).
+---
 
-## Comandos de arranque
+## 1. Stack Tecnológico Consolidado
 
-### Windows
+- **Runtime:** PHP 8.2+ (`composer.json:9`), contenedor local bajo Alpine (`docker/php/Dockerfile:4`).
+- **Framework:** Laravel 12 (`"laravel/framework": "^12.0"` en `composer.json:13`).
+- **Base de Datos:** MySQL 8.0 en contenedor Docker (`docker-compose.yml:56`). Soporte heredado para PostgreSQL vía `pdo_pgsql` (`Dockerfile:17`).
+- **Servidor Web:** Nginx 1.25 Alpine actuando como reverse proxy hacia PHP-FPM (`docker-compose.yml:6-18`).
+- **Frontend:** Blade Views con Alpine.js v3.4.2, Tailwind CSS v3.1.0 y Vite v7.0.4 (`package.json:11-19`). Sin Livewire.
+- **Microservicio WhatsApp:** Node.js v20 Slim con `whatsapp-web.js` y Chromium (`docker/wa-motor/Dockerfile:5-10`, `wa-motor/index.js:1-740`).
 
-El proyecto usa un arranque Docker local y volumenes persistentes. La convención esperada del entorno es:
+---
 
-```bat
-docker compose up --build -d
-```
+## 2. Topología y Comandos de Despliegue Docker
 
-Se identifica la ruta base y el dominio local `http://TallerVelazque.com` en la configuración del despliegue del proyecto, aunque la evidencia explícita del archivo de Windows no se ha encontrado en este repo. `docker-compose.yml:1-95`.
+### 2.1 Topología Multi-Contenedor (`docker-compose.yml`)
 
-### Laravel
+1. `capital_gestor_nginx` (`nginx:1.25-alpine`): Expone puerto host `8080` a puerto `80` interno (`docker-compose.yml:10-11`).
+2. `capital_gestor_php` (`php:8.2-fpm-alpine`): Conexión FastCGI en puerto interno `9000` (`docker-compose.yml:23-49`, `docker/php/Dockerfile:70`).
+3. `capital_gestor_mysql` (`mysql:8.0`): Puerto host expuesto en `3307:3306` para evitar colisiones locales, con volumen persistente `mysql_data` (`docker-compose.yml:55-74`).
+4. `capital_gestor_wa_motor` (`node:20-slim`): Daemon de mensajería con volumen persistente para sesión `./.wwebjs_auth` y bind `./storage` para lectura de PDFs (`docker-compose.yml:79-100`).
+
+### 2.2 Secuencia Oficial de Arranque
 
 ```bash
-php artisan migrate
-php artisan route:list
-php artisan test
-php artisan optimize:clear
+# 1. Preparar archivo de variables para docker
+cp .env.docker.example .env
+
+# 2. Levantar el stack completo en segundo plano
+docker compose up -d --build
+
+# 3. Inicialización de Laravel (única vez)
+docker compose exec php php artisan key:generate
+docker compose exec php php artisan migrate --force
+docker compose exec php php artisan db:seed
+docker compose exec php php artisan storage:link
 ```
 
-## Reglas de cacheo
+> [!NOTE]
+> Para entornos Windows, si no se cuenta con `iniciar_windows.bat`, se ejecutan exactamente los mismos comandos anteriores desde PowerShell o Git Bash.
 
-- `AppServiceProvider` inyecta `AppSetting` en todas las vistas con `View::composer('*', ...)`: `app/Providers/AppServiceProvider.php:24-41`.
-- `AppSetting::clearSettingsCache()` invalida la clave `app_settings` al guardar o eliminar: `app/Models/AppSetting.php:19-51`.
-- Para limpiar cache del framework, usar `php artisan optimize:clear` según la operación requerida en el proyecto.
+---
 
-## Convenciones de migraciones
+## 3. Reglas de Optimización y Caché
 
-- Las migraciones usan `Schema::create` y `Schema::table` con `foreignId` y `onDelete('cascade')` para relaciones críticas.
-- El sistema admite ajustes de rendimiento por índices en migraciones posteriores: `database/migrations/2026_09_24_100409_add_performance_indexes_to_articulos_table.php:8-61` y `database/migrations/2026_10_15_000002_add_compound_indexes_to_ventas_and_entradas_tables.php:8-82`.
-- La convención es preservar compatibilidad con re-ejecución mediante `if (!Schema::hasColumn(...))` y `if (!$this->indexExists(...))`.
+En entornos de producción (o tras cambios en variables de entorno), se debe ejecutar:
 
-## Seguridad operativa
+```bash
+# Limpiar y regenerar cachés de alto rendimiento
+php artisan optimize:clear
+php artisan optimize
+```
 
-- Las rutas y los archivos de `storage` deben mantenerse fuera del acceso público directo salvo lo que se expone con `public/storage` o `public/img`.
-- La personalización de marca usa `Storage::disk('public')` y es consumida desde la configuración global. `app/Models/AppSetting.php:61-118`.
-- Los mensajes de WhatsApp se centralizan en la tabla `whatsapp_pending_messages` y deben tratarse como cola de negocio real. `database/migrations/2026_05_29_125352_create_whatsapp_pending_messages_table.php:8-28`.
+- **[HECHO]** El helper `AppSetting::clearSettingsCache()` (`app/Models/AppSetting.php:47-53`) invalida automáticamente la caché de interfaz tras guardar modificaciones en `/admin/personalizacion`.
+- **[HECHO]** Opcache está configurado con revalidación activa en `docker/php/local.ini:23-29` para desarrollo continuo sin reinicio forzado del contenedor.
+
+---
+
+## 4. Convenciones de Base de Datos y Migraciones
+
+1. **Campos Monetarios:** Todo valor financiero DEBE declararse como `$table->decimal('campo', 10, 2)`. Prohibido el uso de `float` o `double` en esquemas de base de datos.
+2. **Llaves Foráneas y Eliminación:** 
+   - Tablas maestras o críticas (`articulos`, `roles`) usan restricción `restrictOnDelete` o default restrict.
+   - Dependencias de usuario secundarias usan `cascadeOnDelete` (`comprobantes`, `feedbacks`, `role_user`).
+   - Auditorías y compras conservan historial con `nullOnDelete` (`ventas.comprador_id`, `entradas.registrado_por_id`).
+3. **Indexación Requerida:** Todo campo de búsqueda frecuente (`created_at`, `status`, `user_id`, `numero`) debe declarar índice B-Tree individual o compuesto cubierto.

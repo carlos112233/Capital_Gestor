@@ -1,46 +1,24 @@
-# 06 - Mejoras Propuestas
+# 06 — Bitácora Viva de Mejoras Propuestas
 
-## 1) Seguridad
+> Bitácora de iniciativas de mejora arquitectónica, seguridad, rendimiento y buenas prácticas.
+> Regla: Al culminar un feature o refactor, actualizar el estado y retorno de inversión (ROI) del ítem correspondiente.
+> Convenciones: **[HECHO]** · **[INFERENCIA]** · **[DUDA]** · `❓ NO DETERMINABLE CON EL CÓDIGO`.
 
-| ID | Título | Justificación técnica | Archivos involucrados | ROI |
-| --- | --- | --- | --- | --- |
-| MP-01 | Desactivar `comando_secreto` y moverlo a gate administrativo real | La lógica actual permite ejecutar mantenimiento a través de una query string. Debe convertirse en un endpoint autenticado con permisos y secreto en `APP_*` o un token de entorno. | `app/Providers/AppServiceProvider.php:43-56` | Alto |
-| MP-02 | Centralizar un Policy/Authorization para permisos por rol | El sistema usa comprobaciones repetidas con `hasRole()` en múltiples controladores. Un Policy centralizado reduce bypass operativo y mejora mantenibilidad. | `app/Models/User.php:310-322`, `app/Http/Middleware/RoleMiddleware.php:15-24` | Alto |
-| MP-03 | Reforzar logging seguro | Debe excluir contraseñas, tokens y payloads sensibles; limitar `Log::error` a contexto necesario y sanitizar mensajes de WhatsApp y pedidos. | `app/Models/Venta.php:101-114`, `app/Services/ReceiptOcrService.php:184-324` | Medio |
+---
 
-## 2) Arquitectura y modelado
+## Catálogo de Mejoras Propuestas
 
-| ID | Título | Justificación técnica | Archivos involucrados | ROI |
-| --- | --- | --- | --- | --- |
-| MP-04 | Normalizar el modelo de negocio para `app_settings` y branding | Actualmente hay lógica de almacenamiento dual (`storage/app/public` + `public/img`) para mantener compatibilidad. Debe centralizarse en un único repositorio y un único contrato de URL. | `app/Models/AppSetting.php:11-118`, `app/Http/Controllers/ConfiguracionController.php:35-77`, `app/Http/Controllers/BrandingController.php:92-159` | Medio |
-| MP-05 | Separar el consumidor de WhatsApp del modelo de dominio | La cola `whatsapp_pending_messages` quedó acoplada a ventas y feedback. Conviene encapsular la salida en un servicio de notificaciones con contrato y estado explícito. | `app/Models/Venta.php:60-115`, `database/migrations/2026_05_29_125352_create_whatsapp_pending_messages_table.php:8-28` | Alto |
-| MP-06 | Consolidar `FormRequest` y validación en capas | Hay validación inline en varios controladores y todavía algunas consultas directas con `whereRaw`. La capa de request centraliza reglas y prueba unitaria. | `app/Http/Controllers/VentaController.php:85-165`, `app/Http/Controllers/BrandingController.php:58-90` | Medio |
-
-## 3) Rendimiento
-
-| ID | Título | Justificación técnica | Archivos involucrados | ROI |
-| --- | --- | --- | --- | --- |
-| MP-07 | Auditoría de consultas con `whereRaw` y `join` de roles | Las consultas con `join('roles', ...)` se repiten en muchos modelos. Debe revisarse la cardinalidad y el uso de `with`/`loadMissing` para evitar N+1 y joins no indexados. | `app/Models/Venta.php:57-71`, `app/Models/Feedback.php:31-42`, `app/Http/Controllers/PedidoController.php:99-110` | Medio |
-| MP-08 | Trazar un contrato de índices para alta concurrencia | Los índices recientes ayudan, pero la clave es mantener una hoja de ruta de índices por tabla y por tipo de consulta (ventas por usuario/fecha, entradas por cliente/fecha). | `database/migrations/2026_09_24_100409_add_performance_indexes_to_articulos_table.php:8-61`, `database/migrations/2026_10_15_000002_add_compound_indexes_to_ventas_and_entradas_tables.php:8-82` | Medio |
-
-## 4) DevOps y operación
-
-| ID | Título | Justificación técnica | Archivos involucrados | ROI |
-| --- | --- | --- | --- | --- |
-| MP-09 | Documentar el arranque del contenedor y la dependencia de `wa-motor` | Requiere un contrato de despliegue con puertos, ubicaciones de sesión y permisos del directorio `.wwebjs_auth` y `storage`. | `docker-compose.yml:1-95`, `Dockerfile:1-56` | Alto |
-| MP-10 | Crear un playbook de recuperación para `app_settings`, `storage` y WhatsApp | El sistema usa `storage/app/public`, `public/img` y `.wwebjs_auth`; un error de sincronización puede romper la marca visual y la entrega real. | `app/Models/AppSetting.php:61-118`, `app/Http/Controllers/ConfiguracionController.php:35-77`, `docker-compose.yml:64-88` | Alto |
-
-## Priorización recomendada
-
-1. MP-01: cerrar la ejecución por `comando_secreto`.
-2. MP-05: convertir la cola de WhatsApp en servicio de notificaciones formal.
-3. MP-09: documentar despliegue y coordinación de contenedores.
-4. MP-04: unificar almacenamiento de branding.
-5. MP-07: revisar consultas repetidas y joins de roles.
-
-## Criterio de aceptación
-
-- Sin `comando_secreto` expuesto como mantenimiento live en producción.
-- `AppSetting` con un único punto de verdad de marca.
-- Cola de WhatsApp con servicio claramente responsable y trazable.
-- Índices y consultas con evidencia se revisan bajo plan de observabilidad.
+| ID | Área | Estado | Título | Archivos Involucrados | Justificación Técnica y Retorno de Inversión (ROI) |
+|---|---|---|---|---|---|
+| **MP-01** | **Seguridad** | `PROPUESTA` | Eliminación de endpoints de depuración y bypass | `app/Providers/AppServiceProvider.php`, `routes/web.php` | **Justificación:** Cierra vulnerabilidades críticas de ejecución remota y fuga de información sin afectar funciones de negocio. **ROI:** Máximo; previene intrusiones directas al servidor. |
+| **MP-02** | **Seguridad** | `PROPUESTA` | Purga y rotación integral de credenciales en Git | `.env.example`, `.env.txt`, `deploy_remote.py`, `.gitignore` | **Justificación:** Previene el compromiso de buzones SMTP de Google y servidores remotos. **ROI:** Alto; cumplimiento de estándares de seguridad y auditoría. |
+| **MP-03** | **Seguridad** | `PROPUESTA` | Sanitización de subidas SVG y almacenamiento privado de comprobantes | `app/Http/Controllers/BrandingController.php`, `ComprobanteController.php` | **Justificación:** Evita Stored XSS y protege la privacidad financiera de los clientes al pasar comprobantes bancarios a un disco privado. **ROI:** Alto; mitigación de brechas de datos personales (GDPR/LFPDPPP). |
+| **MP-04** | **Arquitectura** | `PROPUESTA` | Corrección del motor de precios en POS y API | `app/Http/Controllers/CatalogoController.php`, `VentaController.php`, `Api/CatalogoApiController.php` | **Justificación:** Bloquea la alteración del precio unitario desde el cliente HTTP, forzando la lectura de la verdad en BD (`articulos.precio`). **ROI:** Alto; evita fraudes operativos y fugas de capital. |
+| **MP-05** | **Arquitectura** | `PROPUESTA` | Estandarización de consultas SQL a dialecto MySQL 8.0 | `app/Http/Controllers/Api/VentaApiController.php`, `Api/EntradaApiController.php`, `Api/ClienteApiController.php` | **Justificación:** Reemplaza `ILIKE` por `whereRaw('LOWER(...) LIKE ?')` o collation insensible a mayúsculas, garantizando interoperabilidad con MySQL en Docker y producción. **ROI:** Inmediato; repara caídas de la API móvil. |
+| **MP-06** | **Rendimiento** | `PROPUESTA` | Indexación B-Tree de la cola de WhatsApp | `database/migrations/2026_05_29_125352_create_whatsapp_pending_messages_table.php` | **Justificación:** Agrega un índice compuesto `(status, created_at)` en `whatsapp_pending_messages`. **ROI:** Alto; reduce el consumo de CPU y latencia del polling continuo de Node.js. |
+| **MP-07** | **Arquitectura** | `PROPUESTA` | Atomicidad transaccional y control de stock en Pedidos | `app/Http/Controllers/PedidoController.php` | **Justificación:** Envuelve `PedidoController@store` en `DB::transaction` con `lockForUpdate` y descuenta inventario de refacciones/artículos al crearse la orden. **ROI:** Alto; erradica descuadres de inventario físico. |
+| **MP-08** | **Seguridad** | `PROPUESTA` | Envío de enlaces temporales de acceso en lugar de contraseñas planas | `app/Http/Controllers/ClienteController.php` | **Justificación:** Sustituye el envío de la contraseña por un enlace firmado o token de un solo uso (`Password::broker()`), evitando que las credenciales queden en texto plano en WhatsApp. **ROI:** Alto; buenas prácticas de autenticación. |
+| **MP-09** | **DevOps** | `PROPUESTA` | Homologación del entorno Docker y symlinks de almacenamiento | `docker-compose.yml`, `docker/php/Dockerfile` | **Justificación:** Corrige el montaje de `storage_data` en Nginx y recrea el enlace simbólico `storage:link` relativo dentro del contenedor para resolver imágenes rotas en local. **ROI:** Medio; estabilidad de desarrollo local. |
+| **MP-10** | **DevOps** | `PROPUESTA` | Contenedorización formal del supervisor de colas y scheduler | `docker-compose.yml`, `routes/console.php` | **Justificación:** Integra un worker `queue:work` y el cron `schedule:run` en la topología Compose para automatizar respaldos, depuración de tokens y alertas push. **ROI:** Alto; automatización real sin intervención manual. |
+| **MP-11** | **Arquitectura** | `PROPUESTA` | Modelo de dominio específico para Taller Automotriz | `database/migrations/`, `app/Models/` | **Justificación:** Introduce entidades formales (`vehiculos`, `ordenes_trabajo`, `mecanicos`, `servicios`) para dar soporte nativo al modelo de negocio de Taller Velázquez en lugar de reusar tablas de restaurante. **ROI:** Estratégico; escalabilidad del negocio. |
+| **MP-12** | **UX / UI** | `PROPUESTA` | Limpieza de textos residuales de la marca anterior | `resources/views/layouts/guest.blade.php`, `app_settings` | **Justificación:** Elimina referencias a "HAMBURGUESAS & PANADERÍA" sustituyéndolas por las variables dinámicas de `AppSetting`. **ROI:** Rápido; coherencia visual institucional. |

@@ -1,49 +1,95 @@
-# API Contract Steering
+# API Contract Steering — Capital Gestor (Taller Velázquez)
 
-## Rutas web activas
+> Catálogo de contratos de interfaz, endpoints REST y respuestas oficiales · Última actualización: 2026-11-07
+> Convenciones: **[HECHO]** · **[INFERENCIA]** · **[DUDA]** · `❓ NO DETERMINABLE CON EL CÓDIGO`.
 
-### Auth
+---
 
-- `GET /login` -> `AuthenticatedSessionController@create` (`routes/auth.php:12-17`)
-- `POST /login` -> `AuthenticatedSessionController@store` (`routes/auth.php:18-20`)
-- `POST /logout` -> `AuthenticatedSessionController@destroy` (`routes/auth.php:57-61`)
+## 1. Convenciones Globales y Autenticación
 
-### Dashboard y administración
+- **Base URL API:** `/api`
+- **Mecanismo de Autenticación:** Laravel Sanctum Bearer Token en cabecera `Authorization: Bearer <token>` (`routes/api.php:20`).
+- **Estructura Estándar de Respuesta:** Orquestada por el trait `App\Traits\ApiResponse` (`app/Traits/ApiResponse.php:9-27`):
 
-- `GET /dashboard` -> `DashboardController@index` (`routes/web.php:26-46`)
-- `GET /dashboardAdmin` -> `DashboardController@indexAdmin` (`routes/web.php:10-19`)
-- `GET /admin/configuracion` -> `ConfiguracionController@index` (`routes/web.php:91-104`)
-- `POST /admin/configuracion/logo` -> `ConfiguracionController@updateLogo` (`routes/web.php:93-95`)
-- `GET /admin/personalizacion` -> `BrandingController@index` (`routes/web.php:104-104`)
-- `POST /admin/personalizacion` -> `BrandingController@update` (`routes/web.php:104-104`)
+```json
+// Éxito (HTTP 200 / 201)
+{
+  "success": true,
+  "message": "Operación realizada con éxito",
+  "data": { ... }
+}
 
-### Recursos principales
+// Error (HTTP 400 / 401 / 403 / 404 / 422)
+{
+  "success": false,
+  "message": "Descripción del error",
+  "errors": { ... }
+}
+```
 
-- `Route::resource('ventas', VentaController::class)` (`routes/web.php:58-60`)
-- `Route::resource('pedidos', PedidoController::class)` (`routes/web.php:40-41`)
-- `Route::resource('articulos', ArticuloController::class)` (`routes/web.php:78-81`)
-- `Route::resource('clientes', ClienteController::class)` (`routes/web.php:72-76`)
-- `Route::resource('entradas', EntradaController::class)` (`routes/web.php:82-83`)
+---
 
-## Rutas API Sanctum
+## 2. Catálogo de Endpoints REST (`routes/api.php`)
 
-- `POST /login` -> `Api\AuthController@login` (`routes/api.php:11-12`)
-- `GET /profile` -> `Api\ProfileApiController@show` (`routes/api.php:16-20`)
-- `PATCH /profile` -> `Api\ProfileApiController@update` (`routes/api.php:17-20`)
-- `GET /dashboard` -> `Api\DashboardApiController@usuario` (`routes/api.php:21-22`)
-- `GET /catalogo` -> `Api\CatalogoApiController@index` (`routes/api.php:23-24`)
-- `apiResource('ventas')` -> `Api\VentaApiController` (`routes/api.php:31-32`)
-- `apiResource('pedidos')` -> `Api\PedidoApiController` (`routes/api.php:31-32`)
-- `apiResource('articulos')` -> `Api\ArticuloApiController` (`routes/api.php:35-40`)
+### 2.1 Autenticación
 
-## Payloads y respuestas
+#### `POST /api/login`
+- **Middleware:** `throttle:6,1` (`routes/api.php:16`)
+- **Controlador:** `App\Http\Controllers\Api\AuthController@login` (`app/Http/Controllers/Api/AuthController.php:12-43`)
+- **Payload Request:**
+  ```json
+  {
+    "email": "usuario@ejemplo.com",
+    "password": "password123"
+  }
+  ```
+- **Response 200:**
+  ```json
+  {
+    "token": "1|sanctum_plain_text_token...",
+    "user": {
+      "id": 1,
+      "name": "Administrador",
+      "telefono": "5212222153410",
+      "email": "admin@ejemplo.com",
+      "image": "avatars/avatar1.png",
+      "roles": ["admin"]
+    }
+  }
+  ```
+- **Response 401:** `{"message": "Credenciales inválidas"}`
 
-- Los controladores principales validan payloads con `request()->validate()` o con `FormRequest` si aplica; por ejemplo, `VentaController@store` hace validación explícita de `articulo_id`, `cantidad`, `cliente_id`, `precio_venta` y `descripcion`. `app/Http/Controllers/VentaController.php:85-165`.
-- Los archivos con branding usan validaciones de imagen; `logo` acepta `mimes:jpeg,png,jpg,gif,svg,webp` y `favicon` acepta `ico,png,x-icon`. `app/Http/Controllers/BrandingController.php:58-90`.
-- Las respuestas se entregan principalmente como redirecciones y vistas Blade en web, y como JSON con Sanctum en API. `routes/web.php` y `routes/api.php`.
+#### `POST /api/logout`
+- **Middleware:** `auth:sanctum` (`routes/api.php:51`)
+- **Controlador:** `App\Http\Controllers\Api\AuthController@logout`
+- **Response 200:** `{"message": "Sesión cerrada"}`
 
-## Conocimiento transversal
+---
 
-- La aplicación usa `role:admin` en middleware para protecciones de rutas admin.
-- Las rutas con `apiResource` no muestran `create` ni `edit` la intención de un API RESTful. `routes/api.php:15-42`.
-- No se ha encontrado una especificación OpenAPI formal del contrato; la fuente de verdad continúa siendo el mapeo de rutas y los controladores. `routes/api.php:1-42`.
+### 2.2 Endpoints Operativos (`auth:sanctum`)
+
+| Método | Endpoint | Controlador | Parámetros / Payload Clave | Descripción |
+|---|---|---|---|---|
+| `GET` | `/api/profile` | `ProfileApiController@show` | — | Perfil del usuario autenticado |
+| `PATCH` | `/api/profile` | `ProfileApiController@update` | `name`, `email`, `telefono`, `image` | Actualización de perfil |
+| `GET` | `/api/dashboard` | `DashboardApiController@usuario` | `search` (opcional) | Balance financiero y compras del cliente |
+| `GET` | `/api/catalogo` | `CatalogoApiController@index` | `q` (búsqueda de producto) | Lista artículos con stock disponible |
+| `POST` | `/api/catalogo/vender` | `CatalogoApiController@vender` | `articulo_id`, `cantidad`, `precio_venta`, `descripcion` | Registra venta deduciendo inventario |
+| `GET` | `/api/ventas` | `VentaApiController@index` | `search` | Historial de ventas del usuario |
+| `POST` | `/api/ventas` | `VentaApiController@store` | `articulo_id`, `cantidad`, `descripcion` | Crea venta con precio tomado del catálogo |
+| `GET` | `/api/pedidos` | `PedidoApiController@index` | `search` | Lista de órdenes en preparación |
+| `POST` | `/api/pedidos` | `PedidoApiController@store` | `articulo_id`, `cantidad`, `costo`, `descripcion` | Encola pedido para cocina/taller |
+| `GET` | `/api/entradas` | `EntradaApiController@index` | `search` | Relación de abonos y cobros procesados |
+| `GET` | `/api/clientes` | `ClienteApiController@index` | `search` | Lista de clientes registrados |
+
+---
+
+### 2.3 Endpoints Administrativos (`auth:sanctum`, `role:admin`, prefijo `/api/admin`)
+
+| Método | Endpoint | Controlador | Descripción |
+|---|---|---|---|
+| `GET` | `/api/admin/dashboard` | `DashboardApiController@admin` | Métricas globales de venta, cartera vencida y pedidos |
+| `apiResource` | `/api/admin/articulos` | `ArticuloApiController` | CRUD completo de artículos y stock |
+| `apiResource` | `/api/admin/clientes` | `ClienteApiController` | CRUD y asignación de clientes |
+| `apiResource` | `/api/admin/entradas` | `EntradaApiController` | Gestión de abonos de capital |
+| `apiResource` | `/api/admin/pedidos` | `PedidoApiController` | Modificación de estatus de órdenes |

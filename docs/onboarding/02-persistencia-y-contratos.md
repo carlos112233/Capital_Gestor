@@ -187,10 +187,13 @@ erDiagram
 - **[HECHO]** `app_name default 'El bajón'`, `logo_path`, `favicon_path`, `primary_color #6366f1`, `secondary_color #10b981`, `sidebar_color #0f172a`, `font_family 'Inter'`, `theme_mode enum(light,dark,system) default 'light'` — `2026_10_16_000001_create_app_settings_table.php:16-23`.
 
 ### 2.10 `whatsapp_pending_messages`
-- **[HECHO]** `numero string`, `mensaje text`, `status string default 'pendiente'` (comentario: `pendiente, enviado, error`) — `2026_05_29_125352_create_whatsapp_pending_messages_table.php:16-18`; `error_message` (`2026_06_30_172430…`), `pdf_path` (`2026_08_28_204500…`).
-- **[HECHO]** **Sin modelo Eloquent**: se usa `DB::table('whatsapp_pending_messages')` (ej. `app/Http/Controllers/PedidoController.php:203`).
-- **[HECHO]** **Sin índice** sobre `status`/`created_at`, aunque `wa-motor/index.js:625` consulta `WHERE status = 'pendiente' ORDER BY created_at ASC LIMIT 5` cada 5 s (`wa-motor/index.js:618,732`).
-- **[HECHO]** Estados realmente escritos: `pendiente`, `enviado` (`wa-motor/index.js:696`), `fallido` (`wa-motor/index.js:650,717`), `cancelado` (`app/Services/NotificationCircuitBreakerService.php:66`). El comentario de la migración (`error`) no coincide.
+- **[HECHO]** Columnas: `numero string`, `mensaje text`, `status string default 'pendiente'`, `pdf_path string nullable`, `error_message text nullable`, `attempts unsigned smallint default 0`, `created_at`, `updated_at`; las columnas adicionales se agregan en migraciones separadas.
+- **[HECHO]** Los productores Laravel encolan mediante `App\Services\WhatsAppNotificationService::enqueue()` / `enqueuePayload()`. Un mensaje nuevo inicia con `status=pendiente`, `attempts=0`; `pdf_path` es opcional.
+- **[HECHO]** El único consumidor de entrega es `wa-motor/index.js`: cada 5 segundos selecciona hasta 5 filas con `status='pendiente'`, en orden FIFO por `created_at`, envía texto y adjunto opcional y marca `enviado` o `fallido`.
+- **[HECHO]** En cada fallo el motor incrementa `attempts`, guarda `error_message` y marca `fallido`. Conserva `pdf_path` para que un reintento pueda volver a enviar el adjunto. En éxito marca `enviado` y limpia `error_message`.
+- **[HECHO]** `php artisan whatsapp:process-pending` es un comando de supervisión, no un segundo emisor: muestra conteos y evita competir con el consumidor Node. `--retry-failed` vuelve a poner en `pendiente` los fallidos con `attempts` menor a `--max-attempts` (por defecto 3), hasta el `--limit` configurado (por defecto 100); limpia `error_message`. `attempts` cuenta fallos registrados, por lo que un valor 3 queda fuera de reintento.
+- **[HECHO]** Estados de la tabla: `pendiente`, `enviado`, `fallido` y `cancelado` (`app/Services/NotificationCircuitBreakerService.php`). El comentario original de la migración (`error`) no representa el contrato vigente.
+- **[HECHO]** No hay índice sobre `status`/`created_at`, aunque el consumidor Node filtra y ordena por esas columnas.
 
 ### 2.11 Otras
 - `feedbacks`, `feedback_mensajes` — `2026_08_04_180000_create_feedbacks_table.php`.
@@ -226,11 +229,11 @@ erDiagram
 ### 5.1 Motor de WhatsApp (`wa-motor/`)
 - **[HECHO]** Node.js con `whatsapp-web.js ^1.34.7`, `puppeteer ^22.12.0`, `mysql2`, `pg`, `qrcode` (`wa-motor/package.json`).
 - **[HECHO]** Selecciona MySQL o PostgreSQL según `DB_CONNECTION` (`wa-motor/index.js:16,72-91`); adapta placeholders `$n` → `?` para MySQL (`wa-motor/index.js:99`).
-- **[HECHO]** Bucle `setInterval` cada 5000 ms con candado `isProcessing` (`wa-motor/index.js:618-732`): lee 5 pendientes (L625), envía texto y, si hay `pdf_path`, adjunta `MessageMedia` (L650-717), marca `enviado`/`fallido`.
+- **[HECHO]** Bucle `setInterval` cada 5000 ms con candado `isProcessing` (`wa-motor/index.js:618-732`): lee 5 pendientes (L625), envía texto y, si hay `pdf_path`, adjunta `MessageMedia` (L650-717), registra `enviado`/`fallido`, `error_message` y `attempts`.
 - **[HECHO]** Escribe el QR en una ruta absoluta de la máquina del desarrollador (`wa-motor/index.js:371,404`).
 - **[HECHO]** Credenciales PostgreSQL de respaldo **hardcodeadas** en `getPgPoolConfig()` (`wa-motor/index.js:44,49`). Valor omitido en esta documentación.
-- **[HECHO]** Laravel arranca/reinicia el proceso con `shell_exec`/`exec` (`pgrep`, `pm2`, `pkill`, `nohup node`) — `app/Http/Controllers/ConfiguracionController.php:131-134,176,219-220`.
-- **[HECHO]** Productores de la cola: `PedidoController.php:203,240,268,285,461,469,489`, `ClienteController.php` (credenciales), `Venta::notificarAdminWhatsApp` (`app/Models/Venta.php:52`), `Feedback::notificarAdminWhatsApp` (`app/Models/Feedback.php:66`), `PagoVendedorController::notificarLiquidacionWhatsApp` (`app/Http/Controllers/PagoVendedorController.php:230`), comandos `whatsapp:recordatorios` y `wa:send`.
+- **[HECHO]** Laravel separa productores y consumidor mediante `WhatsAppNotificationService`; el comando `whatsapp:process-pending` supervisa/reintenta fallos para que el mismo motor Node los entregue, sin enviar WhatsApp directamente desde una petición web o un segundo consumidor.
+- **[HECHO]** Productores de la cola incluyen pedidos, clientes, ventas, entradas, comprobantes, feedback, pagos de vendedor y comandos de recordatorios; todos llaman el servicio compartido.
 - **[HECHO]** `NotificationCircuitBreakerService` cancela mensajes duplicados (`status = 'cancelado'`) — `app/Services/NotificationCircuitBreakerService.php:52-66`.
 
 ### 5.2 OCR de comprobantes
