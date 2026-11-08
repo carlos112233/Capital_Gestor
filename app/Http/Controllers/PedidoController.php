@@ -76,9 +76,9 @@ class PedidoController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'pedidos'               => 'required|array|min:1',
             'pedidos.*.articulo_id' => 'required|exists:articulos,id',
             'pedidos.*.cantidad'    => 'required|integer|min:1',
-            'pedidos.*.costo'       => 'required|numeric|min:1',
             'pedidos.*.descripcion' => 'nullable|string',
             'pedidos.*.user_id'      => 'nullable|exists:users,id',
         ]);
@@ -128,8 +128,10 @@ class PedidoController extends Controller
 
         $totalPedidoGlobal = 0;
 
-        foreach ($request->pedidos as $p) {
-            $total = $p['costo'] * $p['cantidad'];
+        foreach ($validated['pedidos'] as $p) {
+            $articulo = Articulo::findOrFail($p['articulo_id']);
+            $precioUnitario = (float) $articulo->precio;
+            $total = $precioUnitario * (int) $p['cantidad'];
             $totalPedidoGlobal += $total;
             $targetUserId = $p['user_id'] ?? $userId;
 
@@ -138,7 +140,7 @@ class PedidoController extends Controller
                 'comprador_id' => Auth::id(),
                 'articulo_id'  => $p['articulo_id'],
                 'cantidad'     => $p['cantidad'],
-                'precio_venta' => $p['costo'],
+                'precio_venta' => $precioUnitario,
                 'total_venta'  => $total,
                 'descripcion'  => $p['descripcion'] ?? '',
             ]);
@@ -331,10 +333,10 @@ class PedidoController extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
+            'pedidos'               => 'required|array|min:1',
             'pedidos.*.id'           => 'nullable|exists:pedidos,id',
             'pedidos.*.articulo_id'  => 'required|exists:articulos,id',
             'pedidos.*.cantidad'     => 'required|integer|min:1',
-            'pedidos.*.costo'        => 'required|numeric|min:1',
             'pedidos.*.descripcion'  => 'nullable|string',
             'pedidos.*.user_id'      => 'nullable|exists:users,id',
         ]);
@@ -370,8 +372,10 @@ class PedidoController extends Controller
         $tieneCemitas = false;
         $clienteNombreResumen = 'Cliente';
 
-        foreach ($request->pedidos as $p) {
-            $total = $p['costo'] * $p['cantidad'];
+        foreach ($validated['pedidos'] as $p) {
+            $articulo = Articulo::findOrFail($p['articulo_id']);
+            $precioUnitario = (float) $articulo->precio;
+            $total = $precioUnitario * (int) $p['cantidad'];
 
             if (!empty($p['id'])) {
                 $pedidoExistente = Pedido::find($p['id']);
@@ -387,7 +391,7 @@ class PedidoController extends Controller
                     $pedidoExistente->venta()->update([
                         'articulo_id'  => $p['articulo_id'],
                         'cantidad'     => $p['cantidad'],
-                        'precio_venta' => $p['costo'],
+                        'precio_venta' => $precioUnitario,
                         'total_venta'  => $total,
                         'user_id'     => $p['user_id'] ?? $userId,
                         'descripcion'  => $p['descripcion'] ?? '',
@@ -400,7 +404,7 @@ class PedidoController extends Controller
                     'comprador_id' => Auth::id(),
                     'articulo_id'  => $p['articulo_id'],
                     'cantidad'     => $p['cantidad'],
-                    'precio_venta' => $p['costo'],
+                    'precio_venta' => $precioUnitario,
                     'total_venta'  => $total,
                     'descripcion'  => $p['descripcion'] ?? '',
                 ]);

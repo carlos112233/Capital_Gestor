@@ -95,7 +95,6 @@ class VentaController extends Controller
             'articulo_id'  => 'required|exists:articulos,id',
             'cantidad'     => 'required|integer|min:1',
             'cliente_id'   => 'nullable|exists:users,id',
-            'precio_venta' => 'nullable|numeric|min:0',
             'descripcion'  => 'nullable|string',
         ]);
 
@@ -125,12 +124,8 @@ class VentaController extends Controller
                     $articulo->save();
                 }
 
-                // 5. Blindaje de precio maestro: usar el precio de la base de datos por defecto
+                // El precio siempre proviene del catálogo, nunca del payload.
                 $precioUnitario = (float) $articulo->precio;
-                if (Auth::user()->hasRole('admin') && isset($validated['precio_venta']) && is_numeric($validated['precio_venta'])) {
-                    // Solo administradores pueden aplicar un precio o descuento especial
-                    $precioUnitario = (float) $validated['precio_venta'];
-                }
                 $totalVenta = $precioUnitario * $cantidadVenta;
 
                 $venta = $articulo->ventas()->create([
@@ -197,7 +192,6 @@ class VentaController extends Controller
             'ventas'               => 'required|array|min:1',
             'ventas.*.articulo_id' => 'required|exists:articulos,id',
             'ventas.*.cantidad'    => 'required|integer|min:1',
-            'ventas.*.precio'      => 'nullable|numeric|min:0',
             'ventas.*.user_id'     => 'nullable|exists:users,id',
             'ventas.*.descripcion' => 'nullable|string',
             'redirect_to'          => 'nullable|string'
@@ -231,11 +225,7 @@ class VentaController extends Controller
                         $articulo->save();
                     }
 
-                    // Blindaje de precio maestro por artículo en el carrito
                     $precioUnitario = (float) $articulo->precio;
-                    if ($isAdmin && isset($ventaData['precio']) && is_numeric($ventaData['precio'])) {
-                        $precioUnitario = (float) $ventaData['precio'];
-                    }
 
                     $totalVenta = $precioUnitario * $cantidadVenta;
                     $totalCarrito += $totalVenta;
@@ -329,7 +319,6 @@ class VentaController extends Controller
             'articulo_id'  => 'required|exists:articulos,id',
             'cantidad'     => 'required|integer|min:1',
             'cliente_id'   => 'nullable|exists:users,id',
-            'precio_venta' => 'nullable|numeric|min:0',
             'descripcion'  => 'nullable|string',
         ]);
 
@@ -379,12 +368,8 @@ class VentaController extends Controller
                     $articuloTarget = $articulo;
                 }
 
-                // Blindaje de precio maestro en actualización
+                // El precio siempre proviene del artículo bloqueado en inventario.
                 $precioUnitario = (float) $articuloTarget->precio;
-                if ($authUser->hasRole('admin') && isset($validated['precio_venta']) && is_numeric($validated['precio_venta'])) {
-                    $precioUnitario = (float) $validated['precio_venta'];
-                }
-
                 $total = $precioUnitario * $nuevaCantidad;
 
                 // 2. Actualizar la Venta

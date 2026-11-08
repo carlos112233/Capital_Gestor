@@ -151,7 +151,7 @@
                             </div>
                             <div>
                                 <label class="block font-bold text-gray-700 text-sm">Precio Unit.</label>
-                                <input type="number" step="0.01" name="ventas[0][precio]" class="precio-input-venta w-full border-gray-300 rounded-lg text-sm" required>
+                                <input type="number" step="0.01" class="precio-input-venta w-full border-gray-300 rounded-lg text-sm bg-gray-50" readonly>
                             </div>
                         </div>
                         <div class="mb-2">

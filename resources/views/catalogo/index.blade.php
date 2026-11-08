@@ -98,7 +98,7 @@
 
                     <div>
                         <label class="block text-gray-700 font-bold mb-2">Precio Unitario ($)</label>
-                        <input type="number" step="0.01" name="precio_venta" id="modal_vender_precio" class="w-full border-gray-300 rounded-lg shadow-sm" required>
+                        <input type="number" step="0.01" id="modal_vender_precio" class="w-full border-gray-300 rounded-lg shadow-sm bg-gray-50" readonly>
                     </div>
                 </div>
 
@@ -168,7 +168,7 @@
                             </div>
                             <div>
                                 <label class="block font-bold text-gray-700 text-sm">Precio Unit.</label>
-                                <input type="number" step="0.01" name="ventas[0][precio]" class="precio-input-venta w-full border-gray-300 rounded-lg text-sm" required>
+                                <input type="number" step="0.01" class="precio-input-venta w-full border-gray-300 rounded-lg text-sm bg-gray-50" readonly>
                             </div>
                         </div>
                         <div class="mb-2">

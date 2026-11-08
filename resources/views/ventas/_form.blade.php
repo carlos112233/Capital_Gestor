@@ -1,6 +1,8 @@
 {{-- resources/views/ventas/_form.blade.php --}}
 @php
     $articuloId = $articuloId ?? null;
+    $selectedArticuloId = old('articulo_id', $venta->articulo_id ?? $articuloId);
+    $selectedArticulo = $articulos->firstWhere('id', $selectedArticuloId);
 @endphp
 
 <div class="mb-4">
@@ -10,6 +12,7 @@
         @foreach ($articulos as $articulo)
             @if($articulo->nombre != "Pago saldado")
             <option value="{{ $articulo->id }}"
+                data-precio="{{ $articulo->precio }}"
                 {{ old('articulo_id', $venta->articulo_id ?? $articuloId ?? '') == $articulo->id ? 'selected' : '' }}>
                 {{ $articulo->nombre }}
             </option>
@@ -23,12 +26,8 @@
 
 <div class="mb-4">
     <label class="block text-gray-700 font-bold mb-2">Precio de Venta</label>
-    <input type="number" step="0.01" name="precio_venta"
-        class="w-full border-gray-300 rounded-lg shadow-sm"
-        value="{{ old('precio_venta', $venta->precio_venta ?? ($articuloId ? $articulos->find($articuloId)->precio : '')) }}" required>
-    @error('precio_venta')
-        <span class="text-red-600 text-sm">{{ $message }}</span>
-    @enderror
+    <input type="number" step="0.01" class="precio-venta-display w-full border-gray-300 rounded-lg shadow-sm bg-gray-50"
+        value="{{ $selectedArticulo?->precio ?? '' }}" readonly>
 </div>
 
 <div class="mb-4">
@@ -91,15 +90,15 @@
     if (!form) return;
 
     const articuloSelect = form.querySelector('[name="articulo_id"]');
-    const precioInput = form.querySelector('[name="precio_venta"]');
+    const precioInput = form.querySelector('.precio-venta-display');
 
     if (articuloSelect && precioInput) {
-        articuloSelect.addEventListener('change', function() {
-            const selectedId = this.value;
-            if (precios[selectedId]) {
-                precioInput.value = parseFloat(precios[selectedId]).toFixed(2);
-            }
-        });
+        const actualizarPrecio = function() {
+            const precio = precios[articuloSelect.value];
+            precioInput.value = precio === undefined ? '' : parseFloat(precio).toFixed(2);
+        };
+        articuloSelect.addEventListener('change', actualizarPrecio);
+        actualizarPrecio();
     }
 })();
 </script>

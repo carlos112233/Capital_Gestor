@@ -54,6 +54,7 @@
                     @foreach ($articulos as $articulo)
                         @if ($articulo->nombre !== 'Pago saldado')
                             <option value="{{ $articulo->id }}"
+                                data-precio="{{ $articulo->precio }}"
                                 {{ old("pedidos.$i.articulo_id", $p['articulo_id'] ?? '') == $articulo->id ? 'selected' : '' }}>
                                 {{ $articulo->nombre }}
                             </option>
@@ -73,15 +74,8 @@
             {{-- Costo --}}
             <div class="mb-2">
                 <label class="block font-bold text-gray-700">Costo unitario</label>
-                @if (Auth::user()->hasRole('admin'))
-                    <input type="number" name="pedidos[{{ $i }}][costo]"
-                        class="costo-input w-full border-gray-300 rounded-lg"
-                        value="{{ old("pedidos.$i.costo", $p['costo'] ?? '') }}" required>
-                @else
-                    <input type="number" name="pedidos[{{ $i }}][costo]"
-                        class="costo-input w-full border-gray-300 rounded-lg bg-gray-50"
-                        value="{{ old("pedidos.$i.costo", $p['costo'] ?? '') }}" readonly required>
-                @endif
+                <input type="number" class="costo-input w-full border-gray-300 rounded-lg bg-gray-50"
+                    value="{{ $articulos->firstWhere('id', old("pedidos.$i.articulo_id", $p['articulo_id'] ?? ''))?->precio ?? '' }}" readonly>
             </div>
 
             {{-- Descripción --}}

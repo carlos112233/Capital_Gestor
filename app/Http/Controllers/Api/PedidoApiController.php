@@ -60,7 +60,6 @@ class PedidoApiController extends Controller
             'pedidos' => 'required|array|min:1',
             'pedidos.*.articulo_id' => 'required|exists:articulos,id',
             'pedidos.*.cantidad'    => 'required|integer|min:1',
-            'pedidos.*.costo'       => 'required|numeric|min:1',
             'pedidos.*.descripcion' => 'nullable|string',
             'pedidos.*.user_id'     => 'nullable|exists:users,id',
         ]);
@@ -75,14 +74,17 @@ class PedidoApiController extends Controller
                         ? ($p['user_id'] ?? Auth::id())
                         : Auth::id();
 
-                    $total = $p['costo'] * $p['cantidad'];
+                    $articulo = Articulo::lockForUpdate()->findOrFail($p['articulo_id']);
+                    $precioUnitario = (float) $articulo->precio;
+                    $cantidad = (int) $p['cantidad'];
+                    $total = $precioUnitario * $cantidad;
 
                     // 1. Crear la venta
                     $venta = Venta::create([
                         'user_id'      => $userId,
-                        'articulo_id'  => $p['articulo_id'],
-                        'cantidad'     => $p['cantidad'],
-                        'precio_venta' => $p['costo'],
+                        'articulo_id'  => $articulo->id,
+                        'cantidad'     => $cantidad,
+                        'precio_venta' => $precioUnitario,
                         'total_venta'  => $total,
                         'descripcion'  => $p['descripcion'] ?? '',
                     ]);
@@ -90,11 +92,11 @@ class PedidoApiController extends Controller
                     // 2. Crear el pedido
                     $pedido = Pedido::create([
                         'user_id'     => $userId,
-                        'articulo_id' => $p['articulo_id'],
+                        'articulo_id' => $articulo->id,
                         'descripcion' => $p['descripcion'] ?? '',
                         'costo'       => $total,
                         'venta_id'    => $venta->id,
-                        'cantidad'    => $p['cantidad'],
+                        'cantidad'    => $cantidad,
                     ]);
 
                     // 3. Notificación (Opcional: puedes moverlo fuera del loop o usar colas)
@@ -140,7 +142,6 @@ class PedidoApiController extends Controller
             'pedidos.*.id'           => 'nullable|exists:pedidos,id',
             'pedidos.*.articulo_id'  => 'required|exists:articulos,id',
             'pedidos.*.cantidad'     => 'required|integer|min:1',
-            'pedidos.*.costo'        => 'required|numeric|min:1',
             'pedidos.*.descripcion'  => 'nullable|string',
             'pedidos.*.user_id'      => 'nullable|exists:users,id',
         ]);
@@ -149,7 +150,10 @@ class PedidoApiController extends Controller
             $actualizados = DB::transaction(function () use ($request) {
                 $lista = [];
                 foreach ($request->pedidos as $p) {
-                    $total = $p['costo'] * $p['cantidad'];
+                    $articulo = Articulo::lockForUpdate()->findOrFail($p['articulo_id']);
+                    $precioUnitario = (float) $articulo->precio;
+                    $cantidad = (int) $p['cantidad'];
+                    $total = $precioUnitario * $cantidad;
                     $userId = Auth::user()->hasRole('admin') ? ($p['user_id'] ?? Auth::id()) : Auth::id();
 
                     if (!empty($p['id'])) {
@@ -168,9 +172,9 @@ class PedidoApiController extends Controller
 
                         if ($pedido->venta) {
                             $pedido->venta->update([
-                                'articulo_id'  => $p['articulo_id'],
-                                'cantidad'     => $p['cantidad'],
-                                'precio_venta' => $p['costo'],
+                                'articulo_id'  => $articulo->id,
+                                'cantidad'     => $cantidad,
+                                'precio_venta' => $precioUnitario,
                                 'total_venta'  => $total,
                                 'user_id'      => $userId,
                                 'descripcion'  => $p['descripcion'] ?? '',

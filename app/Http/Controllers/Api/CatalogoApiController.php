@@ -48,7 +48,6 @@ class CatalogoApiController extends Controller
             'articulo_id'  => 'required|exists:articulos,id',
             'cantidad'     => 'required|integer|min:1',
             'cliente_id'   => 'required|exists:clientes,id',
-            'precio_venta' => 'nullable|numeric|min:0',
             'descripcion'  => 'nullable|string',
         ]);
 
@@ -66,11 +65,8 @@ class CatalogoApiController extends Controller
                 // Descontar stock
                 $articulo->decrement('stock', $cantidadVenta);
 
-                // Blindaje de precio maestro: por defecto precio de catálogo
+                // El precio maestro del catálogo es la única fuente autorizada.
                 $precioUnitario = (float) $articulo->precio;
-                if (Auth::user()->hasRole('admin') && isset($validated['precio_venta']) && is_numeric($validated['precio_venta'])) {
-                    $precioUnitario = (float) $validated['precio_venta'];
-                }
                 $totalVenta = $precioUnitario * $cantidadVenta;
 
                 // Registrar venta

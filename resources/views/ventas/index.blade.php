@@ -144,7 +144,7 @@
             if (title) title.textContent = "Editar Venta #" + venta.id;
 
             const articuloSelect = form.querySelector('[name="articulo_id"]');
-            const precioInput = form.querySelector('[name="precio_venta"]');
+            const precioInput = form.querySelector('.precio-venta-display');
             const cantidadInput = form.querySelector('[name="cantidad"]');
             const clienteSelect = form.querySelector('[name="cliente_id"]');
             const descripcionInput = form.querySelector('[name="descripcion"]');
@@ -161,12 +161,14 @@
                 } else {
                     let exists = Array.from(articuloSelect.options).some(opt => opt.value == venta.articulo_id);
                     if (venta.articulo_id && !exists) {
-                        articuloSelect.add(new Option(venta.articulo_nombre || ('Artículo #' + venta.articulo_id), venta.articulo_id));
+                        const option = new Option(venta.articulo_nombre || ('Artículo #' + venta.articulo_id), venta.articulo_id);
+                        option.dataset.precio = venta.articulo_precio || '';
+                        articuloSelect.add(option);
                     }
                     articuloSelect.value = venta.articulo_id || '';
                 }
             }
-            if (precioInput) precioInput.value = parseFloat(venta.precio_venta || 0).toFixed(2);
+            if (precioInput) precioInput.value = parseFloat(venta.articulo_precio || 0).toFixed(2);
             if (cantidadInput) cantidadInput.value = venta.cantidad || 1;
             if (clienteSelect) {
                 if (clienteSelect.tomselect) clienteSelect.tomselect.setValue(venta.user_id || '');

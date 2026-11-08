@@ -146,7 +146,6 @@ $q->where('user_id', $userNav->id)->orWhere('cliente_id', $userNav->id);
                                 <div>
                                     <input type="hidden" :name="`ventas[${index}][articulo_id]`" :value="item.id">
                                     <input type="hidden" :name="`ventas[${index}][cantidad]`" :value="item.cantidad">
-                                    <input type="hidden" :name="`ventas[${index}][precio]`" :value="item.precio">
                                 </div>
                             </template>
                             <button type="submit" :disabled="items.length === 0"
