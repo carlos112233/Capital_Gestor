@@ -95,7 +95,7 @@ class VentaController extends Controller
             'articulo_id'  => 'required|exists:articulos,id',
             'cantidad'     => 'required|integer|min:1',
             'cliente_id'   => 'nullable|exists:users,id',
-            'precio_venta' => 'required|numeric|min:0',
+            'precio_venta' => 'nullable|numeric|min:0',
             'descripcion'  => 'nullable|string',
         ]);
 
@@ -125,14 +125,19 @@ class VentaController extends Controller
                     $articulo->save();
                 }
 
-                // 5. Cálculo exacto y registro de venta
-                $totalVenta = ((float) $validated['precio_venta']) * $cantidadVenta;
+                // 5. Blindaje de precio maestro: usar el precio de la base de datos por defecto
+                $precioUnitario = (float) $articulo->precio;
+                if (Auth::user()->hasRole('admin') && isset($validated['precio_venta']) && is_numeric($validated['precio_venta'])) {
+                    // Solo administradores pueden aplicar un precio o descuento especial
+                    $precioUnitario = (float) $validated['precio_venta'];
+                }
+                $totalVenta = $precioUnitario * $cantidadVenta;
 
                 $venta = $articulo->ventas()->create([
                     'user_id'      => $finalUserId,
                     'comprador_id' => (int) Auth::id(),
                     'cantidad'     => $cantidadVenta,
-                    'precio_venta' => $validated['precio_venta'],
+                    'precio_venta' => $precioUnitario,
                     'total_venta'  => $totalVenta,
                     'descripcion'  => $validated['descripcion'] ?? null,
                 ]);
@@ -192,7 +197,7 @@ class VentaController extends Controller
             'ventas'               => 'required|array|min:1',
             'ventas.*.articulo_id' => 'required|exists:articulos,id',
             'ventas.*.cantidad'    => 'required|integer|min:1',
-            'ventas.*.precio'      => 'required|numeric|min:0',
+            'ventas.*.precio'      => 'nullable|numeric|min:0',
             'ventas.*.user_id'     => 'nullable|exists:users,id',
             'ventas.*.descripcion' => 'nullable|string',
             'redirect_to'          => 'nullable|string'
@@ -226,14 +231,20 @@ class VentaController extends Controller
                         $articulo->save();
                     }
 
-                    $totalVenta = ((float) $ventaData['precio']) * $cantidadVenta;
+                    // Blindaje de precio maestro por artículo en el carrito
+                    $precioUnitario = (float) $articulo->precio;
+                    if ($isAdmin && isset($ventaData['precio']) && is_numeric($ventaData['precio'])) {
+                        $precioUnitario = (float) $ventaData['precio'];
+                    }
+
+                    $totalVenta = $precioUnitario * $cantidadVenta;
                     $totalCarrito += $totalVenta;
 
                     $venta = $articulo->ventas()->create([
                         'user_id'      => $finalUserId,
                         'comprador_id' => $authUserId,
                         'cantidad'     => $cantidadVenta,
-                        'precio_venta' => $ventaData['precio'],
+                        'precio_venta' => $precioUnitario,
                         'total_venta'  => $totalVenta,
                         'descripcion'  => $ventaData['descripcion'] ?? null,
                     ]);
@@ -318,7 +329,7 @@ class VentaController extends Controller
             'articulo_id'  => 'required|exists:articulos,id',
             'cantidad'     => 'required|integer|min:1',
             'cliente_id'   => 'nullable|exists:users,id',
-            'precio_venta' => 'required|numeric|min:0',
+            'precio_venta' => 'nullable|numeric|min:0',
             'descripcion'  => 'nullable|string',
         ]);
 
@@ -338,6 +349,7 @@ class VentaController extends Controller
                 $nuevaCantidad = (int) $validated['cantidad'];
 
                 // 1. Ajuste de stock si se cambia de artículo o de cantidad
+                $articuloTarget = null;
                 if ($venta->articulo_id != $validated['articulo_id']) {
                     $articuloAnterior = Articulo::lockForUpdate()->findOrFail($venta->articulo_id);
                     $articuloAnterior->increment('stock', $cantidadAnterior);
@@ -349,6 +361,7 @@ class VentaController extends Controller
                         ]);
                     }
                     $nuevoArticulo->decrement('stock', $nuevaCantidad);
+                    $articuloTarget = $nuevoArticulo;
                 } else {
                     $articulo = Articulo::lockForUpdate()->findOrFail($venta->articulo_id);
                     $diferencia = $nuevaCantidad - $cantidadAnterior;
@@ -363,15 +376,22 @@ class VentaController extends Controller
                     } elseif ($diferencia < 0) {
                         $articulo->increment('stock', abs($diferencia));
                     }
+                    $articuloTarget = $articulo;
                 }
 
-                $total = ((float) $validated['precio_venta']) * $nuevaCantidad;
+                // Blindaje de precio maestro en actualización
+                $precioUnitario = (float) $articuloTarget->precio;
+                if ($authUser->hasRole('admin') && isset($validated['precio_venta']) && is_numeric($validated['precio_venta'])) {
+                    $precioUnitario = (float) $validated['precio_venta'];
+                }
+
+                $total = $precioUnitario * $nuevaCantidad;
 
                 // 2. Actualizar la Venta
                 $venta->update([
                     'articulo_id'  => $validated['articulo_id'],
                     'cantidad'     => $nuevaCantidad,
-                    'precio_venta' => $validated['precio_venta'],
+                    'precio_venta' => $precioUnitario,
                     'total_venta'  => $total,
                     'user_id'      => $userId,
                     'descripcion'  => $validated['descripcion'] ?? null,

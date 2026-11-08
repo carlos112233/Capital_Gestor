@@ -50,7 +50,7 @@ class CatalogoController extends Controller
             'articulo_id' => 'required|exists:articulos,id',
             'cantidad' => 'required|integer|min:1',
             'cliente_id' => 'nullable|exists:users,id',
-            'precio_venta' => 'required|numeric|min:0',
+            'precio_venta' => 'nullable|numeric|min:0',
             'descripcion' => 'nullable|string',
         ]);
 
@@ -75,8 +75,13 @@ class CatalogoController extends Controller
                 // 1. Disminuir el stock del artículo
                 $articulo->decrement('stock', $cantidadVenta);
 
-                // 2. Registrar la venta en la tabla 'ventas'
-                $precioUnitario = (float) $validated['precio_venta'];
+                // 2. Blindaje de precio maestro: por defecto usar el precio oficial del catálogo en BD
+                $precioUnitario = (float) $articulo->precio;
+                if (Auth::user()->hasRole('admin') && isset($validated['precio_venta']) && is_numeric($validated['precio_venta'])) {
+                    // Solo el Administrador puede aplicar un ajuste o precio manual validado
+                    $precioUnitario = (float) $validated['precio_venta'];
+                }
+
                 $venta = $articulo->ventas()->create([
                     'user_id'      => $finalUserId,
                     'comprador_id' => (int) Auth::id(),
