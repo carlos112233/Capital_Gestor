@@ -48,7 +48,7 @@ class EnviarRecordatoriosMasivos extends Command
                 $num = preg_replace('/[^0-9]/', '', $user->telefono);
                 $num = (strlen($num) == 10) ? '521' . $num : $num;
 
-                \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                     'numero' => $num,
                     'mensaje' => $mensaje,
                     'pdf_path' => $pdfPath,

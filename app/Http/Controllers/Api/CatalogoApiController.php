@@ -25,10 +25,9 @@ class CatalogoApiController extends Controller
             ->where('nombre', '!=', 'Pago saldado')
             ->where('stock', '>=', 1);
 
-        // 2. Ajuste para PostgreSQL: ILIKE
-        // En Postgres, 'like' es sensible a mayúsculas. 'ilike' es la versión rápida que ignora mayúsculas.
+        // 2. Búsqueda compatible con MySQL y PostgreSQL
         if ($request->filled('q')) {
-            $query->where('nombre', 'ilike', '%' . $request->q . '%');
+            $query->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($request->q) . '%']);
         }
 
         // 3. Ejecución ultra ligera y ordenada

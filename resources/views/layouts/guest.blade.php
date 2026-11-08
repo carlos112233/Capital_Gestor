@@ -277,7 +277,7 @@
                             {{ $appSettings->app_name ?? 'EL BAJÓN' }}
                         </span>
                         <span class="text-amber-400 font-extrabold text-[10px] tracking-widest uppercase mt-0.5" style="color: #fbbf24; font-weight: 800; font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; line-height: 1;">
-                            HAMBURGUESAS &amp; PANADERÍA
+                            {{ $appSettings->tagline ?? $appSettings->nombre_empresa ?? 'SERVICIO AUTOMOTRIZ' }}
                         </span>
                     </div>
                 </a>

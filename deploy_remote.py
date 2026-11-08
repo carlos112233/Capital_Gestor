@@ -1,15 +1,24 @@
 import pexpect
 import sys
+import os
 
 def run_remote_cmd(cmd, timeout=60):
+    server_ip = os.getenv("DEPLOY_SERVER_IP", "206.81.14.81")
+    ssh_user = os.getenv("DEPLOY_SSH_USER", "root")
+    ssh_password = os.getenv("DEPLOY_SSH_PASSWORD")
+
+    if not ssh_password:
+        print("ERROR: Variable de entorno DEPLOY_SSH_PASSWORD no configurada.")
+        sys.exit(1)
+
     print(f"\n==========================================")
     print(f"Executing Remote: {cmd}")
     print(f"==========================================")
-    ssh_cmd = f'ssh -o StrictHostKeyChecking=no root@206.81.14.81 "cd /var/www/capital_gestor && {cmd}"'
+    ssh_cmd = f'ssh -o StrictHostKeyChecking=no {ssh_user}@{server_ip} "cd /var/www/capital_gestor && {cmd}"'
     child = pexpect.spawn(ssh_cmd, timeout=timeout)
     idx = child.expect(['[pP]assword:', pexpect.EOF, pexpect.TIMEOUT])
     if idx == 0:
-        child.sendline('C@rlosAr4iza')
+        child.sendline(ssh_password)
         child.expect(pexpect.EOF)
         output = child.before.decode('utf-8', errors='ignore')
         print(output)

@@ -81,10 +81,10 @@ class ClienteController extends Controller
 
         $waEnviado = false;
         if ($request->boolean('send_whatsapp_credentials') && !empty($cliente->telefono)) {
-            $waEnviado = $this->queueWhatsAppCredentials($cliente, $rawPassword, $roleName);
+            $waEnviado = $this->queueWhatsAppWelcomeNotification($cliente, $roleName);
         }
 
-        $mensajeExito = 'Usuario creado correctamente' . ($waEnviado ? ' y accesos encolados por WhatsApp.' : '.');
+        $mensajeExito = 'Usuario creado correctamente' . ($waEnviado ? ' y notificación de bienvenida encolada por WhatsApp.' : '.');
 
         return redirect()->route('admin.clientes.index')
             ->with('success', $mensajeExito);
@@ -145,7 +145,7 @@ class ClienteController extends Controller
         }
 
         if ($request->boolean('send_whatsapp_credentials') && !empty($cliente->telefono)) {
-            $this->queueWhatsAppCredentials($cliente, $rawPassword ?? 'Su contraseña actual', $roleName);
+            $this->queueWhatsAppWelcomeNotification($cliente, $roleName);
         }
 
         return redirect()->route('admin.clientes.index')
@@ -166,16 +166,14 @@ class ClienteController extends Controller
             $cliente->update([
                 'password' => Hash::make($passwordText),
             ]);
-        } else {
-            $passwordText = 'Su contraseña asignada';
         }
 
-        $this->queueWhatsAppCredentials($cliente, $passwordText);
+        $this->queueWhatsAppWelcomeNotification($cliente);
 
-        return back()->with('success', 'Mensaje de accesos por WhatsApp encolado correctamente para ' . $cliente->name . '.');
+        return back()->with('success', 'Notificación de bienvenida y acceso por WhatsApp encolada correctamente para ' . $cliente->name . '.');
     }
 
-    private function queueWhatsAppCredentials(User $cliente, string $password, ?string $roleName = null): bool
+    private function queueWhatsAppWelcomeNotification(User $cliente, ?string $roleName = null): bool
     {
         $phone = preg_replace('/[^0-9]/', '', (string) $cliente->telefono);
         if (empty($phone)) return false;
@@ -186,17 +184,21 @@ class ClienteController extends Controller
         }
 
         $rolAsignado = ucfirst($roleName ?? $cliente->roles()->first()?->name ?? 'cliente');
+        $appName = \App\Models\AppSetting::getSettings()->app_name ?? config('app.name', 'Capital Gestor');
 
-        $mensaje = "🔐 *ACCESOS DE CUENTA - El Bajón*\n\n" .
+        $mensaje = "👋 *BIENVENIDO(A) - {$appName}*\n\n" .
                    "Hola *{$cliente->name}*,\n" .
-                   "Tus credenciales de acceso a la plataforma son:\n\n" .
+                   "Tu cuenta en nuestra plataforma ha sido habilitada exitosamente.\n\n" .
                    "👤 *Usuario/Email:* {$cliente->email}\n" .
-                   "🔑 *Contraseña:* {$password}\n" .
-                   "🏷️ *Tu rol asignado es:* {$rolAsignado}\n\n" .
+                   "🏷️ *Rol asignado:* {$rolAsignado}\n\n" .
+                   "🔐 *Acceso a tu cuenta:*\n" .
+                   "Por tu seguridad, nunca enviamos contraseñas por este medio.\n" .
+                   "Si requieres establecer o recuperar tu contraseña, haz clic aquí:\n" .
+                   url('/forgot-password') . "\n\n" .
                    "🌐 *Iniciar Sesión:* " . url('/login') . "\n\n" .
-                   "¡Gracias por formar parte de El Bajón!";
+                   "¡Gracias por formar parte de {$appName}!";
 
-        DB::table('whatsapp_pending_messages')->insert([
+        app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
             'numero'     => $phone,
             'mensaje'    => $mensaje,
             'status'     => 'pendiente',

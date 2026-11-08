@@ -38,11 +38,11 @@ class PedidoApiController extends Controller
             $query->where('user_id', $user->id);
         }
 
-        // Búsqueda rápida con ILIKE (específico de Postgres)
+        // Búsqueda compatible con MySQL y PostgreSQL
         if ($request->filled('q')) {
-            $search = $request->input('q');
+            $search = '%' . strtolower($request->input('q')) . '%';
             $query->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'ILIKE', "%$search%");
+                $q->whereRaw('LOWER(name) LIKE ?', [$search]);
             });
         }
 

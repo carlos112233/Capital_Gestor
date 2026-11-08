@@ -90,7 +90,7 @@ class Venta extends Model
                          "_Enviado por {$appName}_";
 
             foreach ($adminPhones as $telAdmin) {
-                \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                     'numero'     => $telAdmin,
                     'mensaje'    => $mensajeWa,
                     'status'     => 'pendiente',
@@ -175,7 +175,7 @@ class Venta extends Model
                          "_Enviado por {$appName}_";
 
             foreach ($adminPhones as $telAdmin) {
-                \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                     'numero'     => $telAdmin,
                     'mensaje'    => $mensajeWa,
                     'status'     => 'pendiente',

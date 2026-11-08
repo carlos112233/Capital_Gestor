@@ -237,7 +237,7 @@ class DashboardController extends Controller
             }
 
             // Insertamos en la tabla para que el motor de Node.js de WhatsApp adjunte el PDF y envíe el texto completo
-            DB::table('whatsapp_pending_messages')->insert([
+            app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                 'numero' => $this->formatearNumero($user->telefono),
                 'mensaje' => $mensaje,
                 'pdf_path' => $pdfPath,

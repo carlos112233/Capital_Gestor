@@ -8,9 +8,113 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Process;
 
 class ConfiguracionController extends Controller
 {
+    protected function resolveNodeBinary(): ?string
+    {
+        $candidates = [
+            env('WA_MOTOR_NODE_BIN'),
+            env('NODE_BIN'),
+            '/usr/local/bin/node',
+            '/usr/bin/node',
+            '/bin/node',
+            '/opt/homebrew/bin/node',
+        ];
+
+        $candidates = array_filter($candidates, fn ($candidate) => is_string($candidate) && trim($candidate) !== '');
+
+        foreach ($candidates as $candidate) {
+            $normalized = trim((string) $candidate);
+            $path = preg_replace('/\s+.+$/', '', $normalized) ?: $normalized;
+            if (is_executable($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    protected function resolveNpmBinary(): ?string
+    {
+        $candidates = [
+            env('WA_MOTOR_NPM_BIN'),
+            env('NPM_BIN'),
+            '/usr/local/bin/npm',
+            '/usr/bin/npm',
+            '/bin/npm',
+            '/opt/homebrew/bin/npm',
+        ];
+
+        $candidates = array_filter($candidates, fn ($candidate) => is_string($candidate) && trim($candidate) !== '');
+
+        foreach ($candidates as $candidate) {
+            $normalized = trim((string) $candidate);
+            $path = preg_replace('/\s+.+$/', '', $normalized) ?: $normalized;
+            if (is_executable($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    protected function resolveMotorScriptPath(): ?string
+    {
+        $scriptPath = base_path('wa-motor/index.js');
+        $realScript = realpath($scriptPath);
+
+        if ($realScript === false || !is_file($realScript)) {
+            return null;
+        }
+
+        $basePath = realpath(base_path());
+        if ($basePath === false) {
+            return null;
+        }
+
+        $normalizedBase = rtrim($basePath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        if (!str_starts_with($realScript, $normalizedBase)) {
+            return null;
+        }
+
+        return $realScript;
+    }
+
+    protected function ensureWaMotorIsRunning(): void
+    {
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            return;
+        }
+
+        $nodeBinary = $this->resolveNodeBinary();
+        $scriptPath = $this->resolveMotorScriptPath();
+
+        if ($nodeBinary === null || $scriptPath === null) {
+            return;
+        }
+
+        $pgrep = Process::timeout(5)->run(['pgrep', '-f', 'wa-motor/index.js']);
+        if ($pgrep->exitCode() === 0 && trim($pgrep->output()) !== '') {
+            return;
+        }
+
+        $process = Process::path(dirname($scriptPath))->timeout(10)->start([$nodeBinary, basename($scriptPath)]);
+        if (!$process->running()) {
+            throw new \RuntimeException('No fue posible arrancar el motor WhatsApp con el binario configurado.');
+        }
+    }
+
+    protected function stopWaMotor(): void
+    {
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            return;
+        }
+
+        Process::timeout(5)->run(['pkill', '-f', 'wa-motor/index.js']);
+    }
+
     public function index()
     {
         $pendingMessages = DB::table('whatsapp_pending_messages')
@@ -127,13 +231,7 @@ class ConfiguracionController extends Controller
 
         // Auto-verificar que el motor Node.js esté activo en segundo plano
         try {
-            if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
-                $check = trim(shell_exec('pgrep -f "wa-motor/index.js" 2>/dev/null') ?? '');
-                if (empty($check)) {
-                    $nodeBin = trim(shell_exec('which node 2>/dev/null') ?? '') ?: '/usr/bin/node';
-                    exec("nohup {$nodeBin} " . base_path('wa-motor/index.js') . ' > /dev/null 2>&1 < /dev/null &');
-                }
-            }
+            $this->ensureWaMotorIsRunning();
         } catch (\Throwable $e) {}
 
         if (File::exists($statusPath)) {
@@ -170,12 +268,10 @@ class ConfiguracionController extends Controller
     public function resetWaSession()
     {
         try {
-            // 1. Matar o reiniciar el proceso de wa-motor (Soporte para PM2 y procesos nativos)
+            // 1. Matar o reiniciar el proceso de wa-motor sin depender de shell_exec/exec
             try {
-                if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
-                    shell_exec('pm2 restart wa-motor 2>/dev/null || pm2 restart index 2>/dev/null || pkill -9 -f "wa-motor" 2>/dev/null || pkill -9 -f "node.*index.js" 2>/dev/null');
-                    sleep(1);
-                }
+                $this->stopWaMotor();
+                sleep(1);
             } catch (\Throwable $eKill) {}
 
             // 2. Eliminar carpetas de sesión local y archivos de estado / cerrojos huérfanos
@@ -213,12 +309,9 @@ class ConfiguracionController extends Controller
                 File::put(public_path('wa-status.json'), json_encode($statusPayload, JSON_PRETTY_PRINT));
             } catch (\Throwable $errWrite) {}
 
-            // 4. Iniciar limpiamente el motor Node en segundo plano
+            // 4. Iniciar limpiamente el motor Node en segundo plano con validación de binarios
             try {
-                if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
-                    $nodeBin = trim(shell_exec('which node 2>/dev/null') ?? '') ?: '/usr/bin/node';
-                    exec("nohup {$nodeBin} " . base_path('wa-motor/index.js') . ' > /dev/null 2>&1 < /dev/null &');
-                }
+                $this->ensureWaMotorIsRunning();
             } catch (\Throwable $e) {}
 
             return redirect()->back()->with('success', '¡Sesión de WhatsApp eliminada correctamente! Generando un nuevo código QR...');

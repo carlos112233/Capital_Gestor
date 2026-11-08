@@ -4,7 +4,12 @@
 .env.production
 .env.local
 .env.*.local
+.env.txt
 /auth.json
+
+# Database Dumps & Backups
+*.sql
+*.dump
 
 # Dependencies & Builds
 /node_modules

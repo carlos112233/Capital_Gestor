@@ -32,14 +32,12 @@ class VentaApiController extends Controller
             $ventasQuery->where('user_id', $user->id);
         }
 
-        // 3. Búsqueda optimizada para POSTGRESQL
+        // 3. Búsqueda compatible con MySQL y PostgreSQL
         if ($request->filled('q')) {
-            $search = $request->input('q');
+            $search = '%' . strtolower($request->input('q')) . '%';
 
-            // RECUERDA: En Postgres usamos ILIKE directamente. 
-            // Es mucho más rápido que LOWER() porque permite usar índices.
             $ventasQuery->whereHas('user', function ($query) use ($search) {
-                $query->where('name', 'ILIKE', "%$search%");
+                $query->whereRaw('LOWER(name) LIKE ?', [$search]);
             });
         }
 

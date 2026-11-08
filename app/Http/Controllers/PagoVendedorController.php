@@ -266,7 +266,7 @@ class PagoVendedorController extends Controller
                          "──────────────────────\n" .
                          "✅ *Tu pago ha sido liquidado exitosamente por Administración.*";
 
-            DB::table('whatsapp_pending_messages')->insert([
+            app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                 'numero'     => $telefono,
                 'mensaje'    => $mensajeWa,
                 'status'     => 'pendiente',
@@ -283,4 +283,3 @@ class PagoVendedorController extends Controller
         }
     }
 }
-

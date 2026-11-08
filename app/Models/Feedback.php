@@ -99,7 +99,7 @@ class Feedback extends Model
                 "_Ingresa al CRM en la sección Quejas y Sugerencias para revisarlo y responder._";
 
             foreach ($adminPhones as $telAdmin) {
-                DB::table('whatsapp_pending_messages')->insert([
+                app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                     'numero'     => $telAdmin,
                     'mensaje'    => $mensajeWa,
                     'status'     => 'pendiente',
