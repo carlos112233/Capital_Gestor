@@ -13,6 +13,7 @@ class AppSetting extends Model
     public const CACHE_KEY = 'app_settings';
 
     public const DEFAULT_APP_NAME = 'El bajón';
+    public const DEFAULT_TAGLINE = 'SERVICIO AUTOMOTRIZ';
     public const DEFAULT_PRIMARY_COLOR = '#6366f1';
     public const DEFAULT_SECONDARY_COLOR = '#10b981';
     public const DEFAULT_SIDEBAR_COLOR = '#0f172a';
@@ -21,6 +22,8 @@ class AppSetting extends Model
 
     protected $fillable = [
         'app_name',
+        'tagline',
+        'nombre_empresa',
         'logo_path',
         'favicon_path',
         'primary_color',
@@ -66,6 +69,8 @@ class AppSetting extends Model
     {
         return new self([
             'app_name' => self::DEFAULT_APP_NAME,
+            'tagline' => self::DEFAULT_TAGLINE,
+            'nombre_empresa' => null,
             'primary_color' => self::DEFAULT_PRIMARY_COLOR,
             'secondary_color' => self::DEFAULT_SECONDARY_COLOR,
             'sidebar_color' => self::DEFAULT_SIDEBAR_COLOR,
