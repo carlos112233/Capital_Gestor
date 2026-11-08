@@ -25,11 +25,11 @@ class ClienteApiController extends Controller
         if ($request->filled('q')) {
             $query->when($request->filled('q'), function ($query) use ($request) {
                 $search = '%' . strtolower($request->q) . '%';
-                // Buscamos por nombre, email o el nuevo campo telefono
+                // Buscamos por nombre, email o el nuevo campo telefono (compatible con MySQL y PostgreSQL)
                 $query->where(function ($q) use ($search) {
-                    $q->where('name', 'ilike', $search)
-                        ->orWhere('email', 'ilike', $search)
-                        ->orWhere('telefono', 'ilike', $search);
+                    $q->whereRaw('LOWER(name) LIKE ?', [$search])
+                        ->orWhereRaw('LOWER(email) LIKE ?', [$search])
+                        ->orWhereRaw('LOWER(telefono) LIKE ?', [$search]);
                 });
             }); // Ahora busca también por teléfono
         }
@@ -155,7 +155,7 @@ class ClienteApiController extends Controller
         $queryA = Articulo::query();
          if ($request->filled('a')) {
                 $search = '%' . strtolower($request->a) . '%';
-                $queryA->where('nombre', 'ilike', $search )->orderBy('nombre', 'asc')
+                $queryA->whereRaw('LOWER(nombre) LIKE ?', [$search])->orderBy('nombre', 'asc')
             ->toBase()
             ->get();
             
@@ -171,11 +171,11 @@ class ClienteApiController extends Controller
         if ($request->filled('q')) {
             $query->when($request->filled('q'), function ($query) use ($request) {
                 $search = '%' . strtolower($request->q) . '%';
-                // Buscamos por nombre, email o el nuevo campo telefono
+                // Buscamos por nombre, email o el nuevo campo telefono (compatible con MySQL y PostgreSQL)
                 $query->where(function ($q) use ($search) {
-                    $q->where('name', 'ilike', $search)
-                        ->orWhere('email', 'ilike', $search)
-                        ->orWhere('telefono', 'ilike', $search);
+                    $q->whereRaw('LOWER(name) LIKE ?', [$search])
+                        ->orWhereRaw('LOWER(email) LIKE ?', [$search])
+                        ->orWhereRaw('LOWER(telefono) LIKE ?', [$search]);
                 });
             }); // Ahora busca también por teléfono
         }

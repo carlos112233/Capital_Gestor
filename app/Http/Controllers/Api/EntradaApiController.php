@@ -35,14 +35,12 @@ class EntradaApiController extends Controller
             $entradasQuery->where('user_id', $user->id);
         }
 
-        // 3. Búsqueda optimizada para POSTGRESQL
+        // 3. Búsqueda compatible con MySQL y PostgreSQL
         if ($request->filled('q')) {
-            $search = $request->input('q');
+            $search = '%' . strtolower($request->input('q')) . '%';
 
-            // En Postgres, existe 'ILIKE', que es mucho más rápido que LOWER()
-            // porque permite a la DB usar índices si están bien configurados.
             $entradasQuery->whereHas('user', function ($query) use ($search) {
-                $query->where('name', 'ILIKE', "%$search%");
+                $query->whereRaw('LOWER(name) LIKE ?', [$search]);
             });
         }
 

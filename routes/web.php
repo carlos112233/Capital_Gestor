@@ -139,16 +139,6 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__ . '/auth.php';
 
-Route::get('/descargar-log-secreto', function () {
-    $path = storage_path('logs/laravel.log');
-
-    if (file_exists($path)) {
-        return response()->download($path);
-    }
-
-    return "El archivo de log aún no existe o está vacío.";
-});
-
 Route::get('/enviar-alerta', function () {
     \Illuminate\Support\Facades\Notification::route('broadcast', 'canal-publico')
         ->notify(new GeneralNotification("Prueba Laravel 12", "¡Esto funciona!"));
