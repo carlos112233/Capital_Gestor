@@ -196,7 +196,7 @@ class ClienteController extends Controller
                    "🌐 *Iniciar Sesión:* " . url('/login') . "\n\n" .
                    "¡Gracias por formar parte de El Bajón!";
 
-        DB::table('whatsapp_pending_messages')->insert([
+        app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
             'numero'     => $phone,
             'mensaje'    => $mensaje,
             'status'     => 'pendiente',

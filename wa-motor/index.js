@@ -647,8 +647,8 @@ function iniciarBucleEnvio() {
                                 timeZone: "America/Mexico_City",
                             });
                             await queryDb(
-                                "UPDATE whatsapp_pending_messages SET status = 'fallido', updated_at = $1 WHERE id = $2",
-                                [mxNow, msg.id],
+                                "UPDATE whatsapp_pending_messages SET status = 'fallido', error_message = $3, attempts = COALESCE(attempts, 0) + 1, updated_at = $1 WHERE id = $2",
+                                [mxNow, msg.id, "Número de WhatsApp inválido"],
                             );
                             continue;
                         }
@@ -693,7 +693,7 @@ function iniciarBucleEnvio() {
                             { timeZone: "America/Mexico_City" },
                         );
                         await queryDb(
-                            "UPDATE whatsapp_pending_messages SET status = 'enviado', updated_at = $1 WHERE id = $2",
+                            "UPDATE whatsapp_pending_messages SET status = 'enviado', error_message = NULL, updated_at = $1 WHERE id = $2",
                             [mxNowSuccess, msg.id],
                         );
                         console.log(
@@ -705,18 +705,18 @@ function iniciarBucleEnvio() {
                             err.message,
                         );
 
-                        // Limpieza de PDF temporal en caso de fallar el envío
-                        if (msg.pdf_path && fs.existsSync(msg.pdf_path)) {
-                            try { fs.unlinkSync(msg.pdf_path); } catch (eUnlinkErr) {}
-                        }
-
                         const mxNowErr = new Date().toLocaleString("sv-SE", {
                             timeZone: "America/Mexico_City",
                         });
                         await queryDb(
-                            "UPDATE whatsapp_pending_messages SET status = 'fallido', updated_at = $1 WHERE id = $2",
-                            [mxNowErr, msg.id],
-                        ).catch(() => {});
+                            "UPDATE whatsapp_pending_messages SET status = 'fallido', error_message = $3, attempts = COALESCE(attempts, 0) + 1, updated_at = $1 WHERE id = $2",
+                            [mxNowErr, msg.id, String(err.message || "Error desconocido").slice(0, 2000)],
+                        ).catch((updateError) => {
+                            console.error(
+                                `No se pudo registrar el fallo del mensaje #${msg.id}:`,
+                                updateError.message,
+                            );
+                        });
                     }
 
                     // Espera de 3 segundos entre envíos para evitar bloqueos por spam

@@ -493,7 +493,7 @@ class VentaController extends Controller
             }
 
             foreach ($adminPhones as $telAdmin) {
-                DB::table('whatsapp_pending_messages')->insert([
+                app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                     'numero'     => $telAdmin,
                     'mensaje'    => $mensajeWa,
                     'status'     => 'pendiente',

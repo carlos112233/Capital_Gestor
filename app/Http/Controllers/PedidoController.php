@@ -200,7 +200,7 @@ class PedidoController extends Controller
                                       "_Enviado por {$appName}_";
 
                     foreach ($adminPhones as $telAdmin) {
-                        \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                        app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                             'numero' => $telAdmin, 'mensaje' => $mensajeWaIndiv, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
                         ]);
                     }
@@ -237,7 +237,7 @@ class PedidoController extends Controller
                                    "_Enviado por {$appName}_";
 
             foreach ($adminPhones as $telAdmin) {
-                \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                     'numero' => $telAdmin, 'mensaje' => $mensajeResumenAdmin, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
                 ]);
             }
@@ -265,7 +265,7 @@ class PedidoController extends Controller
                 $mensajeResumenCocina .= "_Enviado por {$appName}_";
 
                 foreach ($cocinaPhones as $telCocina) {
-                    \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                    app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                         'numero' => $telCocina, 'mensaje' => $mensajeResumenCocina, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
                     ]);
                 }
@@ -282,7 +282,7 @@ class PedidoController extends Controller
                                   "_(Las milanesas necesarias para todo este pedido)_";
                 
                 foreach ($cocinaPhones as $telCocina) {
-                    \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                    app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                         'numero' => $telCocina, 'mensaje' => $mensajeResumen, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
                     ]);
                 }
@@ -458,7 +458,7 @@ class PedidoController extends Controller
 
                 if ($sendToAdmin) {
                     foreach ($adminPhones as $telAdmin) {
-                        \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                        app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                             'numero' => $telAdmin, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
                         ]);
                     }
@@ -466,7 +466,7 @@ class PedidoController extends Controller
 
                 if (!$esCemita) {
                     foreach ($cocinaPhones as $telCocina) {
-                        \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                        app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                             'numero' => $telCocina, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
                         ]);
                     }
@@ -486,7 +486,7 @@ class PedidoController extends Controller
                                   "_(Cantidades totales requeridas tras la actualización del pedido)_";
                 
                 foreach ($cocinaPhones as $telCocina) {
-                    \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                    app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                         'numero' => $telCocina, 'mensaje' => $mensajeResumen, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
                     ]);
                 }

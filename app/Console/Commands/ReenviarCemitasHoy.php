@@ -98,7 +98,7 @@ class ReenviarCemitasHoy extends Command
                          "_Recuperado y reenviado por El bajon_";
 
             foreach ($adminPhones as $telAdmin) {
-                DB::table('whatsapp_pending_messages')->insert([
+                app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                     'numero'     => $telAdmin,
                     'mensaje'    => $mensajeWa,
                     'status'     => 'pendiente',
@@ -129,7 +129,7 @@ class ReenviarCemitasHoy extends Command
                          "_Reporte automático generado por El bajon_";
 
         foreach ($adminPhones as $telAdmin) {
-            DB::table('whatsapp_pending_messages')->insert([
+            app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                 'numero'     => $telAdmin,
                 'mensaje'    => $resumenTexto,
                 'status'     => 'pendiente',

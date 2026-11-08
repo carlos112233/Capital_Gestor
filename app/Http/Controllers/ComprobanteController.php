@@ -119,7 +119,7 @@ class ComprobanteController extends Controller
                         "Ingresa al panel para aprobar o rechazar esta conciliación.";
 
         foreach ($adminPhones as $telAdmin) {
-            DB::table('whatsapp_pending_messages')->insert([
+            app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                 'numero'     => $telAdmin,
                 'mensaje'    => $mensajeAdmin,
                 'status'     => 'pendiente',
@@ -198,7 +198,7 @@ class ComprobanteController extends Controller
                             Log::error("Error generando PDF para Entrada #{$entrada->id} al aprobar comprobante #{$comprobante->id}: " . $ePdf->getMessage());
                         }
 
-                        DB::table('whatsapp_pending_messages')->insert([
+                        app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                             'numero'     => $telCliente,
                             'mensaje'    => $mensajeWa,
                             'pdf_path'   => $pdfPath,
@@ -263,7 +263,7 @@ class ComprobanteController extends Controller
                 "Por favor, revisa tu comprobante e intenta subir uno nuevo desde tu panel de usuario o comunícate con administración.\n\n" .
                 "_Mensaje automático de El bajón_";
 
-            DB::table('whatsapp_pending_messages')->insert([
+            app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                 'numero'     => $telefonoCliente,
                 'mensaje'    => $mensajeWa,
                 'status'     => 'pendiente',

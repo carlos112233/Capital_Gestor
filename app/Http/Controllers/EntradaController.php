@@ -152,7 +152,7 @@ class EntradaController extends Controller
                         \Illuminate\Support\Facades\Log::error("Error generando PDF para Entrada #{$entrada->id}: " . $ePdf->getMessage());
                     }
 
-                    \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+                    app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                         'numero'     => $telCliente,
                         'mensaje'    => $mensajeWa,
                         'pdf_path'   => $pdfPath,
@@ -247,7 +247,7 @@ class EntradaController extends Controller
             $telCliente = (strlen($num) == 10) ? '521' . $num : $num;
             $mensajeWa = "⚠️ *ACTUALIZACIÓN DE PAGO - El bajón*\n\nHola *{$cliente->name}*, te informamos que tu registro de pago por *\${$monto}* ha sido revertido o no fue aprobado.\n\nFavor de comunicarte con administración si tienes alguna duda.";
 
-            \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+            app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                 'numero'     => $telCliente,
                 'mensaje'    => $mensajeWa,
                 'status'     => 'pendiente',
@@ -291,7 +291,7 @@ class EntradaController extends Controller
             // Generar PDF temporal del recibo
             $pdfPath = \App\Services\PdfReceiptService::generateEntradaPdf($entrada);
 
-            \Illuminate\Support\Facades\DB::table('whatsapp_pending_messages')->insert([
+            app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                 'numero'     => $telCliente,
                 'mensaje'    => $mensajeWa,
                 'pdf_path'   => $pdfPath,
