@@ -30,10 +30,9 @@ jobs:
       - name: 📦 Instalar dependencias PHP
         run: composer install --no-interaction --optimize-autoloader
 
-      # 4. Ejecutar pruebas unitarias LOCALMENTE (aquí sí, nunca en producción)
-      #    Solo se ejecutan las que no requieren BD real
-      - name: ✅ Ejecutar Pest (solo pruebas Unit)
-        run: vendor/bin/pest --testsuite=Unit
+      # 4. Ejecutar suite completa de pruebas Pest (Unit + Feature) en memoria
+      - name: ✅ Ejecutar Pest (Unit + Feature)
+        run: vendor/bin/pest
         env:
           APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
           DB_CONNECTION: sqlite
@@ -92,14 +91,17 @@ jobs:
             php artisan route:cache
             php artisan view:cache
 
+            echo "🔄 Reiniciando workers de colas (Redis/Database)..."
+            php artisan queue:restart || true
+
             echo "🔗 Asegurando enlace de almacenamiento público..."
             php artisan storage:link || true
 
             echo "📦 Instalando dependencias del motor..."
             cd wa-motor && npm ci && cd ..
 
-            echo "🤖 Recargando el motor de WhatsApp (wa-motor) en PM2..."
-            pm2 reload wa-motor || true
+            echo "🤖 Recargando el motor de WhatsApp (wa-motor) en PM2 con límite de memoria (350M)..."
+            pm2 reload wa-motor --max-memory-restart 350M || pm2 start wa-motor/index.js --name wa-motor --max-memory-restart 350M || true
 
             echo "✅ ¡Despliegue completado con éxito en elbajon.store!"
 
