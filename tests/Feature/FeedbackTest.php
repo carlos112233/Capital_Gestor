@@ -7,12 +7,15 @@ use App\Models\FeedbackMensaje;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\WhatsAppNotificationService;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     Role::firstOrCreate(['name' => 'admin']);
     Role::firstOrCreate(['name' => 'cliente']);
+    Storage::fake('public');
 });
 
 function assignFeedbackRole(User $user, string $roleName): void
@@ -32,10 +35,13 @@ test('cliente autenticado puede crear un feedback, se encola WhatsApp al admin y
     $cliente = User::factory()->create(['name' => 'Elena Feedback']);
     assignFeedbackRole($cliente, 'cliente');
 
+    $adjunto = UploadedFile::fake()->image('evidencia_queja.jpg', 500, 500);
+
     $response = $this->actingAs($cliente)->post(route('feedback.store'), [
         'tipo'    => 'queja',
         'asunto'  => 'Demora en pedido',
         'mensaje' => 'Mi pedido tardó más de lo esperado hoy.',
+        'imagen'  => $adjunto,
     ]);
 
     $response->assertRedirect(route('feedback.index'));
@@ -45,7 +51,10 @@ test('cliente autenticado puede crear un feedback, se encola WhatsApp al admin y
     expect($feedback)->not->toBeNull()
         ->and($feedback->tipo)->toBe('queja')
         ->and($feedback->estatus)->toBe('enviado')
-        ->and($feedback->asunto)->toBe('Demora en pedido');
+        ->and($feedback->asunto)->toBe('Demora en pedido')
+        ->and($feedback->imagen)->not->toBeNull();
+
+    Storage::disk('public')->assertExists($feedback->imagen);
 
     $queuedWa = DB::table(WhatsAppNotificationService::TABLE)
         ->where('numero', '5212221110099')
