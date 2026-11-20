@@ -387,6 +387,10 @@ class MigrateBase64Storage extends Command
      */
     private function shrinkSchemaAndOptimize(bool $skipOptimize): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         $this->info(' - Reduciendo columnas en `users` (image VARCHAR(255), image_tipo VARCHAR(50))...');
         DB::statement('ALTER TABLE users MODIFY image VARCHAR(255) NULL, MODIFY image_tipo VARCHAR(50) NULL');
 
@@ -414,8 +418,10 @@ class MigrateBase64Storage extends Command
 
         // 1. Re-expandir tipos de columna a LONGTEXT para poder almacenar los bytes Base64
         $this->info('1/3. Re-expandiendo tipos de columnas a LONGTEXT...');
-        DB::statement('ALTER TABLE users MODIFY image LONGTEXT NULL, MODIFY image_tipo LONGTEXT NULL');
-        DB::statement('ALTER TABLE articulos MODIFY img_base64 LONGTEXT NULL, MODIFY imagen_tipo VARCHAR(255) NULL');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE users MODIFY image LONGTEXT NULL, MODIFY image_tipo LONGTEXT NULL');
+            DB::statement('ALTER TABLE articulos MODIFY img_base64 LONGTEXT NULL, MODIFY imagen_tipo VARCHAR(255) NULL');
+        }
 
         // 2. Re-codificar avatares de users
         $this->info('2/3. Reconvirtiendo archivos físicos a Base64 en `users`...');
@@ -456,6 +462,19 @@ class MigrateBase64Storage extends Command
      */
     private function fetchTableSizes(array $tables): array
     {
+        if (DB::getDriverName() !== 'mysql') {
+            $fallback = [];
+            foreach ($tables as $t) {
+                $fallback[$t] = [
+                    'TABLE_NAME'   => $t,
+                    'size_mb'      => 0.0,
+                    'size_kb'      => 0.0,
+                    'data_free_mb' => 0.0,
+                ];
+            }
+            return $fallback;
+        }
+
         foreach ($tables as $t) {
             DB::statement("ANALYZE TABLE `{$t}`");
         }
