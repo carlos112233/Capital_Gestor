@@ -6,10 +6,10 @@
     <meta name="theme-color" content="#000000">
     <title>@yield('code') — @yield('message')</title>
 
-    <!-- Tipografía idéntica a la estética del GIF (Montserrat Black / ExtraBold) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+    <!-- Assets locales compilados con Vite + Fallback CSS inline autónomo para errores 500/503 offline -->
+    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+        @vite(['resources/css/app.css'])
+    @endif
 
     <style>
         :root {
