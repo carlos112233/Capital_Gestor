@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->decimal('monto', 10, 2)->nullable();
             $table->string('imagen');
-            $table->enum('status', ['pendiente', 'aprobado', 'rechazado'])->default('pendiente');
+            $table->enum('status', ['procesando_pago', 'pendiente', 'aprobado', 'rechazado'])->default('pendiente');
             $table->text('notas')->nullable();
             $table->timestamps();
         });

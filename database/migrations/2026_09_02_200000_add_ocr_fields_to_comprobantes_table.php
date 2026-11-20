@@ -22,9 +22,14 @@ return new class extends Migration
         });
 
         // Modificar columna status para permitir 'procesando_pago'
-        // Se usa DB::statement si el motor es MySQL
         if (DB::getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE comprobantes MODIFY COLUMN status ENUM('procesando_pago', 'pendiente', 'aprobado', 'rechazado') DEFAULT 'procesando_pago'");
+        } else {
+            Schema::table('comprobantes', function (Blueprint $table) {
+                $table->enum('status', ['procesando_pago', 'pendiente', 'aprobado', 'rechazado'])
+                    ->default('procesando_pago')
+                    ->change();
+            });
         }
     }
 
