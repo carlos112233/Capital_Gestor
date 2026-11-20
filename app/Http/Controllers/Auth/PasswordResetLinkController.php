@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -8,8 +10,7 @@ use App\Models\User;
 use App\Services\WhatsAppNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Password;
 use Illuminate\View\View;
 
 class PasswordResetLinkController extends Controller
@@ -61,29 +62,37 @@ class PasswordResetLinkController extends Controller
                 ]);
         }
 
+        // Asegurar correo válido antes de emitir el token criptográfico
+        if (empty($user->email) || !filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
+            $user->forceFill([
+                'email' => "usuario_{$user->id}@elbajon.store",
+            ])->save();
+        }
+
         // Sanitizar y formatear el número para WhatsApp
         $phone = preg_replace('/[^0-9]/', '', (string) $user->telefono);
         if (strlen($phone) === 10) {
             $phone = '521' . $phone;
+        } elseif (strlen($phone) === 12 && str_starts_with($phone, '52')) {
+            $phone = '521' . substr($phone, 2);
         }
 
-        // Generar contraseña temporal segura
-        $tempPassword = 'Bajon-' . rand(1000, 9999);
-
-        // Actualizar la contraseña del usuario en la base de datos
-        $user->update([
-            'password' => Hash::make($tempPassword),
-        ]);
-
+        // Generar token criptográfico estándar sin mutar la contraseña actual del usuario
+        $token = Password::broker()->createToken($user);
+        $resetUrl = url(route('password.reset', [
+            'token' => $token,
+            'email' => $user->email,
+        ], false));
+        $expireMinutes = (int) config('auth.passwords.users.expire', 15);
         $appName = AppSetting::getSettings()->app_name ?? config('app.name', 'El Bajón');
 
-        // Construir mensaje oficial
+        // Construir mensaje oficial únicamente con el enlace seguro de recuperación
         $mensaje = "🔐 *RECUPERACIÓN DE ACCESO - {$appName}*\n\n" .
                    "Hola *{$user->name}*,\n" .
-                   "Hemos generado una contraseña temporal para que puedas restablecer tu acceso:\n\n" .
-                   "🔑 *Nueva Contraseña Temporal:* `{$tempPassword}`\n\n" .
-                   "🌐 *Iniciar sesión aquí:* " . url('/login') . "\n\n" .
-                   "⚠️ *Recomendación:* Por tu seguridad, cambia esta contraseña en tu perfil en cuanto ingreses a la plataforma.";
+                   "Recibimos una solicitud para restablecer tu contraseña. Haz clic en el siguiente enlace seguro para definir una nueva:\n\n" .
+                   "🔗 *Enlace de restablecimiento:* {$resetUrl}\n\n" .
+                   "⏳ *Vigencia:* Este enlace expirará en {$expireMinutes} minutos.\n" .
+                   "⚠️ Si tú no solicitaste este cambio, ignora este mensaje; tu contraseña actual sigue siendo válida.";
 
         // Encolar mensaje en WhatsAppNotificationService
         app(WhatsAppNotificationService::class)->enqueuePayload([
@@ -95,6 +104,6 @@ class PasswordResetLinkController extends Controller
         ]);
 
         return redirect()->route('login')
-            ->with('status', '¡Listo! Te enviamos una contraseña temporal por WhatsApp para que puedas iniciar sesión de inmediato.');
+            ->with('status', '¡Listo! Te enviamos un enlace seguro de restablecimiento por WhatsApp con vigencia de ' . $expireMinutes . ' minutos.');
     }
 }

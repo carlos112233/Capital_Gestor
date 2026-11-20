@@ -10,8 +10,6 @@ use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\DashboardController;
-use App\Notifications\GeneralNotification;
-use Illuminate\Support\Facades\Http;
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -139,21 +137,3 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__ . '/auth.php';
 
-Route::get('/enviar-alerta', function () {
-    \Illuminate\Support\Facades\Notification::route('broadcast', 'canal-publico')
-        ->notify(new GeneralNotification("Prueba Laravel 12", "¡Esto funciona!"));
-
-    return "Notificación enviada.";
-});
-
-Route::get('/test-notif', function () {
-    $topic = "canal_marcos_123";
-
-    $response = Http::withHeaders([
-        'Title' => 'Prueba Local',
-        'Priority' => 'high',
-        'Tags' => 'tada,iphone'
-    ])->post("https://ntfy.sh/$topic", "¡Si lees esto, Laravel y ntfy funcionan!");
-
-    return $response->ok() ? "Enviado correctamente" : "Error al enviar";
-});
