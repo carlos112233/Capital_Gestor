@@ -4,7 +4,6 @@
   "description": "Motor de envío automático de WhatsApp para Capital Gestor",
   "main": "index.js",
   "scripts": {
-    "postinstall": "patch-package",
     "start": "node index.js"
   },
   "dependencies": {
@@ -16,7 +15,7 @@
     "puppeteer": "^22.12.0",
     "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
-    "whatsapp-web.js": "1.34.7"
+    "whatsapp-web.js": "1.34.8"
   },
   "overrides": {
     "@puppeteer/browsers": "^3.2.7",
