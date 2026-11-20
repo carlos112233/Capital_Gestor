@@ -56,8 +56,8 @@ class PedidoApiController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'pedidos' => 'required|array|min:1',
+        $validated = $request->validate([
+            'pedidos'               => 'required|array|min:1',
             'pedidos.*.articulo_id' => 'required|exists:articulos,id',
             'pedidos.*.cantidad'    => 'required|integer|min:1',
             'pedidos.*.descripcion' => 'nullable|string',
@@ -65,50 +65,14 @@ class PedidoApiController extends Controller
         ]);
 
         try {
-            $resultados = DB::transaction(function () use ($request) {
-                $creados = [];
-
-                foreach ($request->pedidos as $p) {
-                    // Determinar ID del usuario (Admin puede asignar a otros)
-                    $userId = Auth::user()->hasRole('admin')
-                        ? ($p['user_id'] ?? Auth::id())
-                        : Auth::id();
-
-                    $articulo = Articulo::lockForUpdate()->findOrFail($p['articulo_id']);
-                    $precioUnitario = (float) $articulo->precio;
-                    $cantidad = (int) $p['cantidad'];
-                    $total = $precioUnitario * $cantidad;
-
-                    // 1. Crear la venta
-                    $venta = Venta::create([
-                        'user_id'      => $userId,
-                        'articulo_id'  => $articulo->id,
-                        'cantidad'     => $cantidad,
-                        'precio_venta' => $precioUnitario,
-                        'total_venta'  => $total,
-                        'descripcion'  => $p['descripcion'] ?? '',
-                    ]);
-
-                    // 2. Crear el pedido
-                    $pedido = Pedido::create([
-                        'user_id'     => $userId,
-                        'articulo_id' => $articulo->id,
-                        'descripcion' => $p['descripcion'] ?? '',
-                        'costo'       => $total,
-                        'venta_id'    => $venta->id,
-                        'cantidad'    => $cantidad,
-                    ]);
-
-                    // 3. Notificación (Opcional: puedes moverlo fuera del loop o usar colas)
-                    Notification::route('mail', 'gestorcapital.0925@gmail.com')
-                        ->notify(new NuevoPedidoNotification($pedido));
-
-                    $creados[] = $pedido;
-                }
-                return $creados;
-            });
+            $resultados = app(\App\Actions\Pos\RegistrarPedidoAction::class)->execute(
+                $validated['pedidos'],
+                Auth::user()
+            );
 
             return $this->success($resultados, 'Pedidos y ventas creados correctamente.', 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->error('Error de validación de inventario: ' . collect($e->errors())->flatten()->first(), 422);
         } catch (\Exception $e) {
             return $this->error('Error al procesar los pedidos: ' . $e->getMessage(), 500);
         }

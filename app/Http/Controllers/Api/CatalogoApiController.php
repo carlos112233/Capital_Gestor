@@ -52,37 +52,11 @@ class CatalogoApiController extends Controller
         ]);
 
         try {
-            DB::transaction(function () use ($validated) {
-                $articulo = Articulo::lockForUpdate()->find($validated['articulo_id']);
-                $cantidadVenta = $validated['cantidad'];
-
-                if ($articulo->stock < $cantidadVenta) {
-                    throw ValidationException::withMessages([
-                        'cantidad' => 'No hay suficiente stock. Disponible: ' . $articulo->stock,
-                    ]);
-                }
-
-                // Descontar stock
-                $articulo->decrement('stock', $cantidadVenta);
-
-                // El precio maestro del catálogo es la única fuente autorizada.
-                $precioUnitario = (float) $articulo->precio;
-                $totalVenta = $precioUnitario * $cantidadVenta;
-
-                // Registrar venta
-                $venta = $articulo->ventas()->create([
-                    'user_id'      => Auth::id(),
-                    'comprador_id' => Auth::id(),
-                    'cantidad'     => $cantidadVenta,
-                    'precio_venta' => $precioUnitario,
-                    'total_venta'  => $totalVenta,
-                    'descripcion'  => $validated['descripcion'] ?? null,
-                ]);
-
-                DB::afterCommit(function () use ($venta): void {
-                    \App\Models\Venta::notificarAdminWhatsApp($venta);
-                });
-            });
+            app(\App\Actions\Pos\RegistrarVentaAction::class)->executeSingle([
+                'articulo_id' => $validated['articulo_id'],
+                'cantidad'    => $validated['cantidad'],
+                'descripcion' => $validated['descripcion'] ?? null,
+            ], Auth::user());
         } catch (ValidationException $e) {
             return $this->error(
                 'Error de validación',

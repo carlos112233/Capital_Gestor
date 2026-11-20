@@ -99,78 +99,18 @@ class VentaController extends Controller
         ]);
 
         try {
-            return DB::transaction(function () use ($validated, $request): RedirectResponse {
-                // 1. Bloqueo Pesimista (X-Lock en la fila del inventario)
-                $articulo = Articulo::lockForUpdate()->findOrFail($validated['articulo_id']);
-                $cantidadVenta = (int) $validated['cantidad'];
+            $pedidoId = $request->filled('pedido_id') ? (int) $request->input('pedido_id') : null;
+            app(\App\Actions\Pos\RegistrarVentaAction::class)->executeSingle($validated, Auth::user(), $pedidoId);
 
-                // 2. Validación defensiva de stock en tiempo real
-                if ($articulo->stock < $cantidadVenta) {
-                    throw ValidationException::withMessages([
-                        'cantidad' => "Stock insuficiente. Disponible: {$articulo->stock}",
-                    ]);
-                }
+            if ($request->filled('redirect_to')) {
+                return redirect($request->input('redirect_to'))->with('success', '¡Venta registrada con éxito!');
+            }
 
-                // 3. Resolución de identidad del cliente (user_id) y operador (comprador_id)
-                $isOperadorVenta = Auth::user()->hasRole('admin') || Auth::user()->hasRole('vendedor');
-                $finalUserId = ($isOperadorVenta && $request->filled('cliente_id'))
-                    ? (int) $validated['cliente_id']
-                    : (int) Auth::id();
+            if ($request->header('referer') && str_contains($request->header('referer'), 'catalogo')) {
+                return redirect()->route('catalogo.index')->with('success', '¡Venta registrada con éxito!');
+            }
 
-                // 4. Ajuste atómico de stock e inventario
-                $articulo->decrement('stock', $cantidadVenta);
-                if ($articulo->stock <= 0) {
-                    $articulo->disponible = false;
-                    $articulo->save();
-                }
-
-                // El precio siempre proviene del catálogo, nunca del payload.
-                $precioUnitario = (float) $articulo->precio;
-                $totalVenta = $precioUnitario * $cantidadVenta;
-
-                $venta = $articulo->ventas()->create([
-                    'user_id'      => $finalUserId,
-                    'comprador_id' => (int) Auth::id(),
-                    'cantidad'     => $cantidadVenta,
-                    'precio_venta' => $precioUnitario,
-                    'total_venta'  => $totalVenta,
-                    'descripcion'  => $validated['descripcion'] ?? null,
-                ]);
-
-                // 6. Vinculación a pedido si aplica
-                if ($request->filled('pedido_id')) {
-                    $pedido = Pedido::find($request->input('pedido_id'));
-                    if ($pedido) {
-                        $pedido->update(['venta_id' => $venta->id]);
-                    }
-                }
-
-                // 7. DESACOPLAMIENTO QUIRÚRGICO DE NOTIFICACIONES EXTERNAS (DB::afterCommit)
-                // Se garantiza que el X-Lock de MySQL se libera INMEDIATAMENTE al hacer commit.
-                // Si la red externa de WhatsApp demora o falla, la transacción ya fue consolidada y el stock liberado.
-                if (!Auth::user()->hasRole('admin')) {
-                    DB::afterCommit(function () use ($venta): void {
-                        try {
-                            Venta::notificarAdminWhatsApp($venta);
-                        } catch (\Throwable $eNotification) {
-                            Log::error("Fallo no bloqueante al notificar venta #{$venta->id} por WhatsApp: " . $eNotification->getMessage(), [
-                                'exception' => $eNotification,
-                                'venta_id'  => $venta->id,
-                            ]);
-                        }
-                    });
-                }
-
-                if ($request->filled('redirect_to')) {
-                    return redirect($request->input('redirect_to'))->with('success', '¡Venta registrada con éxito!');
-                }
-
-                if ($request->header('referer') && str_contains($request->header('referer'), 'catalogo')) {
-                    return redirect()->route('catalogo.index')->with('success', '¡Venta registrada con éxito!');
-                }
-
-                return redirect()->route('ventas.index')->with('success', '¡Venta registrada con éxito!');
-            });
+            return redirect()->route('ventas.index')->with('success', '¡Venta registrada con éxito!');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Throwable $e) {
@@ -198,70 +138,13 @@ class VentaController extends Controller
         ]);
 
         try {
-            return DB::transaction(function () use ($validated, $request): RedirectResponse {
-                $ventasData = $validated['ventas'];
-                $isAdmin = Auth::user()->hasRole('admin');
-                $isOperadorVenta = $isAdmin || Auth::user()->hasRole('vendedor');
-                $authUserId = (int) Auth::id();
-                
-                $ventasCreadasParaResumen = [];
-                $totalCarrito = 0.0;
+            app(\App\Actions\Pos\RegistrarVentaAction::class)->executeMultiple($validated['ventas'], Auth::user());
 
-                foreach ($ventasData as $ventaData) {
-                    $articulo = Articulo::lockForUpdate()->findOrFail($ventaData['articulo_id']);
-                    $cantidadVenta = (int) $ventaData['cantidad'];
+            if ($request->filled('redirect_to')) {
+                return redirect($request->input('redirect_to'))->with('success', '¡Ventas registradas con éxito!');
+            }
 
-                    if ($articulo->stock < $cantidadVenta) {
-                        throw ValidationException::withMessages([
-                            'ventas' => "Stock insuficiente para el artículo '{$articulo->nombre}'. Disponible: {$articulo->stock}",
-                        ]);
-                    }
-
-                    $finalUserId = ($isOperadorVenta && !empty($ventaData['user_id'])) ? (int) $ventaData['user_id'] : $authUserId;
-
-                    $articulo->decrement('stock', $cantidadVenta);
-                    if ($articulo->stock <= 0) {
-                        $articulo->disponible = false;
-                        $articulo->save();
-                    }
-
-                    $precioUnitario = (float) $articulo->precio;
-
-                    $totalVenta = $precioUnitario * $cantidadVenta;
-                    $totalCarrito += $totalVenta;
-
-                    $venta = $articulo->ventas()->create([
-                        'user_id'      => $finalUserId,
-                        'comprador_id' => $authUserId,
-                        'cantidad'     => $cantidadVenta,
-                        'precio_venta' => $precioUnitario,
-                        'total_venta'  => $totalVenta,
-                        'descripcion'  => $ventaData['descripcion'] ?? null,
-                    ]);
-
-                    $ventasCreadasParaResumen[] = $venta;
-                }
-
-                // Desacoplar la notificación consolidada del carrito fuera del bloqueo pesimista
-                if (!$isAdmin && count($ventasCreadasParaResumen) > 0) {
-                    DB::afterCommit(function () use ($ventasCreadasParaResumen, $totalCarrito): void {
-                        try {
-                            Venta::notificarCarritoAdminWhatsApp($ventasCreadasParaResumen, $totalCarrito);
-                        } catch (\Throwable $eNotification) {
-                            Log::error("Fallo no bloqueante al notificar carrito por WhatsApp: " . $eNotification->getMessage(), [
-                                'exception' => $eNotification,
-                                'total'     => $totalCarrito,
-                            ]);
-                        }
-                    });
-                }
-
-                if ($request->filled('redirect_to')) {
-                    return redirect($request->input('redirect_to'))->with('success', '¡Ventas registradas con éxito!');
-                }
-
-                return redirect()->route('ventas.index')->with('success', '¡Ventas registradas con éxito!');
-            });
+            return redirect()->route('ventas.index')->with('success', '¡Ventas registradas con éxito!');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Throwable $e) {
@@ -475,37 +358,8 @@ class VentaController extends Controller
                          "• Artículo: {$articuloNombre} (Total: \${$totalFormatted})\n" .
                          "• Motivo: \"{$motivo}\"";
 
-            // Obtener números de teléfono de administradores registrados
-            $adminPhones = DB::table('users')
-                ->join('role_user', 'users.id', '=', 'role_user.user_id')
-                ->join('roles', 'role_user.role_id', '=', 'roles.id')
-                ->whereIn(DB::raw('LOWER(roles.name)'), ['admin', 'administrador'])
-                ->whereNotNull('users.telefono')
-                ->where('users.telefono', '!=', '')
-                ->pluck('users.telefono')
-                ->map(function ($tel) {
-                    $num = preg_replace('/[^0-9]/', '', (string) $tel);
-                    if (strlen($num) === 10) return '521' . $num;
-                    if (strlen($num) === 12 && str_starts_with($num, '52')) return '521' . substr($num, 2);
-                    return $num;
-                })
-                ->filter()
-                ->unique()
-                ->toArray();
-
-            if (empty($adminPhones)) {
-                $adminPhones = ['5212222153410'];
-            }
-
-            foreach ($adminPhones as $telAdmin) {
-                app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
-                    'numero'     => $telAdmin,
-                    'mensaje'    => $mensajeWa,
-                    'status'     => 'pendiente',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            $waService = app(\App\Services\WhatsAppNotificationService::class);
+            $waService->enqueueToAdmins($mensajeWa);
 
             Log::info("Solicitud de anulación para venta #{$venta->id} encolada en WhatsApp para admins.");
 

@@ -83,327 +83,15 @@ class PedidoController extends Controller
             'pedidos.*.user_id'     => 'nullable|exists:users,id',
         ]);
 
-        $userId = Auth::user()->hasRole('admin') ? $request->user_id : Auth::id();
-        $authUserId = (int) Auth::id();
-        $isAdmin = Auth::user()->hasRole('admin');
+        $defaultUserId = Auth::user()->hasRole('admin') && $request->filled('user_id')
+            ? (int) $request->input('user_id')
+            : (int) Auth::id();
 
-        // Helper para formatear teléfonos mexicanos a formato WhatsApp (521XXXXXXXXXX)
-        $formatPhone = function ($tel) {
-            $num = preg_replace('/[^0-9]/', '', (string) $tel);
-            if (strlen($num) === 10) return '521' . $num;
-            if (strlen($num) === 12 && str_starts_with($num, '52')) return '521' . substr($num, 2);
-            return $num;
-        };
-
-        // 1. Obtener teléfonos de admin y cocina
-        $adminPhones = \Illuminate\Support\Facades\DB::table('users')
-            ->join('role_user', 'users.id', '=', 'role_user.user_id')
-            ->join('roles', 'role_user.role_id', '=', 'roles.id')
-            ->whereIn(\Illuminate\Support\Facades\DB::raw('LOWER(roles.name)'), ['admin', 'administrador'])
-            ->whereNotNull('users.telefono')
-            ->where('users.telefono', '!=', '')
-            ->pluck('users.telefono')
-            ->map($formatPhone)
-            ->filter()->unique()->toArray();
-        if (empty($adminPhones)) $adminPhones = ['5212222153410'];
-
-        $cocinaPhones = \Illuminate\Support\Facades\DB::table('users')
-            ->join('role_user', 'users.id', '=', 'role_user.user_id')
-            ->join('roles', 'role_user.role_id', '=', 'roles.id')
-            ->whereIn(\Illuminate\Support\Facades\DB::raw('LOWER(roles.name)'), ['cocina'])
-            ->whereNotNull('users.telefono')
-            ->where('users.telefono', '!=', '')
-            ->pluck('users.telefono')
-            ->map($formatPhone)
-            ->filter()->unique()->toArray();
-
-        $articuloIds = collect($validated['pedidos'])
-            ->pluck('articulo_id')
-            ->map(fn ($id) => (int) $id)
-            ->unique()
-            ->values()
-            ->all();
-
-        \Illuminate\Support\Facades\DB::transaction(function () use (
-            $validated,
-            $articuloIds,
-            $userId,
-            $authUserId,
-            $isAdmin,
-            $adminPhones,
-            $cocinaPhones
-        ): void {
-            // Bloqueo pesimista de los artículos involucrados en el pedido
-            $articulosBloqueados = Articulo::whereIn('id', $articuloIds)
-                ->lockForUpdate()
-                ->get()
-                ->keyBy('id');
-
-            // Validar disponibilidad y stock acumulado por artículo antes de mutar inventario
-            $cantidadesRequeridas = [];
-            foreach ($validated['pedidos'] as $item) {
-                $artId = (int) $item['articulo_id'];
-                $cantidadesRequeridas[$artId] = ($cantidadesRequeridas[$artId] ?? 0) + (int) $item['cantidad'];
-            }
-
-            foreach ($cantidadesRequeridas as $artId => $cantidadTotal) {
-                /** @var Articulo|null $articulo */
-                $articulo = $articulosBloqueados->get($artId);
-                if (!$articulo || !$articulo->disponible) {
-                    $nombreArt = $articulo->nombre ?? "#{$artId}";
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        'pedidos' => "El artículo '{$nombreArt}' no se encuentra disponible.",
-                    ]);
-                }
-
-                if ((int) $articulo->stock < $cantidadTotal) {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        'pedidos' => "Stock insuficiente para el artículo '{$articulo->nombre}'. Disponible: {$articulo->stock}",
-                    ]);
-                }
-            }
-
-            // Variables para resumen de notificaciones post-commit
-            $cemitasPollo = 0;
-            $cemitasPuerco = 0;
-            $tieneCemitas = false;
-            $clienteNombreResumen = 'Cliente';
-            $itemsParaCocina = [];
-            $itemsParaAdmin = [];
-            $pedidosCreados = [];
-            $mensajesIndividualesAdmin = [];
-            $notificacionesCocinaWebPush = [];
-            $totalPedidoGlobal = 0.0;
-
-            foreach ($validated['pedidos'] as $p) {
-                $artId = (int) $p['articulo_id'];
-                /** @var Articulo $articulo */
-                $articulo = $articulosBloqueados->get($artId);
-                $cantidadPedido = (int) $p['cantidad'];
-
-                // Descontar stock dentro del bloqueo pesimista
-                $articulo->decrement('stock', $cantidadPedido);
-                if ($articulo->stock <= 0) {
-                    $articulo->disponible = false;
-                    $articulo->save();
-                }
-
-                // Autoridad estricta del precio maestro desde base de datos
-                $precioUnitario = (float) $articulo->precio;
-                $total = $precioUnitario * $cantidadPedido;
-                $totalPedidoGlobal += $total;
-                $targetUserId = $p['user_id'] ?? $userId;
-
-                $venta = Venta::create([
-                    'user_id'      => $targetUserId,
-                    'comprador_id' => $authUserId,
-                    'articulo_id'  => $artId,
-                    'cantidad'     => $cantidadPedido,
-                    'precio_venta' => $precioUnitario,
-                    'total_venta'  => $total,
-                    'descripcion'  => $p['descripcion'] ?? '',
-                ]);
-
-                $pedido = Pedido::create([
-                    'user_id'     => $targetUserId,
-                    'articulo_id' => $artId,
-                    'descripcion' => $p['descripcion'] ?? '',
-                    'costo'       => $total,
-                    'venta_id'    => $venta->id,
-                    'cantidad'    => $cantidadPedido,
-                ]);
-
-                $pedido->load('articulo', 'user');
-                $pedidosCreados[] = $pedido;
-
-                $articuloNombre = $pedido->articulo->nombre ?? 'N/A';
-                $clienteNombre = $pedido->user->name ?? 'Cliente';
-                $clienteNombreResumen = $clienteNombre;
-                $descripcionStr = mb_strtolower($articuloNombre . ' ' . ($pedido->descripcion ?? ''));
-
-                $esCemita = (str_contains($descripcionStr, 'cemita') || str_contains($descripcionStr, 'milanesa'));
-
-                if ($esCemita) {
-                    $tieneCemitas = true;
-                    if (str_contains($descripcionStr, 'hawaiana') || str_contains($descripcionStr, 'cubana') || str_contains($descripcionStr, 'texana') || str_contains($descripcionStr, 'tejama')) {
-                        $cemitasPollo += $cantidadPedido;
-                        $cemitasPuerco += $cantidadPedido;
-                    } else {
-                        if (str_contains($descripcionStr, 'pollo')) {
-                            $cemitasPollo += $cantidadPedido;
-                        } elseif (str_contains($descripcionStr, 'puerco') || str_contains($descripcionStr, 'cerdo') || str_contains($descripcionStr, 'milanesa')) {
-                            $cemitasPuerco += $cantidadPedido;
-                        }
-                    }
-                }
-
-                $totalFormatted = number_format((float) ($pedido->costo ?? 0), 2);
-                $notasStr = $pedido->descripcion ?: 'Sin notas';
-                $lineaItem = "• *{$articuloNombre}* (x{$pedido->cantidad}) = \${$totalFormatted}\n  _Nota:_ {$notasStr}";
-
-                if (!$esCemita) {
-                    $itemsParaCocina[] = "• *{$articuloNombre}* (x{$pedido->cantidad})\n  _Nota:_ {$notasStr}";
-                    $notificacionesCocinaWebPush[] = [
-                        'pedido_id'       => $pedido->id,
-                        'articulo_nombre' => $articuloNombre,
-                        'cliente_nombre'  => $clienteNombre,
-                    ];
-                }
-
-                $itemsParaAdmin[] = $lineaItem;
-
-                if ($isAdmin && $esCemita) {
-                    $appName = \App\Models\AppSetting::getSettings()->app_name ?? 'El Bajón';
-                    $mensajesIndividualesAdmin[] = "*📦 NUEVO PEDIDO DE CEMITA #{$pedido->id} - {$appName}*\n\n" .
-                        "• *Cliente:* {$clienteNombre}\n" .
-                        "• *Artículo:* {$articuloNombre}\n" .
-                        "• *Cantidad:* {$pedido->cantidad}\n" .
-                        "• *Total:* \${$totalFormatted}\n" .
-                        "• *Notas:* {$notasStr}\n\n" .
-                        "_Enviado por {$appName}_";
-                }
-            }
-
-            // Desacoplamiento quirúrgico de todas las notificaciones externas tras consolidar el commit
-            \Illuminate\Support\Facades\DB::afterCommit(function () use (
-                $isAdmin,
-                $adminPhones,
-                $cocinaPhones,
-                $mensajesIndividualesAdmin,
-                $notificacionesCocinaWebPush,
-                $itemsParaAdmin,
-                $itemsParaCocina,
-                $tieneCemitas,
-                $cemitasPollo,
-                $cemitasPuerco,
-                $clienteNombreResumen,
-                $totalPedidoGlobal,
-                $pedidosCreados
-            ): void {
-                $waService = app(\App\Services\WhatsAppNotificationService::class);
-
-                // Notificaciones individuales de cemitas cuando pide Admin
-                foreach ($mensajesIndividualesAdmin as $mensajeWaIndiv) {
-                    foreach ($adminPhones as $telAdmin) {
-                        try {
-                            $waService->enqueuePayload([
-                                'numero'     => $telAdmin,
-                                'mensaje'    => $mensajeWaIndiv,
-                                'status'     => 'pendiente',
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                        } catch (\Throwable $exWa) {
-                            \Illuminate\Support\Facades\Log::error("Error encolando WhatsApp individual de cemita: " . $exWa->getMessage());
-                        }
-                    }
-                }
-
-                // Notificaciones WebPush a Cocina por cada platillo
-                if (!empty($notificacionesCocinaWebPush)) {
-                    try {
-                        $cocinaUsers = \App\Models\User::whereHas('roles', function ($q) {
-                            $q->where('name', 'cocina');
-                        })->get();
-
-                        foreach ($notificacionesCocinaWebPush as $notifCocina) {
-                            \Illuminate\Support\Facades\Notification::send($cocinaUsers, new \App\Notifications\AppNotification(
-                                "PREPARAR PEDIDO #{$notifCocina['pedido_id']} 🧑‍🍳",
-                                "{$notifCocina['articulo_nombre']} para {$notifCocina['cliente_nombre']}",
-                                route('pedidos.index')
-                            ));
-                        }
-                    } catch (\Throwable $exCocinaPush) {
-                        \Illuminate\Support\Facades\Log::error("Error enviando WebPush a cocina: " . $exCocinaPush->getMessage());
-                    }
-                }
-
-                // 1. AL ADMIN: REGLA 1: Si es un usuario normal, se le avisa cualquier pedido que realizó el usuario (Mensaje Consolidado).
-                if (!$isAdmin && count($itemsParaAdmin) > 0 && !empty($adminPhones)) {
-                    try {
-                        $appName = \App\Models\AppSetting::getSettings()->app_name ?? 'El Bajón';
-                        $totalMonto = number_format($totalPedidoGlobal, 2);
-                        $totalPiezasPedidos = array_sum(array_map(fn ($p) => (int) ($p->cantidad ?? 1), $pedidosCreados));
-                        $mensajeResumenAdmin = "*📦 NUEVO PEDIDO MÚLTIPLE - {$appName}*\n\n" .
-                            "• *Cliente:* {$clienteNombreResumen}\n" .
-                            "• *Total de productos:* {$totalPiezasPedidos} unidad(es)\n\n" .
-                            "*PRODUCTOS:*\n" .
-                            implode("\n", $itemsParaAdmin) . "\n\n" .
-                            "*TOTAL DEL PEDIDO:* \${$totalMonto}\n\n" .
-                            "_Enviado por {$appName}_";
-
-                        foreach ($adminPhones as $telAdmin) {
-                            $waService->enqueuePayload([
-                                'numero'     => $telAdmin,
-                                'mensaje'    => $mensajeResumenAdmin,
-                                'status'     => 'pendiente',
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                        }
-                    } catch (\Throwable $exAdminWa) {
-                        \Illuminate\Support\Facades\Log::error("Error enviando resumen WhatsApp a admin: " . $exAdminWa->getMessage());
-                    }
-                }
-
-                // 2. A COCINA: REGLA 4: Siempre se envía a cocina para realizar el pedido (Admin o Usuario normal).
-                if ((!empty($itemsParaCocina) || $tieneCemitas) && !empty($cocinaPhones)) {
-                    try {
-                        $appName = \App\Models\AppSetting::getSettings()->app_name ?? 'El Bajón';
-                        $mensajeResumenCocina = "*🧑‍🍳 NUEVA ORDEN COMPLETA - {$appName}*\n\n" .
-                            "• *Cliente:* {$clienteNombreResumen}\n\n";
-
-                        if (!empty($itemsParaCocina)) {
-                            $mensajeResumenCocina .= "*PLATILLOS:*\n" . implode("\n------------------------------------------\n", $itemsParaCocina) . "\n\n";
-                        }
-
-                        if ($tieneCemitas) {
-                            $mensajeResumenCocina .= "------------------------------------------\n" .
-                                "*RESUMEN DE MILANESAS:*\n" .
-                                "• Pollo a preparar: {$cemitasPollo}\n" .
-                                "• Puerco a preparar: {$cemitasPuerco}\n\n" .
-                                "_(Las milanesas necesarias para todo este pedido)_\n\n";
-                        }
-
-                        $mensajeResumenCocina .= "_Enviado por {$appName}_";
-
-                        foreach ($cocinaPhones as $telCocina) {
-                            $waService->enqueuePayload([
-                                'numero'     => $telCocina,
-                                'mensaje'    => $mensajeResumenCocina,
-                                'status'     => 'pendiente',
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                        }
-                    } catch (\Throwable $ex) {
-                        \Illuminate\Support\Facades\Log::error("Error enviando resumen completo a cocina: " . $ex->getMessage());
-                    }
-                }
-
-                // 3. Enviar Notificación Push al Administrador al crear pedido
-                if (!$isAdmin) {
-                    try {
-                        $totalPiezasPedidos = array_sum(array_map(fn ($p) => (int) ($p->cantidad ?? 1), $pedidosCreados));
-                        $itemsNombres = array_map(function ($p) {
-                            $artNom = $p->articulo->nombre ?? 'Artículo';
-                            $cant = (int) ($p->cantidad ?? 1);
-                            return "{$cant}x {$artNom}";
-                        }, $pedidosCreados);
-                        $listaPedidos = \Illuminate\Support\Str::limit(implode(', ', $itemsNombres), 180, '...');
-                        $totalMonto = number_format($totalPedidoGlobal, 2);
-
-                        \App\Services\PushNotificationService::notifyAdmins(
-                            "Nuevo Pedido Recibido 📦",
-                            "El cliente {$clienteNombreResumen} realizó un pedido de {$totalPiezasPedidos} producto(s) por un total de \${$totalMonto}: {$listaPedidos}.",
-                            route('pedidos.index')
-                        );
-                    } catch (\Throwable $exPushAdmin) {
-                        \Illuminate\Support\Facades\Log::error("Error enviando Push de nuevo pedido a admins: " . $exPushAdmin->getMessage());
-                    }
-                }
-            });
-        });
+        app(\App\Actions\Pos\RegistrarPedidoAction::class)->execute(
+            $validated['pedidos'],
+            Auth::user(),
+            $defaultUserId
+        );
 
         return redirect()->route('pedidos.index')->with('success', 'Todos los pedidos fueron creados correctamente.');
     }
@@ -436,30 +124,9 @@ class PedidoController extends Controller
         ]);
 
         $userId = Auth::user()->hasRole('admin') ? $request->user_id : Auth::id();
-
-        // Obtener teléfonos de admin y cocina
-        $adminPhones = \Illuminate\Support\Facades\DB::table('users')
-            ->join('role_user', 'users.id', '=', 'role_user.user_id')
-            ->join('roles', 'role_user.role_id', '=', 'roles.id')
-            ->where('roles.name', 'admin')
-            ->whereNotNull('users.telefono')
-            ->where('users.telefono', '!=', '')
-            ->pluck('users.telefono')
-            ->map(function ($tel) { return preg_replace('/[^0-9]/', '', $tel); })
-            ->map(function ($num) { return (strlen($num) == 10) ? '521' . $num : $num; })
-            ->filter()->unique()->toArray();
-        if (empty($adminPhones)) $adminPhones = ['5212222153410'];
-
-        $cocinaPhones = \Illuminate\Support\Facades\DB::table('users')
-            ->join('role_user', 'users.id', '=', 'role_user.user_id')
-            ->join('roles', 'role_user.role_id', '=', 'roles.id')
-            ->where('roles.name', 'cocina')
-            ->whereNotNull('users.telefono')
-            ->where('users.telefono', '!=', '')
-            ->pluck('users.telefono')
-            ->map(function ($tel) { return preg_replace('/[^0-9]/', '', $tel); })
-            ->map(function ($num) { return (strlen($num) == 10) ? '521' . $num : $num; })
-            ->filter()->unique()->toArray();
+        $waService = app(\App\Services\WhatsAppNotificationService::class);
+        $adminPhones = $waService->getAdminPhones();
+        $cocinaPhones = $waService->getCocinaPhones();
 
         $cemitasPollo = 0;
         $cemitasPuerco = 0;
@@ -517,26 +184,18 @@ class PedidoController extends Controller
             $pedidoParaMensaje->load('articulo', 'user');
 
             try {
-                $articuloNombre = $pedidoParaMensaje->articulo->nombre ?? 'N/A';
+                $articuloObj = $pedidoParaMensaje->articulo;
+                $articuloNombre = $articuloObj->nombre ?? 'N/A';
                 $clienteNombre  = $pedidoParaMensaje->user->name ?? 'Cliente';
                 $clienteNombreResumen = $clienteNombre;
-                $descripcionStr = strtolower($articuloNombre . ' ' . ($pedidoParaMensaje->descripcion ?? ''));
 
-                $esCemita = (strpos($descripcionStr, 'cemita') !== false);
+                $esCemita = $articuloObj ? $articuloObj->esCemitaOMilanesa() : false;
 
-                if ($esCemita) {
+                if ($esCemita && $articuloObj) {
                     $tieneCemitas = true;
-                    $qty = (int) $pedidoParaMensaje->cantidad;
-                    if (strpos($descripcionStr, 'hawaiana') !== false || strpos($descripcionStr, 'cubana') !== false || strpos($descripcionStr, 'texana') !== false || strpos($descripcionStr, 'tejama') !== false) {
-                        $cemitasPollo += $qty;
-                        $cemitasPuerco += $qty;
-                    } else {
-                        if (strpos($descripcionStr, 'pollo') !== false) {
-                            $cemitasPollo += $qty;
-                        } elseif (strpos($descripcionStr, 'puerco') !== false || strpos($descripcionStr, 'cerdo') !== false || strpos($descripcionStr, 'milanesa') !== false) {
-                            $cemitasPuerco += $qty;
-                        }
-                    }
+                    $conteo = $articuloObj->conteoMilanesas((int) $pedidoParaMensaje->cantidad);
+                    $cemitasPollo += $conteo['pollo'];
+                    $cemitasPuerco += $conteo['puerco'];
                 }
 
                 $totalFormatted = number_format($pedidoParaMensaje->costo ?? 0, 2);
@@ -555,19 +214,11 @@ class PedidoController extends Controller
                 }
 
                 if ($sendToAdmin) {
-                    foreach ($adminPhones as $telAdmin) {
-                        app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
-                            'numero' => $telAdmin, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
-                        ]);
-                    }
+                    $waService->enqueueToMultiple($adminPhones, $mensajeWa);
                 }
 
-                if (!$esCemita) {
-                    foreach ($cocinaPhones as $telCocina) {
-                        app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
-                            'numero' => $telCocina, 'mensaje' => $mensajeWa, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
-                        ]);
-                    }
+                if ($articuloObj && $articuloObj->requierePreparacionPlatilloCocina()) {
+                    $waService->enqueueToMultiple($cocinaPhones, $mensajeWa);
                 }
             } catch (\Exception $exWa) {
                 \Illuminate\Support\Facades\Log::error("Error encolando WhatsApp de Actualización Pedido #{$pedidoParaMensaje->id}: " . $exWa->getMessage());
@@ -583,11 +234,7 @@ class PedidoController extends Controller
                                   "• *Nuevas Milanesas de Puerco:* {$cemitasPuerco}\n\n" .
                                   "_(Cantidades totales requeridas tras la actualización del pedido)_";
                 
-                foreach ($cocinaPhones as $telCocina) {
-                    app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
-                        'numero' => $telCocina, 'mensaje' => $mensajeResumen, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
-                    ]);
-                }
+                $waService->enqueueToMultiple($cocinaPhones, $mensajeResumen);
             } catch (\Exception $ex) {
                 \Illuminate\Support\Facades\Log::error("Error enviando resumen de actualización a cocina: " . $ex->getMessage());
             }

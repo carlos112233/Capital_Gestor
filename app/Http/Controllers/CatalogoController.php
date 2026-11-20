@@ -54,41 +54,7 @@ class CatalogoController extends Controller
         ]);
 
         try {
-            DB::transaction(function () use ($validated, $request) {
-                $articulo = Articulo::lockForUpdate()->find($validated['articulo_id']);
-                $cantidadVenta = (int) $validated['cantidad'];
-
-                // Validar que hay suficiente stock
-                if ($articulo->stock < $cantidadVenta) {
-                    // Usamos una ValidationException para que el error se muestre como un error de formulario
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        'cantidad' => 'No hay suficiente stock. Cantidad disponible: ' . $articulo->stock,
-                    ]);
-                }
-
-                $isOperadorVenta = Auth::user()->hasRole('admin') || Auth::user()->hasRole('vendedor');
-                $finalUserId = ($isOperadorVenta && $request->filled('cliente_id'))
-                    ? (int) $validated['cliente_id']
-                    : (int) Auth::id();
-
-                // 1. Disminuir el stock del artículo
-                $articulo->decrement('stock', $cantidadVenta);
-
-                // El precio maestro del catálogo es la única fuente autorizada.
-                $precioUnitario = (float) $articulo->precio;
-
-                $venta = $articulo->ventas()->create([
-                    'user_id'      => $finalUserId,
-                    'comprador_id' => (int) Auth::id(),
-                    'cantidad'     => $cantidadVenta,
-                    'precio_venta' => $precioUnitario,
-                    'total_venta'  => $precioUnitario * $cantidadVenta,
-                    'descripcion'  => $validated['descripcion'] ?? null,
-                ]);
-
-                // Alerta por WhatsApp al Administrador al realizar compra
-                \App\Models\Venta::notificarAdminWhatsApp($venta);
-            });
+            app(\App\Actions\Pos\RegistrarVentaAction::class)->executeSingle($validated, Auth::user());
         } catch (\Illuminate\Validation\ValidationException $e) {
             // Redirigir hacia atrás con los errores de validación
             return redirect()->back()->withErrors($e->errors())->withInput();
