@@ -7,8 +7,9 @@ if [ -n "$PORT" ]; then
     sed -i "s/:80>/:$PORT>/g" /etc/apache2/sites-available/*.conf
 fi
 
-# 2. Garantizar permisos de escritura para www-data y node en carpetas clave
-chmod -R 777 /var/www/html/public /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/wa-motor 2>/dev/null || true
+# 2. Garantizar permisos de escritura con menor privilegio para www-data en storage y cache (Cierre DT-08)
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null || true
+chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null || true
 
 # 3. Limpieza de cachés de Laravel
 php artisan config:clear || true

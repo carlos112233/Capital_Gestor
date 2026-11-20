@@ -367,13 +367,10 @@ function limpiarQRArchivos() {
             "qr.png",
         );
         const publicPath = path.join(__dirname, "..", "public", "qr.png");
-        const brainPath =
-            "/home/araiza/.gemini/antigravity-ide/brain/20e4ef77-10df-4090-9fac-89a163a822e6/qr.png";
 
         if (fs.existsSync(qrPath)) fs.unlinkSync(qrPath);
         if (fs.existsSync(publicImgPath)) fs.unlinkSync(publicImgPath);
         if (fs.existsSync(publicPath)) fs.unlinkSync(publicPath);
-        if (fs.existsSync(brainPath)) fs.unlinkSync(brainPath);
         console.log(
             "🧹 QR eliminado automáticamente porque la sesión ya se encuentra vinculada y activa.",
         );
@@ -400,10 +397,7 @@ client.on("qr", async (qr) => {
 
         const publicImgPath = path.join(publicImgDir, "qr.png");
         const publicPath = path.join(__dirname, "..", "public", "qr.png");
-        const brainPath =
-            "/home/araiza/.gemini/antigravity-ide/brain/20e4ef77-10df-4090-9fac-89a163a822e6/qr.png";
 
-        if (fs.existsSync(brainPath)) fs.copyFileSync(qrPath, brainPath);
         fs.copyFileSync(qrPath, publicImgPath);
         fs.copyFileSync(qrPath, publicPath);
 
