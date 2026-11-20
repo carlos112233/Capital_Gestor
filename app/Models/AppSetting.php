@@ -19,6 +19,7 @@ class AppSetting extends Model
     public const DEFAULT_SIDEBAR_COLOR = '#0f172a';
     public const DEFAULT_FONT_FAMILY = 'Inter';
     public const DEFAULT_THEME_MODE = 'light';
+    public const DEFAULT_RETENCION = 20.00;
 
     protected $fillable = [
         'app_name',
@@ -31,6 +32,7 @@ class AppSetting extends Model
         'sidebar_color',
         'font_family',
         'theme_mode',
+        'retencion_default',
     ];
 
     protected static function booted(): void
@@ -76,6 +78,7 @@ class AppSetting extends Model
             'sidebar_color' => self::DEFAULT_SIDEBAR_COLOR,
             'font_family' => self::DEFAULT_FONT_FAMILY,
             'theme_mode' => self::DEFAULT_THEME_MODE,
+            'retencion_default' => self::DEFAULT_RETENCION,
             'logo_path' => null,
             'favicon_path' => null,
         ]);
