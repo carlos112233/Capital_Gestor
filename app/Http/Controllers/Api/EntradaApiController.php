@@ -56,6 +56,10 @@ class EntradaApiController extends Controller
      */
     public function store(Request $request)
     {
+        if (!Auth::user()?->hasRole('admin')) {
+            return $this->error('No autorizado para registrar entradas de capital', 403);
+        }
+
         try {
             // 1. Validación
             $validated = $request->validate([
@@ -119,6 +123,10 @@ class EntradaApiController extends Controller
      */
     public function update(Request $request, Entrada $entrada)
     {
+        if (!Auth::user()?->hasRole('admin')) {
+            return $this->error('No autorizado para modificar entradas de capital', 403);
+        }
+
         try {
             $validated = $request->validate([
                 'articulo_id'  => 'required|exists:articulos,id',

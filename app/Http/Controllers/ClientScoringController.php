@@ -104,11 +104,11 @@ class ClientScoringController extends Controller
 
         $user = User::findOrFail($userId);
 
-        $user->update([
-            'override_score' => $request->override_score,
-            'score_manual' => $request->override_score ? $request->score_manual : null,
-            'notas_scoring' => $request->notas_scoring,
-        ]);
+        $user->forceFill([
+            'override_score' => (bool) $request->override_score,
+            'score_manual'   => $request->override_score ? $request->score_manual : null,
+            'notas_scoring'  => $request->notas_scoring,
+        ])->save();
 
         $scoringUpdated = ClientScoringService::getScoring($user);
 

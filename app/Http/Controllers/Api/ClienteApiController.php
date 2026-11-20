@@ -83,14 +83,21 @@ class ClienteApiController extends Controller
 
     public function show(User $cliente): JsonResponse
     {
-        // El objeto $cliente ya incluye el teléfono automáticamente si está en el modelo
+        if (!\Illuminate\Support\Facades\Auth::user()?->hasRole('admin') && (int) \Illuminate\Support\Facades\Auth::id() !== (int) $cliente->id) {
+            return $this->error('No autorizado para consultar este cliente', 403);
+        }
+
         return $this->success($cliente);
     }
 
     public function update(Request $request, User $cliente): JsonResponse
     {
+        if (!\Illuminate\Support\Facades\Auth::user()?->hasRole('admin') && (int) \Illuminate\Support\Facades\Auth::id() !== (int) $cliente->id) {
+            return $this->error('No autorizado para modificar este cliente', 403);
+        }
+
         $request->merge([
-            'email' => trim(strtolower($request->email)),
+            'email' => trim(strtolower((string) $request->email)),
         ]);
 
         $validated = $request->validate([

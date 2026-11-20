@@ -34,10 +34,6 @@ class User extends Authenticatable
         'image',
         'image_tipo',
         'telefono',
-        'score_calculado',
-        'score_manual',
-        'override_score',
-        'notas_scoring',
         'theme_color',
         'theme_mode',
     ];
