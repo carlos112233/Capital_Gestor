@@ -72,6 +72,7 @@ test('al crear un pedido un usuario cliente notifica al administrador via push',
     $articulo = Articulo::create([
         'nombre' => 'Cemita de Pollo Test',
         'precio' => 85.00,
+        'stock' => 20,
         'disponible' => true,
     ]);
 
@@ -87,6 +88,7 @@ test('al crear un pedido un usuario cliente notifica al administrador via push',
     ]);
 
     $response->assertRedirect(route('pedidos.index'));
+    expect($articulo->fresh()->stock)->toBe(19);
 
     Notification::assertSentTo(
         [$admin],
@@ -97,6 +99,59 @@ test('al crear un pedido un usuario cliente notifica al administrador via push',
                 && str_contains($notification->message, "1x Cemita de Pollo Test");
         }
     );
+});
+
+test('PedidoController store ejecuta rollback atomico y rechaza pedido cuando el stock es insuficiente', function () {
+    Notification::fake();
+
+    $admin = User::factory()->create();
+    assignTestRole($admin, 'admin');
+
+    $cliente = User::factory()->create();
+    assignTestRole($cliente, 'cliente');
+
+    $articuloOk = Articulo::create([
+        'nombre' => 'Cemita Milanesa Stock OK',
+        'precio' => 90.00,
+        'stock' => 5,
+        'disponible' => true,
+    ]);
+
+    $articuloSinStock = Articulo::create([
+        'nombre' => 'Refresco Agotado',
+        'precio' => 25.00,
+        'stock' => 1,
+        'disponible' => true,
+    ]);
+
+    $pedidosCountBefore = Pedido::count();
+    $ventasCountBefore = \App\Models\Venta::count();
+
+    $response = $this->actingAs($cliente)->from(route('pedidos.create'))->post(route('pedidos.store'), [
+        'pedidos' => [
+            [
+                'articulo_id' => $articuloOk->id,
+                'cantidad' => 2,
+                'descripcion' => 'Con todo',
+            ],
+            [
+                'articulo_id' => $articuloSinStock->id,
+                'cantidad' => 3, // Excede el stock de 1
+                'descripcion' => 'Frio',
+            ],
+        ],
+    ]);
+
+    $response->assertRedirect(route('pedidos.create'));
+    $response->assertSessionHasErrors(['pedidos']);
+
+    // Verificar rollback atómico: ningún artículo descontó stock, ni se crearon ventas o pedidos
+    expect($articuloOk->fresh()->stock)->toBe(5)
+        ->and($articuloSinStock->fresh()->stock)->toBe(1)
+        ->and(Pedido::count())->toBe($pedidosCountBefore)
+        ->and(\App\Models\Venta::count())->toBe($ventasCountBefore);
+
+    Notification::assertNothingSent();
 });
 
 test('notificarAdminWhatsApp envia push al admin indicando cuantos y cuales productos compro', function () {

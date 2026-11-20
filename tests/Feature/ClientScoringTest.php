@@ -51,6 +51,7 @@ test('calcula correctamente el scoring crediticio automatico de un cliente', fun
         'imagen' => 'comprobantes/test3.jpg',
     ]);
 
+    \Illuminate\Support\Facades\Cache::forget("scoring_{$cliente->id}_x");
     $scoringUpdated = ClientScoringService::getScoring($cliente->fresh());
     expect($scoringUpdated['score'])->toBe(75)
         ->and($scoringUpdated['tier'])->toBe('regular');

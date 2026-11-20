@@ -1,8 +1,9 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 
 test('reset password link screen can be rendered', function () {
     $response = $this->get('/forgot-password');
@@ -10,51 +11,85 @@ test('reset password link screen can be rendered', function () {
     $response->assertStatus(200);
 });
 
-test('reset password link can be requested', function () {
-    Notification::fake();
+test('solicitar reset por WhatsApp no modifica users.password y encola enlace con token sin contrasena en texto plano', function () {
+    $originalHash = Hash::make('MiClaveOriginalSegura123!');
+    $user = User::factory()->create([
+        'email' => 'cliente.reset@elbajon.store',
+        'telefono' => '2221234567',
+        'password' => $originalHash,
+    ]);
 
-    $user = User::factory()->create();
+    $response = $this->post('/forgot-password', ['email' => $user->email]);
 
-    $this->post('/forgot-password', ['email' => $user->email]);
+    $response->assertRedirect(route('login'));
+    $response->assertSessionHas('status');
 
-    Notification::assertSentTo($user, ResetPassword::class);
+    // (a) Verificar que users.password NO fue modificado al solicitar el reset
+    $user->refresh();
+    expect($user->password)->toBe($originalHash)
+        ->and(Hash::check('MiClaveOriginalSegura123!', $user->password))->toBeTrue();
+
+    // (b) Verificar que el mensaje en whatsapp_pending_messages contiene el link con token y NO una contraseña temporal en texto plano
+    $queuedMsg = DB::table('whatsapp_pending_messages')
+        ->where('numero', '5212221234567')
+        ->latest('id')
+        ->first();
+
+    expect($queuedMsg)->not->toBeNull()
+        ->and($queuedMsg->mensaje)->toContain('/reset-password/')
+        ->and($queuedMsg->mensaje)->toContain(urlencode($user->email))
+        ->and($queuedMsg->mensaje)->not->toContain('Bajon-')
+        ->and($queuedMsg->mensaje)->not->toContain('Nueva Contraseña Temporal');
 });
 
 test('reset password screen can be rendered', function () {
-    Notification::fake();
+    $user = User::factory()->create([
+        'telefono' => '2229876543',
+    ]);
 
-    $user = User::factory()->create();
+    $token = Password::broker()->createToken($user);
 
-    $this->post('/forgot-password', ['email' => $user->email]);
+    $response = $this->get(route('password.reset', [
+        'token' => $token,
+        'email' => $user->email,
+    ]));
 
-    Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
-        $response = $this->get('/reset-password/'.$notification->token);
-
-        $response->assertStatus(200);
-
-        return true;
-    });
+    $response->assertStatus(200);
 });
 
 test('password can be reset with valid token', function () {
-    Notification::fake();
+    $user = User::factory()->create([
+        'telefono' => '2229876543',
+    ]);
 
-    $user = User::factory()->create();
+    $token = Password::broker()->createToken($user);
 
-    $this->post('/forgot-password', ['email' => $user->email]);
+    $response = $this->post('/reset-password', [
+        'token' => $token,
+        'email' => $user->email,
+        'password' => 'NuevaClaveSegura99!',
+        'password_confirmation' => 'NuevaClaveSegura99!',
+    ]);
 
-    Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
-        $response = $this->post('/reset-password', [
-            'token' => $notification->token,
-            'email' => $user->email,
-            'password' => 'password',
-            'password_confirmation' => 'password',
-        ]);
+    $response
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('login'));
 
-        $response
-            ->assertSessionHasNoErrors()
+    expect(Hash::check('NuevaClaveSegura99!', $user->fresh()->password))->toBeTrue();
+});
+
+test('exceder throttle 3,15 en forgot-password retorna HTTP 429', function () {
+    $user = User::factory()->create([
+        'email' => 'throttle.user@elbajon.store',
+        'telefono' => '2225554433',
+    ]);
+
+    for ($i = 1; $i <= 3; $i++) {
+        $this->post('/forgot-password', ['email' => $user->email])
             ->assertRedirect(route('login'));
+    }
 
-        return true;
-    });
+    // El 4to intento dentro de la ventana de 15 minutos debe ser bloqueado con HTTP 429
+    $this->post('/forgot-password', ['email' => $user->email])
+        ->assertStatus(429);
 });
