@@ -1,14 +1,15 @@
   <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-slate-50">
           <tr>
-              <th class="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">ID</th>
-              <th class="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Nombre</th>
-              <th class="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Stock</th>
-              <th class="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Disponible
+              <th class="px-6 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">ID</th>
+              <th class="px-6 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Nombre</th>
+              <th class="px-6 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Cocina</th>
+              <th class="px-6 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Stock</th>
+              <th class="px-6 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Disponible
               </th>
-              <th class="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Precio
+              <th class="px-6 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Precio
                   Unitario</th>
-              <th class="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Acciones
+              <th class="px-6 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Acciones
               </th>
           </tr>
       </thead>
@@ -16,10 +17,24 @@
           @forelse ($articulos as $articulo)
               @if ($articulo->nombre != 'Pago saldado')
                   <tr class="hover:bg-slate-50/80 transition-colors">
-                      <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-slate-900">
+                      <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-slate-900 dark:text-slate-100">
                           {{ $articulo->id }}</td>
-                      <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-slate-900">
+                      <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-slate-900 dark:text-slate-100">
                           {{ $articulo->nombre }}</td>
+                      <td class="px-6 py-4 text-center whitespace-nowrap text-xs font-semibold">
+                          @php
+                              $catLabel = match($articulo->categoria_cocina ?? 'otro') {
+                                  'cemita' => '🥪 Cemita (Pollo+Puerco)',
+                                  'milanesa_pollo' => '🍗 Milanesa Pollo',
+                                  'milanesa_puerco' => '🥩 Milanesa Puerco',
+                                  'bebida' => '🥤 Bebida',
+                                  default => $articulo->requiere_cocina ? '🍽️ Cocina' : '📦 Sin Cocina',
+                              };
+                          @endphp
+                          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full {{ $articulo->requiere_cocina ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800' : 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700' }}">
+                              {{ $catLabel }}
+                          </span>
+                      </td>
                       <td class="px-6 py-4 text-center whitespace-nowrap text-sm font-medium text-slate-900">
                           <span
                               class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $articulo->stock > 5 ? 'bg-slate-100 text-slate-800' : ($articulo->stock > 0 ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-rose-100 text-rose-800 border border-rose-300') }}"

@@ -30,11 +30,25 @@ class CatalogoApiController extends Controller
             $query->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($request->q) . '%']);
         }
 
-        // 3. Ejecución ultra ligera y ordenada
-        $articulos = $query->select('id', 'nombre', 'precio', 'stock', 'img_base64')
-            ->orderBy('nombre', 'asc') // Siempre ordena para que tu App se vea profesional
-            ->toBase() // Sigue usando esto, es genial para ahorrar los 512MB de RAM de Render
-            ->get();
+        // 3. Ejecución ultra ligera y ordenada con metadatos estructurados de cocina
+        $articulos = $query->select(
+            'id',
+            'nombre',
+            'precio',
+            'stock',
+            'disponible',
+            'requiere_cocina',
+            'categoria_cocina',
+            'img_base64'
+        )
+            ->orderBy('nombre', 'asc')
+            ->toBase()
+            ->get()
+            ->map(function ($art) {
+                $art->disponible = (bool) $art->disponible;
+                $art->requiere_cocina = (bool) $art->requiere_cocina;
+                return $art;
+            });
 
         return $this->success($articulos);
     }

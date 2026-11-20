@@ -21,12 +21,21 @@ class ArticuloApiController extends Controller
         $query = Articulo::latest();
 
         if ($request->filled('q')) {
-            $query->when($request->filled('q'), function ($query) use ($request) {
-                $query->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($request->q) . '%']);
-            })->orderBy('nombre', 'asc');
+            $query->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower((string) $request->q) . '%'])
+                ->orderBy('nombre', 'asc');
         }
 
-        $articulos = $query->select('id', 'nombre', 'precio', 'stock', 'img_base64', 'imagen_tipo')
+        $articulos = $query->select(
+            'id',
+            'nombre',
+            'precio',
+            'stock',
+            'disponible',
+            'requiere_cocina',
+            'categoria_cocina',
+            'img_base64',
+            'imagen_tipo'
+        )
             ->orderBy('nombre', 'asc')
             ->get();
 
@@ -37,17 +46,24 @@ class ArticuloApiController extends Controller
     {
         try {
             $validated = $request->validate([
-                'nombre'      => 'required|string|max:255',
-                'descripcion' => 'nullable|string',
-                'precio'      => 'required|numeric|min:0',
-                'stock'       => 'required|integer|min:0',
-                'img_base64'  => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+                'nombre'           => 'required|string|max:255',
+                'descripcion'      => 'nullable|string',
+                'precio'           => 'required|numeric|min:0',
+                'stock'            => 'required|integer|min:0',
+                'requiere_cocina'  => 'nullable|boolean',
+                'categoria_cocina' => 'nullable|in:cemita,milanesa_pollo,milanesa_puerco,bebida,otro',
+                'img_base64'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             ]);
 
             if ($request->hasFile('img_base64')) {
                 $path = $request->file('img_base64')->store('articulos', 'public');
                 $validated['img_base64'] = $path;
                 $validated['imagen_tipo'] = $request->file('img_base64')->getMimeType();
+            }
+
+            if ($request->has('requiere_cocina') && !$request->boolean('requiere_cocina') && empty($validated['categoria_cocina'])) {
+                $validated['requiere_cocina'] = false;
+                $validated['categoria_cocina'] = Articulo::CATEGORIA_BEBIDA;
             }
 
             $articulo = Articulo::create($validated);
@@ -80,15 +96,17 @@ class ArticuloApiController extends Controller
     {
         try {
             $validated = $request->validate([
-                'nombre'      => 'required|string|max:255',
-                'descripcion' => 'nullable|string',
-                'precio'      => 'required|numeric|min:0',
-                'stock'       => 'required',
-                'img_base64'  => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+                'nombre'           => 'required|string|max:255',
+                'descripcion'      => 'nullable|string',
+                'precio'           => 'required|numeric|min:0',
+                'stock'            => 'required',
+                'requiere_cocina'  => 'nullable|boolean',
+                'categoria_cocina' => 'nullable|in:cemita,milanesa_pollo,milanesa_puerco,bebida,otro',
+                'img_base64'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             ]);
 
             if (isset($validated['stock'])) {
-                $validated['stock'] = $articulo->stock + $validated['stock'];
+                $validated['stock'] = (int) $articulo->stock + (int) $validated['stock'];
             }
 
             if ($request->hasFile('img_base64')) {
@@ -99,6 +117,11 @@ class ArticuloApiController extends Controller
                 $path = $request->file('img_base64')->store('articulos', 'public');
                 $validated['img_base64'] = $path;
                 $validated['imagen_tipo'] = $request->file('img_base64')->getMimeType();
+            }
+
+            if ($request->has('requiere_cocina') && !$request->boolean('requiere_cocina') && empty($validated['categoria_cocina'])) {
+                $validated['requiere_cocina'] = false;
+                $validated['categoria_cocina'] = Articulo::CATEGORIA_BEBIDA;
             }
 
             $articulo->update($validated);

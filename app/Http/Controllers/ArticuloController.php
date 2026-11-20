@@ -15,9 +15,22 @@ class ArticuloController extends Controller
     public function index(Request $request)
     {
         $articulos = Articulo::comerciales()
-            ->select(['id', 'nombre', 'descripcion', 'precio', 'stock', 'disponible', 'img_base64', 'imagen_tipo', 'created_at', 'updated_at'])
+            ->select([
+                'id',
+                'nombre',
+                'descripcion',
+                'precio',
+                'stock',
+                'disponible',
+                'requiere_cocina',
+                'categoria_cocina',
+                'img_base64',
+                'imagen_tipo',
+                'created_at',
+                'updated_at',
+            ])
             ->when($request->filled('q'), function ($query) use ($request) {
-                $query->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($request->q) . '%']);
+                $query->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower((string) $request->q) . '%']);
             })
             ->orderBy('nombre', 'asc')
             ->paginate(10)
@@ -32,6 +45,7 @@ class ArticuloController extends Controller
         })->whereDoesntHave('roles', function ($query) {
             $query->whereIn('name', ['admin', 'vendedor', 'cocina']);
         })->orderBy('name')->get(['id', 'name']);
+
         return view('admin.articulos.index', compact('articulos', 'clientes'));
     }
 
@@ -43,11 +57,13 @@ class ArticuloController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'nombre'      => 'required|string|max:255',
-            'descripcion' => 'nullable|string',
-            'precio'      => 'required|numeric|min:0',
-            'stock'       => 'required|integer|min:0',
-            'img_base64'  => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'nombre'           => 'required|string|max:255',
+            'descripcion'      => 'nullable|string',
+            'precio'           => 'required|numeric|min:0',
+            'stock'            => 'required|integer|min:0',
+            'requiere_cocina'  => 'nullable|boolean',
+            'categoria_cocina' => 'nullable|in:cemita,milanesa_pollo,milanesa_puerco,bebida,otro',
+            'img_base64'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         if ($request->hasFile('img_base64')) {
@@ -56,7 +72,8 @@ class ArticuloController extends Controller
             $validated['imagen_tipo'] = $request->file('img_base64')->getMimeType();
         }
 
-        $validated['disponible'] = ($validated['stock'] > 0);
+        $validated['disponible'] = ((int) $validated['stock'] > 0);
+        $validated = $this->normalizeKitchenMetadata($validated, $request);
 
         Articulo::create($validated);
 
@@ -72,19 +89,20 @@ class ArticuloController extends Controller
     public function update(Request $request, Articulo $articulo): RedirectResponse
     {
         $validated = $request->validate([
-            'nombre'      => 'required|string|max:255',
-            'descripcion' => 'nullable|string',
-            'precio'      => 'required|numeric|min:0',
-            'stock'       => 'required',
-            'img_base64'  => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'nombre'           => 'required|string|max:255',
+            'descripcion'      => 'nullable|string',
+            'precio'           => 'required|numeric|min:0',
+            'stock'            => 'required|integer',
+            'requiere_cocina'  => 'nullable|boolean',
+            'categoria_cocina' => 'nullable|in:cemita,milanesa_pollo,milanesa_puerco,bebida,otro',
+            'img_base64'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         if (isset($validated['stock'])) {
-            $validated['stock'] = $articulo->stock + $validated['stock'];
+            $validated['stock'] = max(0, (int) $articulo->stock + (int) $validated['stock']);
         }
 
         if ($request->hasFile('img_base64')) {
-            // Eliminar imagen física anterior si existe
             if (!empty($articulo->img_base64) && Storage::disk('public')->exists($articulo->img_base64)) {
                 Storage::disk('public')->delete($articulo->img_base64);
             }
@@ -95,8 +113,10 @@ class ArticuloController extends Controller
         }
 
         if (isset($validated['stock'])) {
-            $validated['disponible'] = ($validated['stock'] > 0);
+            $validated['disponible'] = ((int) $validated['stock'] > 0);
         }
+
+        $validated = $this->normalizeKitchenMetadata($validated, $request, $articulo);
 
         $articulo->update($validated);
 
@@ -104,9 +124,75 @@ class ArticuloController extends Controller
             ->with('success', 'Artículo actualizado con éxito.');
     }
 
+    /**
+     * Normaliza de forma consistente requiere_cocina y categoria_cocina en creación y actualización.
+     *
+     * @param array<string, mixed> $validated
+     * @return array<string, mixed>
+     */
+    private function normalizeKitchenMetadata(array $validated, Request $request, ?Articulo $existing = null): array
+    {
+        $hasRequiere = $request->has('requiere_cocina');
+        $hasCategoria = $request->filled('categoria_cocina');
+
+        if (!$hasRequiere && !$hasCategoria) {
+            if ($existing) {
+                $validated['requiere_cocina'] = (bool) $existing->requiere_cocina;
+                $validated['categoria_cocina'] = $existing->categoria_cocina ?? Articulo::CATEGORIA_OTRO;
+                return $validated;
+            }
+
+            $inferred = Articulo::inferirMetadatosCocina(
+                (string) ($validated['nombre'] ?? ''),
+                (string) ($validated['descripcion'] ?? '')
+            );
+            $validated['requiere_cocina'] = $inferred['requiere_cocina'];
+            $validated['categoria_cocina'] = $inferred['categoria_cocina'];
+
+            return $validated;
+        }
+
+        $categoria = $hasCategoria
+            ? (string) $validated['categoria_cocina']
+            : null;
+
+        if ($hasRequiere) {
+            $requiereCocina = $request->boolean('requiere_cocina');
+        } elseif ($categoria === Articulo::CATEGORIA_BEBIDA) {
+            $requiereCocina = false;
+        } else {
+            $requiereCocina = $existing ? (bool) $existing->requiere_cocina : true;
+        }
+
+        if ($requiereCocina === false) {
+            // Si no requiere cocina y no se envió categoría (o se envió una categoría de cemita/milanesa), normalizar a bebida u otro
+            if ($categoria === null || in_array($categoria, [
+                Articulo::CATEGORIA_CEMITA,
+                Articulo::CATEGORIA_MILANESA_POLLO,
+                Articulo::CATEGORIA_MILANESA_PUERCO,
+            ], true)) {
+                $categoria = Articulo::CATEGORIA_BEBIDA;
+            }
+        } else {
+            if ($categoria === null) {
+                $inferred = Articulo::inferirMetadatosCocina(
+                    (string) ($validated['nombre'] ?? ''),
+                    (string) ($validated['descripcion'] ?? '')
+                );
+                $categoria = $inferred['categoria_cocina'] === Articulo::CATEGORIA_BEBIDA
+                    ? Articulo::CATEGORIA_OTRO
+                    : $inferred['categoria_cocina'];
+            }
+        }
+
+        $validated['requiere_cocina'] = $requiereCocina;
+        $validated['categoria_cocina'] = $categoria;
+
+        return $validated;
+    }
+
     public function destroy(Articulo $articulo): RedirectResponse
     {
-        // Limpiar archivo físico asociado al eliminar el registro
         if (!empty($articulo->img_base64) && Storage::disk('public')->exists($articulo->img_base64)) {
             Storage::disk('public')->delete($articulo->img_base64);
         }
