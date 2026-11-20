@@ -41,7 +41,7 @@ sequenceDiagram
 - **[HECHO]** La raíz `/` y `redirectUsersTo` también redirigen por rol (`routes/web.php:16-24`, `bootstrap/app.php:38-43`).
 
 ### 1.2 API (Sanctum)
-- **[HECHO]** `POST /api/login` con `throttle:6,1` (`routes/api.php:16`) → `Api\AuthController@login`: busca por email y verifica `Hash::check($request->password, $user->password)` (`app/Http/Controllers/Api/AuthController.php:19-21`), luego consulta roles vía `role_user` (`L27`) y emite token Sanctum. Formato exacto de respuesta en `.kiro/steering/api-contract.md`.
+- **[HECHO]** `POST /api/login` con `throttle:6,1` (`routes/api.php:16`) → `Api\AuthController@login`: busca por email y verifica `Hash::check($request->password, $user->password)` (`app/Http/Controllers/Api/AuthController.php:19-21`), luego consulta roles vía `role_user` (`L27`) y emite token Sanctum. Formato exacto de respuesta en `.antigravity/steering/api-contract.md`.
 - **[HECHO]** Tokens expirados se purgan con `sanctum:prune-expired --hours=2` diario (`routes/console.php:11`).
 
 ### 1.3 HTTP vs HTTPS

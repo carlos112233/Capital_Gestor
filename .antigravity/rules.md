@@ -104,5 +104,18 @@ Actúa bajo el principio de menor privilegio técnico. El usuario alternará ent
 
 1. **Regla del Boy Scout Quirúrgico:** Todo agente que toque un archivo debe dejarlo más limpio, tipado (`declare(strict_types=1);`) y desacoplado de lo que lo encontró, sin salirse de su jurisdicción de carpeta.
 2. **Radar Proactivo Post-Misión:** Al finalizar cualquier tarea, cada agente involucrado debe reportar exactamente **1 oportunidad concreta de mejora** detectada en los archivos inspeccionados (ej. consulta N+1 potencial, índice faltante, controlador >250 líneas, validación débil o caso borde sin test), clasificada por impacto (`ALTO`, `MEDIO`, `BAJO`).
-3. **Cero Regresiones y Cero Deuda Silenciosa:** Ningún cambio se considera terminado si `vendor/bin/pest` o `composer audit` degradan su estado actual (`83 passed`, `0 advisories`), y ninguna deuda técnica puede ocultarse con `// TODO` sin documentarse en el reporte.
+3. **Cero Regresiones y Cero Deuda Silenciosa:** Ningún cambio se considera terminado si `vendor/bin/pest`, `composer audit` o `npm audit` degradan su estado actual (`91 passed`, `0 advisories`, `0 vulnerabilities`), y ninguna deuda técnica puede ocultarse con `// TODO` sin documentarse en el reporte.
 4. **Ciclo de Iteración Controlada:** Las mejoras detectadas fuera del alcance inmediato de la misión no se ejecutan a ciegas; se presentan numeradas al usuario con su ROI técnico para aprobación antes de tocar código.
+
+---
+
+# ÍNDICE DE DOCUMENTOS DE STEERING Y ARQUITECTURA (`.antigravity/steering/`)
+
+Todo agente que opere en este repositorio debe cargar y respetar el contexto arquitectónico y de seguridad definido en:
+
+- **`.antigravity/steering/product.md`** — Dominio funcional del negocio, actores (`admin`, `vendedor`, `cliente`), flujos POS/Cocina/Crédito FIFO y reglas de operación.
+- **`.antigravity/steering/tech.md`** — Stack tecnológico oficial (Laravel 12, PHP 8.2/8.3, MySQL 8.0, Redis, Vite/Tailwind/Alpine, `wa-motor` con `whatsapp-web.js@1.34.8` y Pest).
+- **`.antigravity/steering/api-contract.md`** — Contratos de endpoints REST (`/api/*` bajo `auth:sanctum` y `role:admin`), payloads, códigos HTTP y respuestas JSON.
+- **`.antigravity/steering/security-notes.md`** — Políticas de seguridad, rate-limiting, almacenamiento privado de comprobantes, cabeceras HTTP/HSTS y controles OWASP Top 10.
+- **`docs/onboarding/BITACORA_PRODUCCION_2026_11.md`** — Estado vivo de producción en `https://elbajon.store` y roadmap de Arquitectura Multi-Empresa.
+

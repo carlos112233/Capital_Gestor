@@ -151,7 +151,7 @@ flowchart LR
 
 ### 3.2 Rutas API (`routes/api.php`, prefijo `/api`)
 - **[HECHO]** `POST /login` con `throttle:6,1` → `Api\AuthController@login` (`routes/api.php:16`).
-- **[HECHO]** Grupo `auth:sanctum` (`routes/api.php:20-52`): `profile` (L22-24), `dashboard` (L26), `catalogo` (L27-28), `apiResource entradas` (L29), `clientes` (L30-33), `apiResource pedidos/ventas` (L35-36), sub-grupo `role:admin` prefijo `admin` (L38-46), `POST /logout` (L51). Detalle en `.kiro/steering/api-contract.md`.
+- **[HECHO]** Grupo `auth:sanctum` (`routes/api.php:20-52`): `profile` (L22-24), `dashboard` (L26), `catalogo` (L27-28), `apiResource entradas` (L29), `clientes` (L30-33), `apiResource pedidos/ventas` (L35-36), sub-grupo `role:admin` prefijo `admin` (L38-46), `POST /logout` (L51). Detalle en `.antigravity/steering/api-contract.md`.
 
 ### 3.3 Comandos de consola
 
