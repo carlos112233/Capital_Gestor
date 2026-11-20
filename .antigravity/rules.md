@@ -96,3 +96,13 @@ Actúa bajo el principio de menor privilegio técnico. El usuario alternará ent
   3. **Topología Higiénica:** No dejar ramas huérfanas ni merges accidentales. En fusiones de features a ramas principales usar `--no-ff` para preservar la trazabilidad histórica.
   4. **Resolución Quirúrgica de Conflictos:** En colisiones de código (`<<<<<<< HEAD`), nunca borrar código ajeno por conveniencia; analizar el AST y coordinar con el autor del cambio.
   5. **Branch Hygiene:** Aplicar `git status` y `git diff --staged` antes de cada commit para certificar que ningún secreto (`.env`), binario o basura temporal sea rastreado.
+
+
+---
+
+# PROTOCOLO DE MEJORA CONTINUA OBLIGATORIO (KAIZEN)
+
+1. **Regla del Boy Scout Quirúrgico:** Todo agente que toque un archivo debe dejarlo más limpio, tipado (`declare(strict_types=1);`) y desacoplado de lo que lo encontró, sin salirse de su jurisdicción de carpeta.
+2. **Radar Proactivo Post-Misión:** Al finalizar cualquier tarea, cada agente involucrado debe reportar exactamente **1 oportunidad concreta de mejora** detectada en los archivos inspeccionados (ej. consulta N+1 potencial, índice faltante, controlador >250 líneas, validación débil o caso borde sin test), clasificada por impacto (`ALTO`, `MEDIO`, `BAJO`).
+3. **Cero Regresiones y Cero Deuda Silenciosa:** Ningún cambio se considera terminado si `vendor/bin/pest` o `composer audit` degradan su estado actual (`83 passed`, `0 advisories`), y ninguna deuda técnica puede ocultarse con `// TODO` sin documentarse en el reporte.
+4. **Ciclo de Iteración Controlada:** Las mejoras detectadas fuera del alcance inmediato de la misión no se ejecutan a ciegas; se presentan numeradas al usuario con su ROI técnico para aprobación antes de tocar código.
