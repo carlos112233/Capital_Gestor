@@ -80,16 +80,18 @@ class PedidoController extends Controller
             'pedidos.*.articulo_id' => 'required|exists:articulos,id',
             'pedidos.*.cantidad'    => 'required|integer|min:1',
             'pedidos.*.descripcion' => 'nullable|string',
-            'pedidos.*.user_id'      => 'nullable|exists:users,id',
+            'pedidos.*.user_id'     => 'nullable|exists:users,id',
         ]);
 
         $userId = Auth::user()->hasRole('admin') ? $request->user_id : Auth::id();
+        $authUserId = (int) Auth::id();
+        $isAdmin = Auth::user()->hasRole('admin');
 
         // Helper para formatear teléfonos mexicanos a formato WhatsApp (521XXXXXXXXXX)
         $formatPhone = function ($tel) {
-            $num = preg_replace('/[^0-9]/', '', $tel);
-            if (strlen($num) == 10) return '521' . $num;
-            if (strlen($num) == 12 && str_starts_with($num, '52')) return '521' . substr($num, 2);
+            $num = preg_replace('/[^0-9]/', '', (string) $tel);
+            if (strlen($num) === 10) return '521' . $num;
+            if (strlen($num) === 12 && str_starts_with($num, '52')) return '521' . substr($num, 2);
             return $num;
         };
 
@@ -115,51 +117,107 @@ class PedidoController extends Controller
             ->map($formatPhone)
             ->filter()->unique()->toArray();
 
-        // Variables para resumen
-        $cemitasPollo = 0;
-        $cemitasPuerco = 0;
-        $tieneCemitas = false;
-        $clienteNombreResumen = 'Cliente';
-        $isAdmin = Auth::user()->hasRole('admin');
-        
-        $itemsParaCocina = [];
-        $itemsParaAdmin  = []; // Sólo si es usuario normal
-        $pedidosCreados  = [];
+        $articuloIds = collect($validated['pedidos'])
+            ->pluck('articulo_id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
 
-        $totalPedidoGlobal = 0;
+        \Illuminate\Support\Facades\DB::transaction(function () use (
+            $validated,
+            $articuloIds,
+            $userId,
+            $authUserId,
+            $isAdmin,
+            $adminPhones,
+            $cocinaPhones
+        ): void {
+            // Bloqueo pesimista de los artículos involucrados en el pedido
+            $articulosBloqueados = Articulo::whereIn('id', $articuloIds)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
 
-        foreach ($validated['pedidos'] as $p) {
-            $articulo = Articulo::findOrFail($p['articulo_id']);
-            $precioUnitario = (float) $articulo->precio;
-            $total = $precioUnitario * (int) $p['cantidad'];
-            $totalPedidoGlobal += $total;
-            $targetUserId = $p['user_id'] ?? $userId;
+            // Validar disponibilidad y stock acumulado por artículo antes de mutar inventario
+            $cantidadesRequeridas = [];
+            foreach ($validated['pedidos'] as $item) {
+                $artId = (int) $item['articulo_id'];
+                $cantidadesRequeridas[$artId] = ($cantidadesRequeridas[$artId] ?? 0) + (int) $item['cantidad'];
+            }
 
-            $venta = Venta::create([
-                'user_id'      => $targetUserId,
-                'comprador_id' => Auth::id(),
-                'articulo_id'  => $p['articulo_id'],
-                'cantidad'     => $p['cantidad'],
-                'precio_venta' => $precioUnitario,
-                'total_venta'  => $total,
-                'descripcion'  => $p['descripcion'] ?? '',
-            ]);
+            foreach ($cantidadesRequeridas as $artId => $cantidadTotal) {
+                /** @var Articulo|null $articulo */
+                $articulo = $articulosBloqueados->get($artId);
+                if (!$articulo || !$articulo->disponible) {
+                    $nombreArt = $articulo->nombre ?? "#{$artId}";
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'pedidos' => "El artículo '{$nombreArt}' no se encuentra disponible.",
+                    ]);
+                }
 
-            $pedido = Pedido::create([
-                'user_id'     => $targetUserId,
-                'articulo_id' => $p['articulo_id'],
-                'descripcion' => $p['descripcion'] ?? '',
-                'costo'       => $total,
-                'venta_id'    => $venta->id,
-                'cantidad'    => $p['cantidad'],
-            ]);
+                if ((int) $articulo->stock < $cantidadTotal) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'pedidos' => "Stock insuficiente para el artículo '{$articulo->nombre}'. Disponible: {$articulo->stock}",
+                    ]);
+                }
+            }
 
-            $pedido->load('articulo', 'user');
-            $pedidosCreados[] = $pedido;
+            // Variables para resumen de notificaciones post-commit
+            $cemitasPollo = 0;
+            $cemitasPuerco = 0;
+            $tieneCemitas = false;
+            $clienteNombreResumen = 'Cliente';
+            $itemsParaCocina = [];
+            $itemsParaAdmin = [];
+            $pedidosCreados = [];
+            $mensajesIndividualesAdmin = [];
+            $notificacionesCocinaWebPush = [];
+            $totalPedidoGlobal = 0.0;
 
-            try {
+            foreach ($validated['pedidos'] as $p) {
+                $artId = (int) $p['articulo_id'];
+                /** @var Articulo $articulo */
+                $articulo = $articulosBloqueados->get($artId);
+                $cantidadPedido = (int) $p['cantidad'];
+
+                // Descontar stock dentro del bloqueo pesimista
+                $articulo->decrement('stock', $cantidadPedido);
+                if ($articulo->stock <= 0) {
+                    $articulo->disponible = false;
+                    $articulo->save();
+                }
+
+                // Autoridad estricta del precio maestro desde base de datos
+                $precioUnitario = (float) $articulo->precio;
+                $total = $precioUnitario * $cantidadPedido;
+                $totalPedidoGlobal += $total;
+                $targetUserId = $p['user_id'] ?? $userId;
+
+                $venta = Venta::create([
+                    'user_id'      => $targetUserId,
+                    'comprador_id' => $authUserId,
+                    'articulo_id'  => $artId,
+                    'cantidad'     => $cantidadPedido,
+                    'precio_venta' => $precioUnitario,
+                    'total_venta'  => $total,
+                    'descripcion'  => $p['descripcion'] ?? '',
+                ]);
+
+                $pedido = Pedido::create([
+                    'user_id'     => $targetUserId,
+                    'articulo_id' => $artId,
+                    'descripcion' => $p['descripcion'] ?? '',
+                    'costo'       => $total,
+                    'venta_id'    => $venta->id,
+                    'cantidad'    => $cantidadPedido,
+                ]);
+
+                $pedido->load('articulo', 'user');
+                $pedidosCreados[] = $pedido;
+
                 $articuloNombre = $pedido->articulo->nombre ?? 'N/A';
-                $clienteNombre  = $pedido->user->name ?? 'Cliente';
+                $clienteNombre = $pedido->user->name ?? 'Cliente';
                 $clienteNombreResumen = $clienteNombre;
                 $descripcionStr = mb_strtolower($articuloNombre . ' ' . ($pedido->descripcion ?? ''));
 
@@ -167,149 +225,185 @@ class PedidoController extends Controller
 
                 if ($esCemita) {
                     $tieneCemitas = true;
-                    $qty = (int) $pedido->cantidad;
                     if (str_contains($descripcionStr, 'hawaiana') || str_contains($descripcionStr, 'cubana') || str_contains($descripcionStr, 'texana') || str_contains($descripcionStr, 'tejama')) {
-                        $cemitasPollo += $qty;
-                        $cemitasPuerco += $qty;
+                        $cemitasPollo += $cantidadPedido;
+                        $cemitasPuerco += $cantidadPedido;
                     } else {
                         if (str_contains($descripcionStr, 'pollo')) {
-                            $cemitasPollo += $qty;
+                            $cemitasPollo += $cantidadPedido;
                         } elseif (str_contains($descripcionStr, 'puerco') || str_contains($descripcionStr, 'cerdo') || str_contains($descripcionStr, 'milanesa')) {
-                            $cemitasPuerco += $qty;
+                            $cemitasPuerco += $cantidadPedido;
                         }
                     }
                 }
 
-                $totalFormatted = number_format($pedido->costo ?? 0, 2);
+                $totalFormatted = number_format((float) ($pedido->costo ?? 0), 2);
                 $notasStr = $pedido->descripcion ?: 'Sin notas';
                 $lineaItem = "• *{$articuloNombre}* (x{$pedido->cantidad}) = \${$totalFormatted}\n  _Nota:_ {$notasStr}";
-                
-                // Preparar strings para resúmenes
+
                 if (!$esCemita) {
                     $itemsParaCocina[] = "• *{$articuloNombre}* (x{$pedido->cantidad})\n  _Nota:_ {$notasStr}";
+                    $notificacionesCocinaWebPush[] = [
+                        'pedido_id'       => $pedido->id,
+                        'articulo_nombre' => $articuloNombre,
+                        'cliente_nombre'  => $clienteNombre,
+                    ];
                 }
+
                 $itemsParaAdmin[] = $lineaItem;
 
-                // REGLA 2: Si el Admin realiza el pedido, SOLO se le envían mensajes individuales por cada cemita.
                 if ($isAdmin && $esCemita) {
                     $appName = \App\Models\AppSetting::getSettings()->app_name ?? 'El Bajón';
-                    $mensajeWaIndiv = "*📦 NUEVO PEDIDO DE CEMITA #{$pedido->id} - {$appName}*\n\n" .
-                                      "• *Cliente:* {$clienteNombre}\n" .
-                                      "• *Artículo:* {$articuloNombre}\n" .
-                                      "• *Cantidad:* {$pedido->cantidad}\n" .
-                                      "• *Total:* \${$totalFormatted}\n" .
-                                      "• *Notas:* {$notasStr}\n\n" .
-                                      "_Enviado por {$appName}_";
+                    $mensajesIndividualesAdmin[] = "*📦 NUEVO PEDIDO DE CEMITA #{$pedido->id} - {$appName}*\n\n" .
+                        "• *Cliente:* {$clienteNombre}\n" .
+                        "• *Artículo:* {$articuloNombre}\n" .
+                        "• *Cantidad:* {$pedido->cantidad}\n" .
+                        "• *Total:* \${$totalFormatted}\n" .
+                        "• *Notas:* {$notasStr}\n\n" .
+                        "_Enviado por {$appName}_";
+                }
+            }
 
+            // Desacoplamiento quirúrgico de todas las notificaciones externas tras consolidar el commit
+            \Illuminate\Support\Facades\DB::afterCommit(function () use (
+                $isAdmin,
+                $adminPhones,
+                $cocinaPhones,
+                $mensajesIndividualesAdmin,
+                $notificacionesCocinaWebPush,
+                $itemsParaAdmin,
+                $itemsParaCocina,
+                $tieneCemitas,
+                $cemitasPollo,
+                $cemitasPuerco,
+                $clienteNombreResumen,
+                $totalPedidoGlobal,
+                $pedidosCreados
+            ): void {
+                $waService = app(\App\Services\WhatsAppNotificationService::class);
+
+                // Notificaciones individuales de cemitas cuando pide Admin
+                foreach ($mensajesIndividualesAdmin as $mensajeWaIndiv) {
                     foreach ($adminPhones as $telAdmin) {
-                        app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
-                            'numero' => $telAdmin, 'mensaje' => $mensajeWaIndiv, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
-                        ]);
+                        try {
+                            $waService->enqueuePayload([
+                                'numero'     => $telAdmin,
+                                'mensaje'    => $mensajeWaIndiv,
+                                'status'     => 'pendiente',
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        } catch (\Throwable $exWa) {
+                            \Illuminate\Support\Facades\Log::error("Error encolando WhatsApp individual de cemita: " . $exWa->getMessage());
+                        }
                     }
                 }
 
-                // Notificación WebPush a Cocina
-                if (!$esCemita) {
-                    $cocinaUsers = \App\Models\User::whereHas('roles', function($q) { $q->where('name', 'cocina'); })->get();
-                    \Illuminate\Support\Facades\Notification::send($cocinaUsers, new \App\Notifications\AppNotification(
-                        "PREPARAR PEDIDO #{$pedido->id} 🧑‍🍳", 
-                        "{$articuloNombre} para {$clienteNombre}",
-                        route('pedidos.index')
-                    ));
+                // Notificaciones WebPush a Cocina por cada platillo
+                if (!empty($notificacionesCocinaWebPush)) {
+                    try {
+                        $cocinaUsers = \App\Models\User::whereHas('roles', function ($q) {
+                            $q->where('name', 'cocina');
+                        })->get();
+
+                        foreach ($notificacionesCocinaWebPush as $notifCocina) {
+                            \Illuminate\Support\Facades\Notification::send($cocinaUsers, new \App\Notifications\AppNotification(
+                                "PREPARAR PEDIDO #{$notifCocina['pedido_id']} 🧑‍🍳",
+                                "{$notifCocina['articulo_nombre']} para {$notifCocina['cliente_nombre']}",
+                                route('pedidos.index')
+                            ));
+                        }
+                    } catch (\Throwable $exCocinaPush) {
+                        \Illuminate\Support\Facades\Log::error("Error enviando WebPush a cocina: " . $exCocinaPush->getMessage());
+                    }
                 }
 
-            } catch (\Exception $exWa) {
-                \Illuminate\Support\Facades\Log::error("Error procesando notificaciones individuales Pedido #{$pedido->id}: " . $exWa->getMessage());
-            }
-        }
+                // 1. AL ADMIN: REGLA 1: Si es un usuario normal, se le avisa cualquier pedido que realizó el usuario (Mensaje Consolidado).
+                if (!$isAdmin && count($itemsParaAdmin) > 0 && !empty($adminPhones)) {
+                    try {
+                        $appName = \App\Models\AppSetting::getSettings()->app_name ?? 'El Bajón';
+                        $totalMonto = number_format($totalPedidoGlobal, 2);
+                        $totalPiezasPedidos = array_sum(array_map(fn ($p) => (int) ($p->cantidad ?? 1), $pedidosCreados));
+                        $mensajeResumenAdmin = "*📦 NUEVO PEDIDO MÚLTIPLE - {$appName}*\n\n" .
+                            "• *Cliente:* {$clienteNombreResumen}\n" .
+                            "• *Total de productos:* {$totalPiezasPedidos} unidad(es)\n\n" .
+                            "*PRODUCTOS:*\n" .
+                            implode("\n", $itemsParaAdmin) . "\n\n" .
+                            "*TOTAL DEL PEDIDO:* \${$totalMonto}\n\n" .
+                            "_Enviado por {$appName}_";
 
-        // --- ENVIOS CONSOLIDADOS DESPUÉS DEL BUCLE ---
-
-        // 1. AL ADMIN: REGLA 1: Si es un usuario normal, se le avisa cualquier pedido que realizó el usuario (Mensaje Consolidado).
-        if (!$isAdmin && count($itemsParaAdmin) > 0 && !empty($adminPhones)) {
-            $appName = \App\Models\AppSetting::getSettings()->app_name ?? 'El Bajón';
-            $totalMonto = number_format($totalPedidoGlobal, 2);
-            $totalPiezasPedidos = array_sum(array_map(fn($p) => (int) ($p->cantidad ?? 1), $pedidosCreados));
-            $mensajeResumenAdmin = "*📦 NUEVO PEDIDO MÚLTIPLE - {$appName}*\n\n" .
-                                   "• *Cliente:* {$clienteNombreResumen}\n" .
-                                   "• *Total de productos:* {$totalPiezasPedidos} unidad(es)\n\n" .
-                                   "*PRODUCTOS:*\n" .
-                                   implode("\n", $itemsParaAdmin) . "\n\n" .
-                                   "*TOTAL DEL PEDIDO:* \${$totalMonto}\n\n" .
-                                   "_Enviado por {$appName}_";
-
-            foreach ($adminPhones as $telAdmin) {
-                app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
-                    'numero' => $telAdmin, 'mensaje' => $mensajeResumenAdmin, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
-                ]);
-            }
-        }
-
-        // 2. A COCINA: REGLA 4: Siempre se envía a cocina para realizar el pedido (Admin o Usuario normal).
-        if ((!empty($itemsParaCocina) || $tieneCemitas) && !empty($cocinaPhones)) {
-            try {
-                $appName = \App\Models\AppSetting::getSettings()->app_name ?? 'El Bajón';
-                $mensajeResumenCocina = "*🧑‍🍳 NUEVA ORDEN COMPLETA - {$appName}*\n\n" .
-                                       "• *Cliente:* {$clienteNombreResumen}\n\n";
-
-                if (!empty($itemsParaCocina)) {
-                    $mensajeResumenCocina .= "*PLATILLOS:*\n" . implode("\n------------------------------------------\n", $itemsParaCocina) . "\n\n";
+                        foreach ($adminPhones as $telAdmin) {
+                            $waService->enqueuePayload([
+                                'numero'     => $telAdmin,
+                                'mensaje'    => $mensajeResumenAdmin,
+                                'status'     => 'pendiente',
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    } catch (\Throwable $exAdminWa) {
+                        \Illuminate\Support\Facades\Log::error("Error enviando resumen WhatsApp a admin: " . $exAdminWa->getMessage());
+                    }
                 }
 
-                if ($tieneCemitas) {
-                    $mensajeResumenCocina .= "------------------------------------------\n" .
-                                             "*RESUMEN DE MILANESAS:*\n" .
-                                             "• Pollo a preparar: {$cemitasPollo}\n" .
-                                             "• Puerco a preparar: {$cemitasPuerco}\n\n" .
-                                             "_(Las milanesas necesarias para todo este pedido)_\n\n";
+                // 2. A COCINA: REGLA 4: Siempre se envía a cocina para realizar el pedido (Admin o Usuario normal).
+                if ((!empty($itemsParaCocina) || $tieneCemitas) && !empty($cocinaPhones)) {
+                    try {
+                        $appName = \App\Models\AppSetting::getSettings()->app_name ?? 'El Bajón';
+                        $mensajeResumenCocina = "*🧑‍🍳 NUEVA ORDEN COMPLETA - {$appName}*\n\n" .
+                            "• *Cliente:* {$clienteNombreResumen}\n\n";
+
+                        if (!empty($itemsParaCocina)) {
+                            $mensajeResumenCocina .= "*PLATILLOS:*\n" . implode("\n------------------------------------------\n", $itemsParaCocina) . "\n\n";
+                        }
+
+                        if ($tieneCemitas) {
+                            $mensajeResumenCocina .= "------------------------------------------\n" .
+                                "*RESUMEN DE MILANESAS:*\n" .
+                                "• Pollo a preparar: {$cemitasPollo}\n" .
+                                "• Puerco a preparar: {$cemitasPuerco}\n\n" .
+                                "_(Las milanesas necesarias para todo este pedido)_\n\n";
+                        }
+
+                        $mensajeResumenCocina .= "_Enviado por {$appName}_";
+
+                        foreach ($cocinaPhones as $telCocina) {
+                            $waService->enqueuePayload([
+                                'numero'     => $telCocina,
+                                'mensaje'    => $mensajeResumenCocina,
+                                'status'     => 'pendiente',
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    } catch (\Throwable $ex) {
+                        \Illuminate\Support\Facades\Log::error("Error enviando resumen completo a cocina: " . $ex->getMessage());
+                    }
                 }
 
-                $mensajeResumenCocina .= "_Enviado por {$appName}_";
+                // 3. Enviar Notificación Push al Administrador al crear pedido
+                if (!$isAdmin) {
+                    try {
+                        $totalPiezasPedidos = array_sum(array_map(fn ($p) => (int) ($p->cantidad ?? 1), $pedidosCreados));
+                        $itemsNombres = array_map(function ($p) {
+                            $artNom = $p->articulo->nombre ?? 'Artículo';
+                            $cant = (int) ($p->cantidad ?? 1);
+                            return "{$cant}x {$artNom}";
+                        }, $pedidosCreados);
+                        $listaPedidos = \Illuminate\Support\Str::limit(implode(', ', $itemsNombres), 180, '...');
+                        $totalMonto = number_format($totalPedidoGlobal, 2);
 
-                foreach ($cocinaPhones as $telCocina) {
-                    app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
-                        'numero' => $telCocina, 'mensaje' => $mensajeResumenCocina, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
-                    ]);
+                        \App\Services\PushNotificationService::notifyAdmins(
+                            "Nuevo Pedido Recibido 📦",
+                            "El cliente {$clienteNombreResumen} realizó un pedido de {$totalPiezasPedidos} producto(s) por un total de \${$totalMonto}: {$listaPedidos}.",
+                            route('pedidos.index')
+                        );
+                    } catch (\Throwable $exPushAdmin) {
+                        \Illuminate\Support\Facades\Log::error("Error enviando Push de nuevo pedido a admins: " . $exPushAdmin->getMessage());
+                    }
                 }
-            } catch (\Exception $ex) {
-                \Illuminate\Support\Facades\Log::error("Error enviando resumen completo a cocina: " . $ex->getMessage());
-            }
-        } elseif (!$isAdmin && $tieneCemitas && !empty($cocinaPhones)) {
-            // Lógica original (tal cual) para usuario normal con cemitas
-            try {
-                $mensajeResumen = "*🧑‍🍳 RESUMEN DE MILANESAS (NUEVO PEDIDO)*\n\n" .
-                                  "• *Cliente:* {$clienteNombreResumen}\n" .
-                                  "• *Pollo a preparar:* {$cemitasPollo}\n" .
-                                  "• *Puerco a preparar:* {$cemitasPuerco}\n\n" .
-                                  "_(Las milanesas necesarias para todo este pedido)_";
-                
-                foreach ($cocinaPhones as $telCocina) {
-                    app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
-                        'numero' => $telCocina, 'mensaje' => $mensajeResumen, 'status' => 'pendiente', 'created_at' => now(), 'updated_at' => now()
-                    ]);
-                }
-            } catch (\Exception $ex) {
-                \Illuminate\Support\Facades\Log::error("Error enviando resumen a cocina: " . $ex->getMessage());
-            }
-        }
-
-        // Enviar Notificación Push al Administrador al crear pedido
-        if (!$isAdmin) {
-            $totalPiezasPedidos = array_sum(array_map(fn($p) => (int) ($p->cantidad ?? 1), $pedidosCreados));
-            $itemsNombres = array_map(function($p) {
-                $artNom = $p->articulo->nombre ?? 'Artículo';
-                $cant = (int) ($p->cantidad ?? 1);
-                return "{$cant}x {$artNom}";
-            }, $pedidosCreados);
-            $listaPedidos = \Illuminate\Support\Str::limit(implode(', ', $itemsNombres), 180, '...');
-            $totalMonto = number_format($totalPedidoGlobal, 2);
-
-            \App\Services\PushNotificationService::notifyAdmins(
-                "Nuevo Pedido Recibido 📦",
-                "El cliente {$clienteNombreResumen} realizó un pedido de {$totalPiezasPedidos} producto(s) por un total de \${$totalMonto}: {$listaPedidos}.",
-                route('pedidos.index')
-            );
-        }
+            });
+        });
 
         return redirect()->route('pedidos.index')->with('success', 'Todos los pedidos fueron creados correctamente.');
     }
