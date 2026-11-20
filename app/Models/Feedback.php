@@ -66,31 +66,16 @@ class Feedback extends Model
     public static function notificarAdminWhatsApp(self $feedback): void
     {
         try {
-            $adminPhones = DB::table('users')
-                ->join('role_user', 'users.id', '=', 'role_user.user_id')
-                ->join('roles', 'role_user.role_id', '=', 'roles.id')
-                ->where('roles.name', 'admin')
-                ->whereNotNull('users.telefono')
-                ->where('users.telefono', '!=', '')
-                ->pluck('users.telefono')
-                ->map(function ($tel) {
-                    $num = preg_replace('/[^0-9]/', '', $tel);
-                    return (strlen($num) == 10) ? '521' . $num : $num;
-                })
-                ->filter()
-                ->unique()
-                ->toArray();
-
-            if (empty($adminPhones)) {
-                $adminPhones = ['5212222153410'];
-            }
+            $waService = app(\App\Services\WhatsAppNotificationService::class);
+            $adminPhones = $waService->getAdminPhones();
 
             $feedback->loadMissing('user');
             $usuarioNombre = $feedback->user->name ?? 'Usuario del sistema';
             $tipoLabel = strtoupper($feedback->tipo);
             $asunto = $feedback->asunto ?: 'Sin asunto';
+            $appName = \App\Models\AppSetting::getSettings()->app_name ?? 'El Bajón';
 
-            $mensajeWa = "*📢 NUEVO / A " . $tipoLabel . " - El bajon*\n\n" .
+            $mensajeWa = "*📢 NUEVO / A " . $tipoLabel . " - {$appName}*\n\n" .
                 "• *Usuario:* {$usuarioNombre}\n" .
                 "• *Tipo:* " . ucfirst($feedback->tipo) . "\n" .
                 "• *Asunto:* {$asunto}\n" .
@@ -98,15 +83,7 @@ class Feedback extends Model
                 "• *Estado:* Enviado 🔴\n\n" .
                 "_Ingresa al CRM en la sección Quejas y Sugerencias para revisarlo y responder._";
 
-            foreach ($adminPhones as $telAdmin) {
-                app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
-                    'numero'     => $telAdmin,
-                    'mensaje'    => $mensajeWa,
-                    'status'     => 'pendiente',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            $waService->enqueueToMultiple($adminPhones, $mensajeWa);
             Log::info("Notificación WhatsApp de Feedback #{$feedback->id} encolada para admins: " . implode(', ', $adminPhones));
         } catch (\Exception $e) {
             Log::error("Error encolando WhatsApp de Feedback #{$feedback->id}: " . $e->getMessage());

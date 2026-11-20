@@ -35,37 +35,8 @@ class NotificationCircuitBreakerService
                     '521' . $last10,
                 ]));
 
-                $query = DB::table('whatsapp_pending_messages')
-                    ->where('status', 'pendiente')
-                    ->where(function ($q) use ($phoneVariants, $last10) {
-                        $q->whereIn('numero', $phoneVariants);
-                        if (!empty($last10)) {
-                            $q->orWhere('numero', 'like', "%{$last10}%");
-                        }
-                    });
-
-                // Si se especificó un concepto específico, filtrar los mensajes relevantes
-                if ($concept !== null && $concept !== '') {
-                    $conceptLower = mb_strtolower($concept, 'UTF-8');
-                    if ($conceptLower === 'saldo' || $conceptLower === 'recordatorio' || $conceptLower === 'deuda') {
-                        $query->where(function ($q) {
-                            $q->whereRaw('LOWER(mensaje) LIKE ?', ['%saldo%'])
-                              ->orWhereRaw('LOWER(mensaje) LIKE ?', ['%estado de cuenta%'])
-                              ->orWhereRaw('LOWER(mensaje) LIKE ?', ['%recordatorio%'])
-                              ->orWhereRaw('LOWER(mensaje) LIKE ?', ['%cobro%'])
-                              ->orWhereRaw('LOWER(mensaje) LIKE ?', ['%deuda%']);
-                        });
-                    } else {
-                        $query->where(function ($q) use ($conceptLower) {
-                            $q->whereRaw('LOWER(mensaje) LIKE ?', ["%{$conceptLower}%"]);
-                        });
-                    }
-                }
-
-                $cancelledCount = $query->update([
-                    'status' => 'cancelado',
-                    'updated_at' => now(),
-                ]);
+                $cancelledCount = app(WhatsAppNotificationService::class)
+                    ->cancelPendingForUserPhones($phoneVariants, (string) $last10, $concept);
 
                 if ($cancelledCount > 0) {
                     Log::info("Cortocircuito de notificaciones: Se cancelaron {$cancelledCount} mensaje(s) de WhatsApp pendientes para el usuario #{$user->id} ({$user->name}). Concepto: " . ($concept ?? 'General/Todos'));

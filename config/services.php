@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'whatsapp' => [
+        'admin_fallback_phone' => env('WHATSAPP_ADMIN_FALLBACK_PHONE', '5212222153410'),
+    ],
+
 ];

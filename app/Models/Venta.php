@@ -52,26 +52,8 @@ class Venta extends Model
     public static function notificarAdminWhatsApp(self $venta): void
     {
         try {
-            $adminPhones = \Illuminate\Support\Facades\DB::table('users')
-                ->join('role_user', 'users.id', '=', 'role_user.user_id')
-                ->join('roles', 'role_user.role_id', '=', 'roles.id')
-                ->whereIn(\Illuminate\Support\Facades\DB::raw('LOWER(roles.name)'), ['admin', 'administrador'])
-                ->whereNotNull('users.telefono')
-                ->where('users.telefono', '!=', '')
-                ->pluck('users.telefono')
-                ->map(function ($tel) {
-                    $num = preg_replace('/[^0-9]/', '', $tel);
-                    if (strlen($num) == 10) return '521' . $num;
-                    if (strlen($num) == 12 && str_starts_with($num, '52')) return '521' . substr($num, 2);
-                    return $num;
-                })
-                ->filter()
-                ->unique()
-                ->toArray();
-
-            if (empty($adminPhones)) {
-                $adminPhones = ['5212222153410'];
-            }
+            $waService = app(\App\Services\WhatsAppNotificationService::class);
+            $adminPhones = $waService->getAdminPhones();
 
             $venta->loadMissing(['user', 'articulo']);
             $articuloNombre = $venta->articulo->nombre ?? 'N/A';
@@ -89,15 +71,7 @@ class Venta extends Model
                          "• *Notas:* " . ($venta->descripcion ?: 'Sin notas') . "\n\n" .
                          "_Enviado por {$appName}_";
 
-            foreach ($adminPhones as $telAdmin) {
-                app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
-                    'numero'     => $telAdmin,
-                    'mensaje'    => $mensajeWa,
-                    'status'     => 'pendiente',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            $waService->enqueueToMultiple($adminPhones, $mensajeWa);
             \Illuminate\Support\Facades\Log::info("Notificación WhatsApp de Nueva Compra/Venta #{$venta->id} encolada para admins: " . implode(', ', $adminPhones));
 
             // Notificación Push a Administradores (Campana web, WebSockets y navegador)
@@ -121,28 +95,10 @@ class Venta extends Model
     public static function notificarCarritoAdminWhatsApp(array $ventas, float $totalCarrito): void
     {
         try {
-            $adminPhones = \Illuminate\Support\Facades\DB::table('users')
-                ->join('role_user', 'users.id', '=', 'role_user.user_id')
-                ->join('roles', 'role_user.role_id', '=', 'roles.id')
-                ->whereIn(\Illuminate\Support\Facades\DB::raw('LOWER(roles.name)'), ['admin', 'administrador'])
-                ->whereNotNull('users.telefono')
-                ->where('users.telefono', '!=', '')
-                ->pluck('users.telefono')
-                ->map(function ($tel) {
-                    $num = preg_replace('/[^0-9]/', '', $tel);
-                    if (strlen($num) == 10) return '521' . $num;
-                    if (strlen($num) == 12 && str_starts_with($num, '52')) return '521' . substr($num, 2);
-                    return $num;
-                })
-                ->filter()
-                ->unique()
-                ->toArray();
-
-            if (empty($adminPhones)) {
-                $adminPhones = ['5212222153410'];
-            }
-
             if (empty($ventas)) return;
+
+            $waService = app(\App\Services\WhatsAppNotificationService::class);
+            $adminPhones = $waService->getAdminPhones();
 
             $clienteNombre = $ventas[0]->user->name ?? 'Cliente';
             $appName = \App\Models\AppSetting::getSettings()->app_name ?? 'El Bajón';
@@ -174,15 +130,7 @@ class Venta extends Model
                          "*TOTAL DEL CARRITO:* \${$totalFormatted}\n\n" .
                          "_Enviado por {$appName}_";
 
-            foreach ($adminPhones as $telAdmin) {
-                app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
-                    'numero'     => $telAdmin,
-                    'mensaje'    => $mensajeWa,
-                    'status'     => 'pendiente',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            $waService->enqueueToMultiple($adminPhones, $mensajeWa);
 
             \Illuminate\Support\Facades\Log::info("Notificación WhatsApp de Carrito encolada para admins: " . implode(', ', $adminPhones));
 

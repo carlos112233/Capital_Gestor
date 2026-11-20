@@ -117,10 +117,7 @@ class ConfiguracionController extends Controller
 
     public function index()
     {
-        $pendingMessages = DB::table('whatsapp_pending_messages')
-            ->orderBy('created_at', 'desc')
-            ->take(20)
-            ->get();
+        $pendingMessages = app(\App\Services\WhatsAppNotificationService::class)->getRecentMessages(20);
 
         return view('admin.configuracion.index', compact('pendingMessages'));
     }
@@ -200,14 +197,12 @@ class ConfiguracionController extends Controller
             $realDbName = config('database.connections.pgsql.database');
         }
 
-        // Obtener la lista reciente de mensajes y conteos desde la tabla whatsapp_pending_messages
+        // Obtener la lista reciente de mensajes y conteos desde WhatsAppNotificationService
         try {
-            $pendingMessages = DB::table('whatsapp_pending_messages')
-                ->orderBy('created_at', 'desc')
-                ->take(20)
-                ->get();
-            $pendingCount = DB::table('whatsapp_pending_messages')->where('status', 'pendiente')->count();
-            $sentCount = DB::table('whatsapp_pending_messages')->where('status', 'enviado')->count();
+            $waService = app(\App\Services\WhatsAppNotificationService::class);
+            $pendingMessages = $waService->getRecentMessages(20);
+            $pendingCount = $waService->countByStatus('pendiente');
+            $sentCount = $waService->countByStatus('enviado');
         } catch (\Throwable $eMsgs) {
             $pendingMessages = [];
             $pendingCount = 0;
@@ -326,12 +321,7 @@ class ConfiguracionController extends Controller
     public function markMessageAsSent($id)
     {
         try {
-            DB::table('whatsapp_pending_messages')
-                ->where('id', $id)
-                ->update([
-                    'status' => 'enviado',
-                    'updated_at' => now(),
-                ]);
+            app(\App\Services\WhatsAppNotificationService::class)->markAsSent((int) $id, false);
             return response()->json(['success' => true, 'message' => 'Mensaje marcado como enviado correctamente.']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
@@ -341,12 +331,7 @@ class ConfiguracionController extends Controller
     public function markAllMessagesAsSent()
     {
         try {
-            $updated = DB::table('whatsapp_pending_messages')
-                ->where('status', 'pendiente')
-                ->update([
-                    'status' => 'enviado',
-                    'updated_at' => now(),
-                ]);
+            $updated = app(\App\Services\WhatsAppNotificationService::class)->markAllPendingAsSent();
             return response()->json(['success' => true, 'message' => "$updated mensajes marcados como enviados."]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
@@ -359,12 +344,7 @@ class ConfiguracionController extends Controller
     public function markMessageAsPending($id)
     {
         try {
-            DB::table('whatsapp_pending_messages')
-                ->where('id', $id)
-                ->update([
-                    'status' => 'pendiente',
-                    'updated_at' => now(),
-                ]);
+            app(\App\Services\WhatsAppNotificationService::class)->markAsPending((int) $id);
             return response()->json(['success' => true, 'message' => 'Mensaje reencolado para envío correctamente.']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);

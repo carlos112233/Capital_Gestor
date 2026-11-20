@@ -92,21 +92,8 @@ class ComprobanteController extends Controller
         ]);
 
         // Notificar a administradores por WhatsApp
-        $adminPhones = \App\Models\User::whereHas('roles', function ($q) {
-            $q->where('name', 'admin');
-        })
-            ->pluck('telefono')
-            ->map(function ($num) {
-                $num = preg_replace('/[^0-9]/', '', (string)$num);
-                return (strlen($num) == 10) ? '521' . $num : $num;
-            })
-            ->filter()
-            ->unique()
-            ->toArray();
-
-        if (empty($adminPhones)) {
-            $adminPhones = ['5212222153410'];
-        }
+        $waService = app(\App\Services\WhatsAppNotificationService::class);
+        $adminPhones = $waService->getAdminPhones();
 
         $clienteNombre = Auth::user()->name;
         $montoNotif = number_format($montoFinal, 2);
@@ -118,15 +105,7 @@ class ComprobanteController extends Controller
                         "• *Folio/Rastreo:* " . ($ocrResult['clave_rastreo'] ?? 'No detectado') . "\n\n" .
                         "Ingresa al panel para aprobar o rechazar esta conciliación.";
 
-        foreach ($adminPhones as $telAdmin) {
-            app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
-                'numero'     => $telAdmin,
-                'mensaje'    => $mensajeAdmin,
-                'status'     => 'pendiente',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
+        $waService->enqueueToMultiple($adminPhones, $mensajeAdmin);
 
         // Notificar Push al cliente (Recepción formal)
         PushNotificationService::notifyUser(
