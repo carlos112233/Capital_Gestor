@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Feedback;
@@ -80,16 +82,12 @@ class FeedbackController extends Controller
             'tipo'    => 'required|in:queja,comentario,sugerencia',
             'asunto'  => 'nullable|string|max:150',
             'mensaje' => 'required|string|max:4000',
-            'imagen'  => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120', // Hasta 5 MB
+            'imagen'  => 'nullable|image|mimes:jpeg,png,jpg,webp|max:4096',
         ]);
 
         $imagenPath = null;
         if ($request->hasFile('imagen')) {
-            $file = $request->file('imagen');
-            $safeExtension = $file->guessExtension() ?: 'jpg';
-            $filename = 'feedback_' . time() . '_' . Str::random(16) . '.' . $safeExtension;
-            $file->move(public_path('uploads/feedbacks'), $filename);
-            $imagenPath = 'uploads/feedbacks/' . $filename;
+            $imagenPath = $request->file('imagen')->store('feedbacks', 'public');
         }
 
         $feedback = Feedback::create([
@@ -172,17 +170,13 @@ class FeedbackController extends Controller
 
         $validated = $request->validate([
             'mensaje' => 'required|string|max:4000',
-            'imagen'  => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'imagen'  => 'nullable|image|mimes:jpeg,png,jpg,webp|max:4096',
             'estatus' => 'nullable|in:enviado,leyendo,leido',
         ]);
 
         $imagenPath = null;
         if ($request->hasFile('imagen')) {
-            $file = $request->file('imagen');
-            $safeExtension = $file->guessExtension() ?: 'jpg';
-            $filename = 'reply_' . time() . '_' . Str::random(16) . '.' . $safeExtension;
-            $file->move(public_path('uploads/feedbacks'), $filename);
-            $imagenPath = 'uploads/feedbacks/' . $filename;
+            $imagenPath = $request->file('imagen')->store('feedbacks', 'public');
         }
 
         FeedbackMensaje::create([

@@ -132,8 +132,8 @@
                         <p class="text-xs font-semibold text-gray-500 uppercase mb-2 flex items-center gap-1">
                             <span>📷</span> Imagen adjunta por el usuario:
                         </p>
-                        <a href="{{ asset($feedback->imagen) }}" target="_blank" class="inline-block border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition">
-                            <img src="{{ asset($feedback->imagen) }}" alt="Adjunto del Feedback" class="max-h-72 object-contain bg-gray-50">
+                        <a href="{{ $feedback->imagen_url }}" target="_blank" class="inline-block border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition">
+                            <img src="{{ $feedback->imagen_url }}" alt="Adjunto del Feedback" class="max-h-72 object-contain bg-gray-50">
                         </a>
                     </div>
                 @endif
@@ -177,8 +177,8 @@
 
                             @if($reply->imagen)
                                 <div class="mt-3">
-                                    <a href="{{ asset($reply->imagen) }}" target="_blank" class="inline-block border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                                        <img src="{{ asset($reply->imagen) }}" alt="Adjunto respuesta" class="max-h-48 object-contain">
+                                    <a href="{{ $reply->imagen_url }}" target="_blank" class="inline-block border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                                        <img src="{{ $reply->imagen_url }}" alt="Adjunto respuesta" class="max-h-48 object-contain">
                                     </a>
                                 </div>
                             @endif
