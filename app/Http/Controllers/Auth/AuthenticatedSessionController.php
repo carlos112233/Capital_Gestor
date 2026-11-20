@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -20,25 +22,12 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Handle an incoming authentication request.
+     * Handle an incoming authentication request using LoginRequest (compound account + IP rate limiting).
      */
-    public function store(Request $request): RedirectResponse
+    public function store(LoginRequest $request): RedirectResponse
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+        $request->authenticate();
 
-        $credentials = $request->only('email', 'password');
-
-        // Login con "remember me"
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
-            return back()->withErrors([
-                'email' => __('Estas credenciales no coinciden con nuestros registros.'),
-            ]);
-        }
-
-        // Regenera sesión
         $request->session()->regenerate();
 
         $user = Auth::user();
@@ -56,9 +45,9 @@ class AuthenticatedSessionController extends Controller
 
         if ($user->hasRole('admin')) {
             return redirect()->route('dashboardAdmin');
-        } else {
-            return redirect()->route('dashboard');
         }
+
+        return redirect()->route('dashboard');
     }
 
     /**

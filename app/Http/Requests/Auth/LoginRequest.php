@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Auth;
 
 use Illuminate\Auth\Events\Lockout;
@@ -27,13 +29,13 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            'email'    => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
         ];
     }
 
     /**
-     * Attempt to authenticate the request's credentials.
+     * Attempt to authenticate the request's credentials with compound account+IP rate limiting.
      *
      * @throws \Illuminate\Validation\ValidationException
      */
@@ -45,7 +47,7 @@ class LoginRequest extends FormRequest
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'email' => __('Estas credenciales no coinciden con nuestros registros.'),
             ]);
         }
 
@@ -76,10 +78,11 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Get the rate limiting throttle key for the request.
+     * Get the rate limiting throttle key for the request (compound normalized email + client IP).
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        $identifier = trim((string) $this->input('email', ''));
+        return Str::transliterate(Str::lower($identifier) . '|' . (string) $this->ip());
     }
 }
