@@ -15,6 +15,7 @@ beforeEach(function () {
     Role::firstOrCreate(['name' => 'admin']);
     Role::firstOrCreate(['name' => 'cliente']);
     Storage::fake('public');
+    Storage::fake('local');
 });
 
 function assignRoleToUser(User $user, string $roleName) {
