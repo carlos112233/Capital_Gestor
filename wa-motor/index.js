@@ -95,9 +95,13 @@ if (isMysql) {
 function queryDb(sql, params = []) {
     return new Promise((resolve, reject) => {
         if (isMysql && mysqlPool) {
-            // Reemplazar sintaxis $1, $2 por ? para MySQL
-            const mysqlSql = sql.replace(/\$\d+/g, "?");
-            mysqlPool.query(mysqlSql, params, (err, results) => {
+            // Reemplazar sintaxis $1, $2 por ? respetando el índice posicional exacto para MySQL
+            const mysqlParams = [];
+            const mysqlSql = sql.replace(/\$(\d+)/g, (_, index) => {
+                mysqlParams.push(params[parseInt(index, 10) - 1]);
+                return "?";
+            });
+            mysqlPool.query(mysqlSql, mysqlParams.length > 0 ? mysqlParams : params, (err, results) => {
                 if (err) return reject(err);
                 const rows = Array.isArray(results) ? results : [results];
                 resolve({ rows: rows });
@@ -641,8 +645,8 @@ function iniciarBucleEnvio() {
                                 timeZone: "America/Mexico_City",
                             });
                             await queryDb(
-                                "UPDATE whatsapp_pending_messages SET status = 'fallido', error_message = $3, attempts = COALESCE(attempts, 0) + 1, updated_at = $1 WHERE id = $2",
-                                [mxNow, msg.id, "Número de WhatsApp inválido"],
+                                "UPDATE whatsapp_pending_messages SET status = 'fallido', error_message = $1, attempts = COALESCE(attempts, 0) + 1, updated_at = $2 WHERE id = $3",
+                                ["Número de WhatsApp inválido", mxNow, msg.id],
                             );
                             continue;
                         }
@@ -702,9 +706,12 @@ function iniciarBucleEnvio() {
                         const mxNowErr = new Date().toLocaleString("sv-SE", {
                             timeZone: "America/Mexico_City",
                         });
+                        const safeErrorMsg = String(
+                            err.message || "Error desconocido",
+                        ).slice(0, 500);
                         await queryDb(
-                            "UPDATE whatsapp_pending_messages SET status = 'fallido', error_message = $3, attempts = COALESCE(attempts, 0) + 1, updated_at = $1 WHERE id = $2",
-                            [mxNowErr, msg.id, String(err.message || "Error desconocido").slice(0, 2000)],
+                            "UPDATE whatsapp_pending_messages SET status = 'fallido', error_message = $1, attempts = COALESCE(attempts, 0) + 1, updated_at = $2 WHERE id = $3",
+                            [safeErrorMsg, mxNowErr, msg.id],
                         ).catch((updateError) => {
                             console.error(
                                 `No se pudo registrar el fallo del mensaje #${msg.id}:`,
