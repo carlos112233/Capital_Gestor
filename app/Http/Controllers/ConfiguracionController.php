@@ -125,11 +125,11 @@ class ConfiguracionController extends Controller
     public function updateLogo(Request $request)
     {
         $request->validate([
-            'logo' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:4096',
+            'logo' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
         ], [
             'logo.required' => 'Debes seleccionar una imagen para el logotipo.',
             'logo.image' => 'El archivo debe ser una imagen válida.',
-            'logo.mimes' => 'Formatos permitidos: JPEG, PNG, JPG, GIF, SVG o WEBP.',
+            'logo.mimes' => 'Formatos permitidos: JPEG, PNG, JPG, GIF o WEBP.',
             'logo.max' => 'El logotipo no debe superar los 4MB.',
         ]);
 

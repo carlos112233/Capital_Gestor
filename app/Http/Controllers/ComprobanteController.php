@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Articulo;
 use App\Models\Comprobante;
 use App\Models\Entrada;
 use App\Services\ReceiptOcrService;
@@ -15,7 +18,7 @@ use Illuminate\Support\Facades\DB;
 class ComprobanteController extends Controller
 {
     /**
-     * Permite al cliente subir su comprobante de pago con procesamiento OCR e IA.
+     * Permite al cliente subir su comprobante de pago con procesamiento OCR e IA en almacenamiento privado.
      */
     public function store(Request $request)
     {
@@ -25,9 +28,9 @@ class ComprobanteController extends Controller
             'notas' => 'nullable|string'
         ]);
 
-        // Guardamos la imagen localmente
-        $path = $request->file('imagen')->store('comprobantes', 'public');
-        $fullPath = storage_path('app/public/' . $path);
+        // Guardamos la imagen en disco privado ('local' => storage/app/private/comprobantes)
+        $path = $request->file('imagen')->store('comprobantes', 'local');
+        $fullPath = Storage::disk('local')->path($path);
 
         // Procesamiento OCR e IA del comprobante
         $ocrResult = ReceiptOcrService::processImage($fullPath);
@@ -126,6 +129,36 @@ class ComprobanteController extends Controller
     }
 
     /**
+     * Sirve de forma privada y autenticada la imagen de un comprobante bancario (solo propietario o admin).
+     */
+    public function verImagen($id)
+    {
+        $comprobante = Comprobante::findOrFail($id);
+        $user = Auth::user();
+
+        if (!$user || (!$user->hasRole('admin') && (int) $comprobante->user_id !== (int) $user->id)) {
+            abort(403, 'No tienes permiso para acceder a este comprobante bancario.');
+        }
+
+        if (!empty($comprobante->imagen)) {
+            if (Storage::disk('local')->exists($comprobante->imagen)) {
+                return Storage::disk('local')->response($comprobante->imagen, null, [
+                    'Cache-Control' => 'private, no-store, max-age=0',
+                ]);
+            }
+
+            // Fallback de lectura legado si el archivo fue subido previamente al disco público
+            if (Storage::disk('public')->exists($comprobante->imagen)) {
+                return Storage::disk('public')->response($comprobante->imagen, null, [
+                    'Cache-Control' => 'private, no-store, max-age=0',
+                ]);
+            }
+        }
+
+        abort(404, 'Archivo de comprobante no encontrado.');
+    }
+
+    /**
      * Aprueba el comprobante y genera la entrada de capital en la base de datos.
      */
     public function aprobar($id)
@@ -136,19 +169,28 @@ class ComprobanteController extends Controller
             return back()->with('error', 'El comprobante ya fue aprobado anteriormente.');
         }
 
-        // Buscar el artículo "Pago saldado" o similar
-        $articulo = \App\Models\Articulo::where('nombre', 'like', '%pago saldado%')->first();
-        $articuloId = $articulo ? $articulo->id : null;
-
         $entrada = null;
 
-        DB::transaction(function () use ($comprobante, $articuloId, &$entrada) {
+        DB::transaction(function () use ($comprobante, &$entrada) {
+            // Garantizar atómicamente la existencia del artículo comodín 'Pago saldado' (Cierre DT-14)
+            $articulo = Articulo::whereRaw('LOWER(nombre) LIKE ?', ['%pago saldado%'])->first()
+                ?? Articulo::firstOrCreate(
+                    ['nombre' => 'Pago saldado'],
+                    [
+                        'precio'           => 0.00,
+                        'stock'            => 0,
+                        'disponible'       => false,
+                        'requiere_cocina'  => false,
+                        'categoria_cocina' => Articulo::CATEGORIA_OTRO,
+                    ]
+                );
+
             // Registrar la entrada de capital
             $entrada = Entrada::create([
                 'user_id' => $comprobante->user_id,
                 'cliente_id' => $comprobante->user_id,
                 'registrado_por_id' => Auth::id(),
-                'articulo_id' => $articuloId,
+                'articulo_id' => $articulo->id,
                 'precio_venta' => $comprobante->monto,
                 'descripcion' => 'Aprobación de comprobante #' . $comprobante->id . ($comprobante->clave_rastreo ? ' [Folio: ' . $comprobante->clave_rastreo . ']' : '') . ($comprobante->banco ? ' [Banco: ' . $comprobante->banco . ']' : ''),
                 'fecha_generado' => now()
@@ -235,12 +277,13 @@ class ComprobanteController extends Controller
                 $telefonoCliente = '521' . $telefonoCliente;
             }
 
-            $montoFormateado = number_format($comprobante->monto, 2);
+            $montoFormateado = number_format((float) $comprobante->monto, 2);
+            $appName = \App\Models\AppSetting::getSettings()->app_name ?? 'El bajón';
 
-            $mensajeWa = "*❌ COMPROBANTE NO APROBADO - El bajón*\n\n" .
+            $mensajeWa = "*❌ COMPROBANTE NO APROBADO - {$appName}*\n\n" .
                 "Hola *" . $comprobante->user->name . "*, te informamos que tu comprobante de pago por *\${$montoFormateado}* no fue aprobado / fue rechazado tras la revisión.\n\n" .
                 "Por favor, revisa tu comprobante e intenta subir uno nuevo desde tu panel de usuario o comunícate con administración.\n\n" .
-                "_Mensaje automático de El bajón_";
+                "_Mensaje automático de {$appName}_";
 
             app(\App\Services\WhatsAppNotificationService::class)->enqueuePayload([
                 'numero'     => $telefonoCliente,
@@ -253,7 +296,7 @@ class ComprobanteController extends Controller
 
         // Notificación Push SIEMPRE al cliente sobre actualización de pago
         if ($comprobante->user) {
-            $montoFormateado = number_format($comprobante->monto, 2);
+            $montoFormateado = number_format((float) $comprobante->monto, 2);
             PushNotificationService::notifyUser(
                 $comprobante->user,
                 "Actualización de Pago ⚠️",

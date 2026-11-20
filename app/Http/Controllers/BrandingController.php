@@ -79,8 +79,8 @@ class BrandingController extends Controller
             'sidebar_color' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'font_family' => ['required', 'string', 'in:Inter,Poppins,Roboto,Plus Jakarta Sans,Montserrat'],
             'theme_mode' => ['nullable', 'string', 'in:light,dark,system'],
-            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg,webp', 'max:2048'],
-            'favicon' => ['nullable', 'file', 'mimes:ico,png,x-icon', 'max:1024'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+            'favicon' => ['nullable', 'file', 'mimes:ico,png,x-icon,webp', 'max:1024'],
         ], [
             'app_name.required' => 'El nombre del sistema es obligatorio.',
             'primary_color.regex' => 'El color primario debe ser un código hexadecimal válido (ej. #6366f1).',

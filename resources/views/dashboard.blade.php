@@ -123,7 +123,7 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{ $comp->created_at->format('d/m/Y h:i A') }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-bold">${{ number_format($comp->monto, 2) }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-indigo-600 dark:text-indigo-400">
-                                                <a href="{{ Storage::url($comp->imagen) }}" target="_blank" class="hover:underline">Ver Imagen</a>
+                                                <a href="{{ route('comprobantes.imagen', $comp->id) }}" target="_blank" class="hover:underline">Ver Imagen</a>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                                 @if($comp->status == 'pendiente')

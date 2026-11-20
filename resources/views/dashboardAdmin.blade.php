@@ -511,7 +511,7 @@
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-center">
-                                                <a href="{{ Storage::url($comp->imagen) }}" target="_blank"
+                                                <a href="{{ route('comprobantes.imagen', $comp->id) }}" target="_blank"
                                                     class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">

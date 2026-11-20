@@ -107,8 +107,9 @@ Route::middleware('auth')->group(function () {
     });
 
 
-    // Comprobantes Usuario
+    // Comprobantes Usuario (subida y visualización privada autenticada)
     Route::post('comprobantes', [\App\Http\Controllers\ComprobanteController::class, 'store'])->name('comprobantes.store');
+    Route::get('comprobantes/{id}/imagen', [\App\Http\Controllers\ComprobanteController::class, 'verImagen'])->name('comprobantes.imagen');
 
     // Estado de Cuenta PDF con QR
     Route::get('estado-cuenta/pdf', [\App\Http\Controllers\EstadoCuentaController::class, 'descargarPdfCliente'])->name('estado-cuenta.pdf');

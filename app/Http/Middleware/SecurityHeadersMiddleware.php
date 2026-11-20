@@ -29,6 +29,11 @@ class SecurityHeadersMiddleware
         // Restricción de capacidades del navegador
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
+        // HTTP Strict Transport Security (HSTS) cuando la conexión es HTTPS
+        if ($request->isSecure()) {
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        }
+
         // Content Security Policy básico y seguro
         $response->headers->set(
             'Content-Security-Policy',
