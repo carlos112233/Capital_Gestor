@@ -15,6 +15,67 @@ use Illuminate\Support\Facades\DB;
 class EstadoCuentaFifoService
 {
     /**
+     * Obtiene la colección consolidada de usuarios con sus saldos de deuda, pagado y cortes quincenales.
+     */
+    public function obtenerResumenSaldosUsuarios(): Collection
+    {
+        return User::select(
+            'id',
+            'name',
+            'email',
+            'telefono',
+            'updated_at',
+            'image',
+            DB::raw('image IS NOT NULL as has_image')
+        )
+            ->withSaldos()
+            ->get()
+            ->map(function (User $u) {
+                $totalDeuda = (float) ($u->ventas_sum_total_venta ?? 0);
+                $totalPagado = (float) ($u->entradas_sum_precio_venta ?? 0);
+                $ventasCorte = (float) ($u->ventas_corte_sum ?? 0);
+
+                $saldo = $totalDeuda - $totalPagado;
+                $saldoAnterior = max(0.0, $ventasCorte - $totalPagado);
+                $saldoActual = max(0.0, $saldo - $saldoAnterior);
+
+                $u->total_deuda = $totalDeuda;
+                $u->total_pagado = $totalPagado;
+                $u->saldo = $saldo;
+                $u->saldo_corte_anterior = $saldoAnterior;
+                $u->saldo_corte_actual = $saldoActual;
+
+                return $u;
+            })
+            ->sortBy('name')
+            ->values();
+    }
+
+    /**
+     * Obtiene las compras más recientes pendientes de pago de un cliente hasta cubrir su saldo adeudado (FIFO).
+     */
+    public function obtenerVentasPendientesFifoUsuario(User $user, float $saldoPendiente): Collection
+    {
+        $ventasCliente = $user->ventas
+            ? $user->ventas->filter(fn ($venta) => $venta->articulo && $venta->articulo->nombre !== 'Pago saldado')
+            : collect();
+
+        $ventasPorCubrir = collect();
+        if ($saldoPendiente > 0 && $ventasCliente->isNotEmpty()) {
+            $acumulado = 0.0;
+            foreach ($ventasCliente->reverse() as $venta) {
+                if ($acumulado >= $saldoPendiente - 0.01) {
+                    break;
+                }
+                $ventasPorCubrir->prepend($venta);
+                $acumulado += (float) $venta->total_venta;
+            }
+        }
+
+        return $ventasPorCubrir;
+    }
+
+    /**
      * Calcula el estado FIFO ('PAGADO' | 'PENDIENTE') de todas las ventas pertenecientes a los usuarios indicados.
      *
      * @param iterable<int|string> $usuariosIds

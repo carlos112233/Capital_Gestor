@@ -60,33 +60,9 @@ class DashboardController extends Controller
      */
     private function adminDashboard(Request $request)
     {
-        $resumen = User::select(
-                'id', 'name', 'email', 'telefono', 'updated_at', 'image',
-                DB::raw('image IS NOT NULL as has_image')
-            )
-            ->withSaldos()
-            ->get();
-
-        $resumen = $resumen->map(function ($User) {
-            $totalDeuda = (float) ($User->ventas_sum_total_venta ?? 0);
-            $totalPagado = (float) ($User->entradas_sum_precio_venta ?? 0);
-            $ventasCorte = (float) ($User->ventas_corte_sum ?? 0);
-
-            $saldo = $totalDeuda - $totalPagado;
-            $saldoAnterior = max(0, $ventasCorte - $totalPagado);
-            $saldoActual = max(0, $saldo - $saldoAnterior);
-
-            $User->total_deuda = $totalDeuda;
-            $User->total_pagado = $totalPagado;
-            $User->saldo = $saldo;
-            $User->saldo_corte_anterior = $saldoAnterior;
-            $User->saldo_corte_actual = $saldoActual;
-
-            return $User;
-        });
-
-        $totalSaldo = $resumen->sum(fn($User) => $User->saldo);
-        $resumen = $resumen->sortBy('name')->values();
+        $fifoService = app(\App\Services\EstadoCuentaFifoService::class);
+        $resumen = $fifoService->obtenerResumenSaldosUsuarios();
+        $totalSaldo = (float) $resumen->sum(fn ($u) => $u->saldo);
 
         $articulos = \App\Models\Articulo::select('id', 'nombre', 'precio')->orderBy('nombre', 'asc')->get();
         $users = User::whereHas('roles', function ($query) {
@@ -263,22 +239,8 @@ class DashboardController extends Controller
                 "--------------------------\n";
         }
 
-        $ventasCliente = $user->ventas ? $user->ventas->filter(function ($venta) {
-            return $venta->articulo && $venta->articulo->nombre !== 'Pago saldado';
-        }) : collect();
-
-        $ventasPorCubrir = collect();
-        if ($saldo > 0 && $ventasCliente->isNotEmpty()) {
-            $acumulado = 0.0;
-            // Recorremos desde la venta más reciente hacia atrás para obtener solo lo que falta por pagar (FIFO)
-            foreach ($ventasCliente->reverse() as $venta) {
-                if ($acumulado >= $saldo - 0.01) {
-                    break;
-                }
-                $ventasPorCubrir->prepend($venta);
-                $acumulado += (float) $venta->total_venta;
-            }
-        }
+        $ventasPorCubrir = app(\App\Services\EstadoCuentaFifoService::class)
+            ->obtenerVentasPendientesFifoUsuario($user, (float) $saldo);
 
         if ($ventasPorCubrir->isNotEmpty()) {
             $desgloseTexto .= "*Detalle de compras:*\n";
